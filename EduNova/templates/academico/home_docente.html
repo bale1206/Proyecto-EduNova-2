@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Panel docente · EduNova{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-2xl font-semibold mb-6">Hola, {{ user.first_name }}</h1>
+
+<div class="grid lg:grid-cols-3 gap-6">
+
+    <div class="lg:col-span-1 space-y-6">
+        <div class="card p-5">
+            <h2 class="font-display font-semibold mb-3">Tu próxima clase</h2>
+            {% if proxima_clase %}
+            <div class="rounded-lg p-4" style="background: var(--lino-2);">
+                <p class="text-sm text-gray-500 dark:text-neutral-400">{{ proxima_clase.fecha|date:"l j \d\e F" }}
+                    {% if proxima_clase.hora_inicio %} · {{ proxima_clase.hora_inicio|time:"H:i" }}{% endif %}
+                </p>
+                <p class="font-medium mt-1">{{ proxima_clase.titulo }}</p>
+                <p class="text-sm text-gray-500 dark:text-neutral-400">{{ proxima_clase.curso.grado_curso }}</p>
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500 dark:text-neutral-400">No tienes clases próximas agendadas.</p>
+            {% endif %}
+        </div>
+
+        <div class="card p-5">
+            <h2 class="font-display font-semibold mb-3">Tus cursos</h2>
+            {% if cursos %}
+            <ul class="space-y-2">
+                {% for curso in cursos %}
+                <li class="flex items-center justify-between text-sm">
+                    <span>{{ curso.grado_curso }}</span>
+                    <span class="text-gray-400 dark:text-neutral-500">{{ curso.estudiantes.count }} estudiantes</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-gray-500 dark:text-neutral-400">Aún no tienes cursos asignados.</p>
+            {% endif %}
+        </div>
+
+        <a href="{% url 'comunicacion:enviar_comunicado' %}" class="btn-primary w-full text-center block py-2.5 font-medium sm:hidden">
+            Nuevo comunicado
+        </a>
+    </div>
+
+    <div class="lg:col-span-2">
+        {% include "academico/_calendario.html" %}
+    </div>
+</div>
+{% endblock %}

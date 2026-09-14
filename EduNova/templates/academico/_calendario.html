@@ -1,0 +1,36 @@
+<div id="calendario-mensual" class="card p-5">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="font-display font-semibold">{{ mes_nombre }} {{ anio }}</h3>
+        <div class="flex gap-2">
+            <button
+                hx-get="?year={{ prev_year }}&month={{ prev_month }}{% if estudiante %}&estudiante={{ estudiante.id }}{% endif %}"
+                hx-target="#calendario-mensual" hx-swap="outerHTML"
+                class="btn-secondary text-sm px-2 py-1" aria-label="Mes anterior">‹</button>
+            <button
+                hx-get="?year={{ next_year }}&month={{ next_month }}{% if estudiante %}&estudiante={{ estudiante.id }}{% endif %}"
+                hx-target="#calendario-mensual" hx-swap="outerHTML"
+                class="btn-secondary text-sm px-2 py-1" aria-label="Mes siguiente">›</button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-400 dark:text-neutral-500 mb-1">
+        <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+    </div>
+
+    <div class="grid grid-cols-7 gap-1">
+        {% for semana in semanas %}
+            {% for dia in semana %}
+            <div class="min-h-[4.5rem] rounded-lg p-1 text-xs {% if dia.numero %}bg-gray-50 dark:bg-neutral-800/60{% endif %} {% if dia.es_hoy %}dia-hoy{% endif %}">
+                {% if dia.numero %}
+                <p class="font-medium text-gray-500 dark:text-neutral-400 mb-1">{{ dia.numero }}</p>
+                {% for evento in dia.eventos %}
+                <div class="chip chip-{{ evento.tipo }} block truncate mb-0.5" title="{{ evento.titulo }}">
+                    {{ evento.titulo }}
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>

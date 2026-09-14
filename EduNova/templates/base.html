@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EduNova{% endblock %}</title>
+
+    <script>
+        // Se aplica de inmediato (no diferido) para que la página no
+        // "parpadee" del tema/tamaño por defecto al correcto al cargar.
+        (function () {
+            var raiz = document.documentElement;
+            var guardado = function (clave, porDefecto) {
+                try { return localStorage.getItem(clave) || porDefecto; } catch (e) { return porDefecto; }
+            };
+            var modo = guardado('edunova-modo', 'sistema');
+            var prefiereOscuro = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (modo === 'oscuro' || (modo === 'sistema' && prefiereOscuro)) raiz.classList.add('dark');
+
+            var tamano = guardado('edunova-a11y-tamano', 'normal');
+            if (tamano === 'grande') raiz.classList.add('a11y-texto-grande');
+            if (tamano === 'xl') raiz.classList.add('a11y-texto-xl');
+
+            if (guardado('edunova-a11y-contraste', '0') === '1') raiz.classList.add('a11y-alto-contraste');
+            if (guardado('edunova-a11y-subrayado', '0') === '1') raiz.classList.add('a11y-subrayado');
+            if (guardado('edunova-a11y-movimiento', '0') === '1') raiz.classList.add('a11y-reducir-movimiento');
+        })();
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' };</script>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <script src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="{% static 'css/edunova.css' %}">
+</head>
+<body class="min-h-screen">
+    {% if user.is_authenticated %}
+    <header class="border-b" style="border-color: var(--linea); background: var(--superficie);">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+            <a href="{% url 'usuarios:post_login_redirect' %}" class="flex items-center gap-2 font-display font-semibold text-lg" style="color: var(--tinta);">
+                <span class="inline-block h-7 w-7 rounded-full" style="background: linear-gradient(135deg, var(--rio), var(--amanecer));"></span>
+                EduNova
+            </a>
+
+            <div class="flex items-center gap-4">
+                <span class="hidden sm:block text-sm text-right leading-tight">
+                    <span class="block font-medium">{{ user.nombre_completo }}</span>
+                    <span class="block text-xs text-gray-500 dark:text-neutral-400">{{ user.get_rol_display }}</span>
+                </span>
+
+                {% if user.rol == 'docente' or user.rol == 'apoderado' %}
+                <a href="{% url 'comunicacion:enviar_comunicado' %}" class="btn-primary text-sm font-medium px-3 py-2 hidden sm:inline-block">
+                    Nuevo comunicado
+                </a>
+                {% endif %}
+
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" @click.outside="open = false" class="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800" aria-label="Notificaciones">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.85 23.85 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                        </svg>
+                        {% if total_no_leidos_global %}
+                        <span class="absolute -top-0.5 -right-0.5 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full text-[0.65rem] leading-[1.15rem] text-white text-center font-semibold" style="background: var(--amanecer);">
+                            {{ total_no_leidos_global }}
+                        </span>
+                        {% endif %}
+                    </button>
+
+                    <div x-show="open" x-cloak x-transition
+                         class="absolute right-0 mt-2 w-80 card shadow-lg overflow-hidden z-20">
+                        <div id="notif-panel"
+                             hx-get="{% url 'comunicacion:panel_notificaciones' %}"
+                             hx-trigger="load, every 45s"
+                             hx-swap="innerHTML">
+                            <p class="p-4 text-sm text-gray-400 dark:text-neutral-500">Cargando notificaciones…</p>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{% url 'usuarios:logout' %}" class="btn-secondary text-sm px-3 py-2">Salir</a>
+            </div>
+        </div>
+    </header>
+    {% endif %}
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {% if messages %}
+        <div class="mb-6 space-y-2">
+            {% for message in messages %}
+            <div class="card px-4 py-3 text-sm {% if message.tags == 'error' %}banner-error{% elif message.tags == 'success' %}banner-exito{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include "_accesibilidad.html" %}
+</body>
+</html>

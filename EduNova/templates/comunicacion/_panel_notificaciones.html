@@ -1,0 +1,26 @@
+{% load static %}
+<div class="max-h-96 overflow-y-auto">
+    <div class="px-4 py-3 border-b" style="border-color: var(--linea);">
+        <p class="font-display font-semibold text-sm">Notificaciones</p>
+        <p class="text-xs text-gray-500 dark:text-neutral-400">{{ total_no_leidos }} sin leer</p>
+    </div>
+
+    {% if notificaciones %}
+        {% for n in notificaciones %}
+        <a href="{% url 'comunicacion:detalle_mensaje' n.id %}" class="block px-4 py-3 border-b last:border-0 hover:bg-gray-50 dark:hover:bg-neutral-800/60" style="border-color: var(--linea);">
+            <div class="flex items-center justify-between gap-2">
+                <span class="chip chip-{{ n.tipo_comunicacion }}">{{ n.get_tipo_comunicacion_display }}</span>
+                <span class="text-[0.7rem] text-gray-400 dark:text-neutral-500">{{ n.fecha_hora_envio|date:"d M, H:i" }}</span>
+            </div>
+            <p class="text-sm font-medium mt-1">{{ n.asunto }}</p>
+            <p class="text-xs text-gray-500 dark:text-neutral-400">{{ n.remitente.nombre_completo|default:"EduNova" }}</p>
+        </a>
+        {% endfor %}
+    {% else %}
+        <p class="p-4 text-sm text-gray-400 dark:text-neutral-500">No tienes notificaciones nuevas.</p>
+    {% endif %}
+
+    <a href="{% url 'comunicacion:bandeja' %}" class="block text-center text-sm font-medium py-2.5 hover:bg-gray-50 dark:hover:bg-neutral-800/60" style="color: var(--rio);">
+        Ver toda la bandeja
+    </a>
+</div>

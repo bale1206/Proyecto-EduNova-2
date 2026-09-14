@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Panel administrativo · EduNova{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-2xl font-semibold mb-1">Hola, {{ user.first_name }}</h1>
+<p class="text-gray-500 dark:text-neutral-400 mb-6">Panel de dirección: cursos, evaluaciones y reuniones del colegio.</p>
+
+<div class="grid sm:grid-cols-2 gap-4 mb-6">
+    <div class="card p-5">
+        <p class="text-sm text-gray-500 dark:text-neutral-400">Cursos</p>
+        <p class="font-display text-3xl font-semibold">{{ cursos.count }}</p>
+    </div>
+    <div class="card p-5">
+        <p class="text-sm text-gray-500 dark:text-neutral-400">Estudiantes matriculados</p>
+        <p class="font-display text-3xl font-semibold">{{ total_estudiantes }}</p>
+    </div>
+</div>
+
+<div class="grid lg:grid-cols-3 gap-6 mb-6">
+
+    <div class="lg:col-span-1 space-y-6">
+        <div class="card p-5">
+            <h2 class="font-display font-semibold mb-3">Cursos</h2>
+            {% if cursos %}
+            <ul class="space-y-2 mb-4">
+                {% for curso in cursos %}
+                <li class="flex items-center justify-between text-sm rounded-lg px-3 py-2" style="background: var(--lino-2);">
+                    <span>{{ curso.grado_curso }}</span>
+                    <span class="text-gray-500 dark:text-neutral-400 text-xs">{{ curso.docente_jefe.nombre_completo|default:"Sin docente jefe" }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-gray-500 dark:text-neutral-400 mb-4">Aún no hay cursos creados.</p>
+            {% endif %}
+
+            <details>
+                <summary class="cursor-pointer text-sm font-medium" style="color: var(--rio);">+ Crear curso</summary>
+                <form method="post" action="{% url 'academico:crear_curso' %}" class="space-y-3 mt-3">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-xs font-medium mb-1">{{ curso_form.grado_curso.label }}</label>
+                        {{ curso_form.grado_curso }}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1">{{ curso_form.docente_jefe.label }}</label>
+                        {{ curso_form.docente_jefe }}
+                    </div>
+                    <button type="submit" class="btn-primary w-full py-2 text-sm font-medium">Crear curso</button>
+                </form>
+            </details>
+        </div>
+
+        <div class="card p-5">
+            <h2 class="font-display font-semibold mb-3">Próximas evaluaciones y reuniones</h2>
+            {% if proximos_eventos %}
+            <ul class="space-y-2">
+                {% for ev in proximos_eventos %}
+                <li class="text-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="chip chip-{{ ev.tipo }}">{{ ev.get_tipo_display }}</span>
+                        <span class="text-gray-400 dark:text-neutral-500 text-xs">{{ ev.fecha|date:"d M" }}</span>
+                    </div>
+                    <p class="mt-1">{{ ev.titulo }} <span class="text-gray-400 dark:text-neutral-500">· {{ ev.curso.grado_curso }}</span></p>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-gray-500 dark:text-neutral-400">No hay evaluaciones ni reuniones agendadas.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="lg:col-span-2 space-y-6">
+        {% include "academico/_calendario.html" %}
+
+        <div class="card p-5">
+            <h2 class="font-display font-semibold mb-4">Agendar evaluación, reunión o clase</h2>
+            <form method="post" action="{% url 'academico:crear_evento' %}" class="grid sm:grid-cols-2 gap-4">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-sm font-medium mb-1">{{ evento_form.curso.label }}</label>
+                    {{ evento_form.curso }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">{{ evento_form.tipo.label }}</label>
+                    {{ evento_form.tipo }}
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium mb-1">{{ evento_form.titulo.label }}</label>
+                    {{ evento_form.titulo }}
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium mb-1">{{ evento_form.descripcion.label }}</label>
+                    {{ evento_form.descripcion }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">{{ evento_form.fecha.label }}</label>
+                    {{ evento_form.fecha }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">{{ evento_form.hora_inicio.label }}</label>
+                    {{ evento_form.hora_inicio }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">{{ evento_form.hora_fin.label }}</label>
+                    {{ evento_form.hora_fin }}
+                </div>
+                <div class="sm:col-span-2">
+                    <button type="submit" class="btn-primary w-full py-2.5 font-medium">Agendar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

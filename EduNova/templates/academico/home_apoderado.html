@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Panel apoderado · EduNova{% endblock %}
+
+{% block content %}
+<h1 class="font-display text-2xl font-semibold mb-1">Hola, {{ user.first_name }}</h1>
+<p class="text-gray-500 dark:text-neutral-400 mb-6">Este es el resumen de tu familia en el colegio.</p>
+
+{% if familias %}
+<div class="space-y-6">
+    {% for apellido, estudiantes in familias.items %}
+    <div class="card p-5">
+        <h2 class="font-display font-semibold mb-4">Familia {{ apellido }}</h2>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for estudiante in estudiantes %}
+            <a href="{% url 'academico:detalle_estudiante' estudiante.id %}"
+               class="rounded-lg p-4 flex items-center gap-3 hover:shadow-md transition-shadow" style="background: var(--lino-2);">
+                <span class="h-10 w-10 rounded-full flex items-center justify-center text-white font-medium font-display"
+                      style="background: linear-gradient(135deg, var(--rio), var(--amanecer));">
+                    {{ estudiante.nombre_completo|first|upper }}
+                </span>
+                <span>
+                    <span class="block font-medium text-sm">{{ estudiante.nombre_completo }}</span>
+                    <span class="block text-xs text-gray-500 dark:text-neutral-400">{{ estudiante.curso|default:"Sin curso asignado" }}</span>
+                </span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card p-8 text-center">
+    <p class="text-gray-500 dark:text-neutral-400">Aún no tienes estudiantes asociados a tu cuenta.</p>
+    <p class="text-sm text-gray-400 dark:text-neutral-500 mt-1">Si crees que esto es un error, contacta al colegio para vincular a tus hijos.</p>
+</div>
+{% endif %}
+{% endblock %}

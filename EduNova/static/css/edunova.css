@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+/*
+  Paleta "Tinta y Musgo": deliberadamente alejada del típico azul/teal de
+  SaaS. Dos acentos minerales (musgo y arcilla quemada) sobre neutros
+  cálidos, con un set equivalente para modo oscuro.
+*/
+:root {
+  color-scheme: light;
+
+  --lino: #f5f1e9;        /* fondo de página */
+  --lino-2: #ece4d4;      /* fondo sutil (hover, filas alternas) */
+  --superficie: #fffdf9;  /* tarjetas, header */
+  --linea: #ded2b8;       /* bordes */
+  --fondo-input: #fffdf9;
+
+  --tinta: #29241d;       /* texto principal */
+  --tinta-muted: #756b57; /* texto secundario */
+  --tinta-faint: #a49a84; /* texto terciario */
+
+  --rio: #55624a;         /* acento primario: musgo profundo */
+  --rio-hover: #434e3a;
+  --amanecer: #b6603a;    /* acento secundario: arcilla quemada */
+  --amanecer-soft: #f2ddca;
+
+  --chip-clase-bg: #e6ebdd;      --chip-clase-fg: #47552e;
+  --chip-evaluacion-bg: #f4e0cd; --chip-evaluacion-fg: #8a4b23;
+  --chip-reunion-bg: #e7e0e9;    --chip-reunion-fg: #5c4a68;
+  --chip-otro-bg: var(--lino-2); --chip-otro-fg: var(--tinta-muted);
+
+  --exito-bg: #eaf0e3;  --exito-fg: #3c5a2c;  --exito-borde: #c9d9b8;
+  --error-bg: #f7e6e0;  --error-fg: #8c3a24;  --error-borde: #e5bfad;
+
+  --tamano-base: 16px;
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --lino: #1a1815;
+  --lino-2: #242019;
+  --superficie: #221f1a;
+  --linea: #3a352a;
+  --fondo-input: #221f1a;
+
+  --tinta: #ece6d8;
+  --tinta-muted: #b0a68f;
+  --tinta-faint: #82796758;
+
+  --rio: #9db088;
+  --rio-hover: #b3c49f;
+  --amanecer: #e0916a;
+  --amanecer-soft: #4a3122;
+
+  --chip-clase-bg: #333d29;      --chip-clase-fg: #c3d4ac;
+  --chip-evaluacion-bg: #4a3421; --chip-evaluacion-fg: #edb488;
+  --chip-reunion-bg: #362e3c;    --chip-reunion-fg: #d1bde0;
+  --chip-otro-bg: var(--lino-2); --chip-otro-fg: var(--tinta-muted);
+
+  --exito-bg: #253422;  --exito-fg: #b7d19f;  --exito-borde: #3c5533;
+  --error-bg: #3a2620;  --error-fg: #eab19b;  --error-borde: #5c3a2c;
+}
+
+html {
+  font-size: var(--tamano-base);
+  scroll-behavior: smooth;
+}
+body { font-family: 'Inter', system-ui, sans-serif; background-color: var(--lino); color: var(--tinta); }
+h1, h2, h3, .font-display { font-family: 'Sora', 'Inter', system-ui, sans-serif; }
+
+.card {
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: 0.9rem;
+}
+
+.btn-primary {
+  background-color: var(--rio);
+  color: #fff;
+  border-radius: 0.6rem;
+  transition: background-color 0.15s ease;
+}
+.btn-primary:hover { background-color: var(--rio-hover); }
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--tinta);
+  border: 1px solid var(--linea);
+  border-radius: 0.6rem;
+}
+.btn-secondary:hover { background-color: var(--lino-2); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.1rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.chip-clase { background: var(--chip-clase-bg); color: var(--chip-clase-fg); }
+.chip-evaluacion { background: var(--chip-evaluacion-bg); color: var(--chip-evaluacion-fg); }
+.chip-reunion { background: var(--chip-reunion-bg); color: var(--chip-reunion-fg); }
+.chip-otro { background: var(--chip-otro-bg); color: var(--chip-otro-fg); }
+
+.dia-hoy { box-shadow: inset 0 0 0 2px var(--rio); }
+
+.banner-exito { background: var(--exito-bg); color: var(--exito-fg); border-color: var(--exito-borde); }
+.banner-error { background: var(--error-bg); color: var(--error-fg); border-color: var(--error-borde); }
+
+input[type="text"], input[type="password"], input[type="email"], input[type="tel"],
+input[type="date"], input[type="time"], input[type="number"], select, textarea {
+  background-color: var(--fondo-input);
+  color: var(--tinta);
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--linea); border-radius: 999px; }
+
+/* ---------- Accesibilidad ---------- */
+
+html.a11y-texto-grande { --tamano-base: 18px; }
+html.a11y-texto-xl { --tamano-base: 20px; }
+
+html.a11y-subrayado a { text-decoration: underline; text-underline-offset: 2px; }
+
+html.a11y-alto-contraste {
+  --linea: currentColor;
+}
+html.a11y-alto-contraste .card { border-width: 2px; }
+html.a11y-alto-contraste .btn-primary,
+html.a11y-alto-contraste .btn-secondary { outline: 2px solid currentColor; outline-offset: 1px; }
+
+html.a11y-reducir-movimiento *,
+html.a11y-reducir-movimiento *::before,
+html.a11y-reducir-movimiento *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+:focus-visible {
+  outline: 2px solid var(--amanecer);
+  outline-offset: 2px;
+}

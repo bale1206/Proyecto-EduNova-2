@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ estudiante.nombre_completo }} · EduNova{% endblock %}
+
+{% block content %}
+<a href="{% url 'academico:home_apoderado' %}" class="text-sm text-gray-500 dark:text-neutral-400 hover:underline">‹ Volver a mi familia</a>
+
+<div class="flex items-center gap-3 mt-3 mb-6">
+    <span class="h-12 w-12 rounded-full flex items-center justify-center text-white font-medium font-display text-lg"
+          style="background: linear-gradient(135deg, var(--rio), var(--amanecer));">
+        {{ estudiante.nombre_completo|first|upper }}
+    </span>
+    <div>
+        <h1 class="font-display text-2xl font-semibold">{{ estudiante.nombre_completo }}</h1>
+        <p class="text-gray-500 dark:text-neutral-400 text-sm">{{ estudiante.curso|default:"Sin curso asignado" }}</p>
+    </div>
+</div>
+
+<div class="grid lg:grid-cols-3 gap-6">
+
+    <div class="lg:col-span-1 space-y-6">
+        <div class="card p-5">
+            <h2 class="font-display font-semibold mb-4">Progreso académico</h2>
+
+            <div class="flex items-center gap-4">
+                <div class="relative h-20 w-20 shrink-0 rounded-full"
+                     style="background: conic-gradient(var(--rio) {{ resumen_asistencia|default:0 }}%, var(--lino-2) 0);">
+                    <div class="absolute inset-2 rounded-full bg-white dark:bg-neutral-900 flex items-center justify-center text-sm font-semibold">
+                        {% if resumen_asistencia is not None %}{{ resumen_asistencia }}%{% else %}—{% endif %}
+                    </div>
+                </div>
+                <div>
+                    <p class="text-sm font-medium">Asistencia (últimos registros)</p>
+                    {% if asistencia_actual %}
+                    <p class="text-xs text-gray-500 dark:text-neutral-400">Último estado: {{ asistencia_actual.get_estado_display }} ({{ asistencia_actual.fecha }})</p>
+                    {% else %}
+                    <p class="text-xs text-gray-500 dark:text-neutral-400">Sin registros de asistencia todavía.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <p class="text-sm font-medium mb-2">Observaciones recientes</p>
+                {% if observaciones %}
+                <ul class="space-y-2">
+                    {% for obs in observaciones %}
+                    <li class="text-sm rounded-lg p-3" style="background: var(--lino-2);">
+                        <span class="chip chip-otro mb-1">{{ obs.get_tipo_display }}</span>
+                        <p class="text-gray-700 dark:text-neutral-300">{{ obs.contenido_texto|truncatewords:20 }}</p>
+                        <p class="text-xs text-gray-400 dark:text-neutral-500 mt-1">{{ obs.fecha }}</p>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-sm text-gray-500 dark:text-neutral-400">Sin observaciones registradas.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card p-5">
+            <h2 class="font-display font-semibold mb-3">Próximas evaluaciones</h2>
+            {% if proximas_evaluaciones %}
+            <ul class="space-y-2">
+                {% for ev in proximas_evaluaciones %}
+                <li class="flex items-center justify-between text-sm">
+                    <span>{{ ev.titulo }}</span>
+                    <span class="text-gray-400 dark:text-neutral-500">{{ ev.fecha|date:"d M" }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-gray-500 dark:text-neutral-400">No hay evaluaciones próximas registradas.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="lg:col-span-2">
+        {% include "academico/_calendario.html" %}
+    </div>
+</div>
+{% endblock %}

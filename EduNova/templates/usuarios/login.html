@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Iniciar sesión · EduNova{% endblock %}
+
+{% block content %}
+<div class="min-h-[75vh] grid md:grid-cols-2 gap-10 items-center">
+
+    <div class="hidden md:block">
+        <span class="inline-block h-12 w-12 rounded-full mb-6" style="background: linear-gradient(135deg, var(--rio), var(--amanecer));"></span>
+        <h1 class="font-display text-4xl font-semibold leading-tight" style="color: var(--tinta);">
+            Bienvenido/a a EduNova
+        </h1>
+        <p class="mt-4 text-gray-600 dark:text-neutral-400 max-w-sm">
+            Comunicados, asistencia, evaluaciones, reuniones y más.
+            <br>
+            Información clara y organizada — Todo en un mismo lugar para la comunidad educativa
+        </p>
+    </div>
+
+    <div class="card p-8 max-w-md w-full mx-auto">
+        <h2 class="font-display text-2xl font-semibold mb-1">Inicia sesión</h2>
+        <p class="text-sm text-gray-500 dark:text-neutral-400 mb-6">Usa tu RUT y contraseña.</p>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm font-medium mb-1" for="{{ form.rut.id_for_label }}">RUT</label>
+                {{ form.rut }}
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1" for="{{ form.password.id_for_label }}">Contraseña</label>
+                {{ form.password }}
+            </div>
+
+            {% if form.non_field_errors %}
+            <p class="text-sm text-red-600 dark:text-red-400">{{ form.non_field_errors.0 }}</p>
+            {% endif %}
+
+            <button type="submit" class="btn-primary w-full py-2.5 font-medium">Entrar</button>
+        </form>
+
+        <p class="text-sm text-gray-500 dark:text-neutral-400 mt-6 text-center">
+            ¿Aún no tienes cuenta?
+            <a href="{% url 'usuarios:registro' %}" class="font-medium" style="color: var(--rio);">Regístrate aquí</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

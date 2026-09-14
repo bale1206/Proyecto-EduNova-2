@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Nuevo comunicado · EduNova{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto card p-8">
+    <h1 class="font-display text-2xl font-semibold mb-1">Nuevo comunicado</h1>
+    <p class="text-sm text-gray-500 dark:text-neutral-400 mb-6">
+        {% if user.rol == 'docente' %}
+        Envíalo a un apoderado en particular o a todo un curso.
+        {% else %}
+        Se enviará al docente jefe del curso correspondiente.
+        {% endif %}
+    </p>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-5">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <p class="text-sm text-red-600 dark:text-red-400">{{ form.non_field_errors.0 }}</p>
+        {% endif %}
+
+        <div class="grid sm:grid-cols-2 gap-4">
+            {% if form.destinatario %}
+            <div>
+                <label class="block text-sm font-medium mb-1">{{ form.destinatario.label }}</label>
+                {{ form.destinatario }}
+            </div>
+            {% endif %}
+            {% if form.curso_destino.field.widget.input_type != 'hidden' %}
+            <div>
+                <label class="block text-sm font-medium mb-1">{{ form.curso_destino.label }}</label>
+                {{ form.curso_destino }}
+            </div>
+            {% else %}
+            {{ form.curso_destino }}
+            {% endif %}
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Tipo de comunicación</label>
+            {{ form.tipo_comunicacion }}
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Asunto</label>
+            {{ form.asunto }}
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Mensaje</label>
+            {{ form.cuerpo_mensaje }}
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Archivo adjunto (opcional)</label>
+            {{ form.archivo_adjunto }}
+        </div>
+
+        <div class="space-y-2 text-sm">
+            {% if form.copia_utp_direccion %}
+            <label class="flex items-center gap-2">{{ form.copia_utp_direccion }} Enviar copia a UTP/Dirección</label>
+            {% endif %}
+            <label class="flex items-center gap-2">{{ form.requiere_firma_digital }} Requiere firma digital de respuesta</label>
+            <label class="flex items-center gap-2">{{ form.exige_recibo_lectura }} Exigir confirmación de lectura</label>
+        </div>
+
+        <button type="submit" class="btn-primary w-full py-2.5 font-medium">Enviar comunicado</button>
+    </form>
+</div>
+{% endblock %}
