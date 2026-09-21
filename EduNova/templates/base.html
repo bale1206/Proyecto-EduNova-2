@@ -82,11 +82,30 @@
             </div>
         </div>
     </header>
+    {% else %}
+    <header class="border-b sticky top-0 z-30" style="border-color: var(--linea); background: var(--superficie);">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+            <a href="{% url 'landing' %}" class="flex items-center gap-2 font-display font-semibold text-lg" style="color: var(--tinta);">
+                <span class="inline-block h-7 w-7 rounded-full" style="background: linear-gradient(135deg, var(--rio), var(--amanecer));"></span>
+                EduNova
+            </a>
+
+            <div class="flex items-center gap-2 sm:gap-5">
+                {% block nav_publica %}{% endblock %}
+                {% if request.resolver_match.url_name != 'login' %}
+                <a href="{% url 'usuarios:login' %}" class="btn-secondary text-sm px-3 py-2">Iniciar sesión</a>
+                {% endif %}
+                {% if request.resolver_match.url_name != 'registro' %}
+                <a href="{% url 'usuarios:registro' %}" class="btn-primary text-sm font-medium px-3 py-2 hidden sm:inline-block">Crear cuenta</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
     {% endif %}
 
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <main class="{% block main_clases %}max-w-6xl mx-auto px-4 sm:px-6 py-8{% endblock %}">
         {% if messages %}
-        <div class="mb-6 space-y-2">
+        <div class="mb-6 space-y-2 {% block mensajes_clases %}{% endblock %}">
             {% for message in messages %}
             <div class="card px-4 py-3 text-sm {% if message.tags == 'error' %}banner-error{% elif message.tags == 'success' %}banner-exito{% endif %}">
                 {{ message }}

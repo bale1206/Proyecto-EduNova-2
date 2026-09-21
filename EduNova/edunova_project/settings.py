@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-$df9g8s7b%%!h*2o!%s(abqy4!jbyj@_s_k-@4_jjtr+*3n+ch
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['testserver', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
 
     # EduNova apps
     'usuarios',

@@ -148,3 +148,51 @@ class Evento(models.Model):
 
     def __str__(self):
         return f"{self.titulo} ({self.fecha})"
+
+class ObservacionComportamiento(models.Model):
+    TIPO_OPCIONES = [
+        ('NEGATIVA', 'Negativa'),
+        ('POSITIVA', 'Positiva'),
+        ('ESPECIALISTA', 'Requiere especialista'),
+    ]
+
+    ESTADO_OPCIONES = [
+        ('NO_VISTA', 'No vista'),
+        ('EN_PROCESO', 'En proceso'),
+        ('RESUELTA', 'Resuelta'),
+    ]
+
+    # El ID se crea de forma automática e invisible por defecto en Django
+    docente = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='observaciones_comportamiento_creadas'
+    )
+    asunto = models.CharField(max_length=200)
+    tipo_observacion = models.CharField(max_length=20, choices=TIPO_OPCIONES)
+    curso = models.ForeignKey('Curso', on_delete=models.CASCADE)
+    estudiantes = models.ManyToManyField('Estudiante') 
+    descripcion = models.TextField()
+    estado = models.CharField(max_length=20, choices=ESTADO_OPCIONES, default='NO_VISTA')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    administrativo = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='observaciones_modificadas'
+    )
+    resolucion = models.TextField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        # Lógica de autocompletado de estado según el tipo (solo al crear la observación)
+        if not self.pk: 
+            if self.tipo_observacion == 'POSITIVA':
+                self.estado = 'RESUELTA'
+            else:
+                self.estado = 'NO_VISTA'
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.asunto} - {self.get_tipo_observacion_display()}"

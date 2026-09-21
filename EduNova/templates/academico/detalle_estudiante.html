@@ -73,8 +73,49 @@
         </div>
     </div>
 
-    <div class="lg:col-span-2">
+    <div class="lg:col-span-2 space-y-6">
         {% include "academico/_calendario.html" %}
+
+        <div class="card p-5">
+            <h2 class="font-display font-semibold mb-4">Justificaciones de retiro, inasistencia o atraso</h2>
+
+            {% if justificaciones %}
+            <ul class="space-y-2 mb-4">
+                {% for j in justificaciones %}
+                <li class="text-sm rounded-lg p-3" style="background: var(--lino-2);">
+                    <div class="flex items-center justify-between gap-2">
+                        <span>{{ j.get_tipo_solicitud_display }}</span>
+                        <span class="chip chip-{{ j.estado_aprobacion }}">{{ j.get_estado_aprobacion_display }}</span>
+                    </div>
+                    <p class="text-gray-700 dark:text-neutral-300 mt-1">{{ j.motivo_texto|truncatewords:25 }}</p>
+                    <p class="text-xs text-gray-400 dark:text-neutral-500 mt-1">Enviada el {{ j.creado_en|date:"d M Y" }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-gray-500 dark:text-neutral-400 mb-4">Aún no has enviado justificaciones para {{ estudiante.nombre_completo }}.</p>
+            {% endif %}
+
+            <details>
+                <summary class="cursor-pointer text-sm font-medium" style="color: var(--rio);">+ Nueva justificación</summary>
+                <form method="post" action="{% url 'academico:crear_justificacion' estudiante.id %}" enctype="multipart/form-data" class="space-y-3 mt-3">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-xs font-medium mb-1">{{ justificacion_form.tipo_solicitud.label }}</label>
+                        {{ justificacion_form.tipo_solicitud }}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1">{{ justificacion_form.motivo_texto.label }}</label>
+                        {{ justificacion_form.motivo_texto }}
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1">{{ justificacion_form.archivo_certificado.label }}</label>
+                        {{ justificacion_form.archivo_certificado }}
+                    </div>
+                    <button type="submit" class="btn-primary w-full py-2 text-sm font-medium">Enviar justificación</button>
+                </form>
+            </details>
+        </div>
     </div>
 </div>
 {% endblock %}

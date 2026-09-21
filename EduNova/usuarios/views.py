@@ -7,6 +7,17 @@ from .forms import LoginForm, RegistroForm
 from .models import Usuario
 
 
+def landing_view(request):
+    """Portada pública: es lo primero que se ve al abrir el sitio.
+
+    Si ya hay sesión activa no tiene sentido mostrar la presentación del
+    producto, así que se deriva al home del rol correspondiente.
+    """
+    if request.user.is_authenticated:
+        return redirect('usuarios:post_login_redirect')
+    return render(request, 'landing.html')
+
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('usuarios:post_login_redirect')

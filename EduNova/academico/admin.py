@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Asistencia, Curso, Estudiante, Evento, JustificacionRetiro, Observacion
+from .models import Asistencia, Curso, Estudiante, Evento, JustificacionRetiro, Observacion, ObservacionComportamiento
 
 
 @admin.register(Curso)
@@ -26,6 +26,19 @@ class ObservacionAdmin(admin.ModelAdmin):
     list_display = ('estudiante', 'tipo', 'fecha', 'confidencial')
     list_filter = ('tipo', 'confidencial')
 
+@admin.register(ObservacionComportamiento)
+class ObservacionComportamientoAdmin(admin.ModelAdmin):
+    # Columnas que se mostrarán en el listado
+    list_display = ('asunto', 'tipo_observacion', 'estado', 'docente', 'curso', 'fecha_creacion')
+    
+    # Opciones para filtrar en el panel lateral derecho
+    list_filter = ('estado', 'tipo_observacion', 'curso', 'fecha_creacion')
+    
+    # Barra de búsqueda (busca por asunto, descripción o nombre del docente)
+    search_fields = ('asunto', 'descripcion', 'docente__first_name', 'docente__last_name')
+    
+    # Campos que el administrador no debería editar manualmente
+    readonly_fields = ('fecha_creacion', 'fecha_actualizacion')
 
 @admin.register(JustificacionRetiro)
 class JustificacionRetiroAdmin(admin.ModelAdmin):

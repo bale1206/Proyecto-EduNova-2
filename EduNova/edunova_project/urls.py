@@ -18,11 +18,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-from django.views.generic import RedirectView
+
+from usuarios.views import landing_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', RedirectView.as_view(pattern_name='usuarios:login', permanent=False)),
+    path('', landing_view, name='landing'),
     path('cuentas/', include('usuarios.urls')),
     path('', include('academico.urls')),
     path('mensajes/', include('comunicacion.urls')),

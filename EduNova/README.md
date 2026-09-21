@@ -10,8 +10,8 @@ integración con un colegio real todavía.
 ## Instalación
 
 ```bash
-python3 -m venv venv
-venv\Scripts\activate
+py -m venv venv
+source venv/bin/activate        # en Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 python manage.py migrate
@@ -19,7 +19,8 @@ python manage.py seed_demo      # crea usuarios y datos de ejemplo
 python manage.py runserver
 ```
 
-Abrir http://127.0.0.1:8000/
+Abrir http://127.0.0.1:8000/ — se llega a la portada pública; el login está
+en `/cuentas/login/` o en el botón "Iniciar sesión".
 
 ## Usuarios de prueba (creados por `seed_demo`)
 
@@ -34,7 +35,7 @@ creado durante el desarrollo — no hace falta correr nada para usarlo:
 
 | Rol           | RUT          | Clave        |
 |---------------|--------------|--------------|
-| Administrador | 10101010-1   | admin12345   |
+| Administrador | 99999999-9   | admin123     |
 
 ⚠️ Es una cuenta de prueba con clave débil. Antes de mostrarle el proyecto a
 un cliente real, bórrala (o cámbiale la clave) desde `/admin/` y crea tu
@@ -47,6 +48,38 @@ python manage.py createsuperuser
 Pedirá RUT, correo, nombre y apellidos — **no** pregunta por el rol: se
 asigna automáticamente como `administrador`, que es el único rol permitido
 para un superusuario.
+
+## Portada pública
+
+La ruta `/` muestra `templates/landing.html`: una presentación del producto
+para escuelas de lenguaje y colegios, pensada para mostrarle el proyecto a
+alguien que todavía no tiene cuenta. Si el visitante ya tiene sesión activa,
+`landing_view` lo deriva a su home según el rol, así que nadie logueado ve la
+portada.
+
+Detalles de implementación, por si hay que tocarla:
+
+- Extiende `base.html`, igual que el resto: el modo oscuro y el panel de
+  accesibilidad funcionan solos y todos los colores salen de las variables de
+  `edunova.css` (no hay colores fijos).
+- `base.html` ahora trae **dos** headers: el de siempre para usuarios con
+  sesión, y uno público (logo + "Iniciar sesión" / "Crear cuenta") que
+  aparece en la portada, el login y el registro. El botón de la página en la
+  que ya estás se oculta.
+- Para poder usar secciones de ancho completo, `base.html` expone los bloques
+  `main_clases` y `mensajes_clases`; si no se sobrescriben, el layout queda
+  exactamente como antes. La portada también usa el bloque `nav_publica` para
+  agregar sus anclas al header.
+- El acordeón de la sección "Pensado para escuelas de lenguaje y colegios"
+  usa Alpine puro (`x-show` + `x-transition`), no el plugin `@alpinejs/collapse`,
+  que no está cargado.
+- Se agregó la regla `[x-cloak] { display: none !important; }` a
+  `edunova.css`: el atributo ya se usaba en varias plantillas pero no tenía
+  efecto, así que los paneles de Alpine alcanzaban a parpadear al cargar.
+- La copia habla de comunicados con acuse de recibo, asistencia, observaciones
+  y justificaciones de retiro porque todo eso existe en los modelos. Si se
+  agregan funciones (o se quita alguna), conviene revisarla para no prometer
+  algo que la demo no hace.
 
 ## Apariencia y accesibilidad
 
@@ -69,16 +102,45 @@ nada. Para que cualquier color nuevo respete el modo oscuro, usar las
 variables de `edunova.css` (`var(--tinta)`, `var(--rio)`, etc.) en vez de
 colores fijos.
 
+## Sesiones y `runserver`
+
+En desarrollo (`DEBUG=True`), cada vez que corres `python manage.py
+runserver` se cierran automáticamente **todas** las sesiones activas
+(`usuarios/apps.py`, método `ready()`). Es para que no quede una sesión
+vieja (por ejemplo de un `administrador`) colgada entre una corrida del
+servidor y la siguiente, y siempre arranques viendo la portada pública en vez
+de una sesión ajena.
+
+Detalles a tener en cuenta:
+- Solo se activa con el comando `runserver` — `migrate`, `test`, `shell`,
+  `createsuperuser`, etc. no tocan las sesiones.
+- Con el autoreload activado (el modo por defecto), cada vez que guardas
+  un archivo `.py` mientras el servidor está corriendo, Django reinicia
+  el proceso — y eso **también** cuenta como "levantar el servidor", así
+  que te va a cerrar la sesión con cada guardado. Si te molesta mientras
+  programas, corre `python manage.py runserver --noreload` (vas a tener
+  que reiniciar el servidor tú mismo para ver cambios).
+- Es intencionalmente algo que **no** pasa en producción (`DEBUG=False`):
+  ahí no querrías que la gente se desloguee cada vez que el servidor se
+  reinicia.
+- Vas a ver una advertencia de Django en la consola
+  ("Accessing the database during app initialization is discouraged")
+  al arrancar — es esperable y no es un error; solo Django avisando que
+  se está consultando la base de datos antes de tiempo, cosa que
+  controlamos con manejo de excepciones para que nunca rompa el arranque.
+
 ## Estructura del proyecto
 
 ```
 edunova_project/   # settings, urls raíz
-usuarios/          # modelo Usuario (custom, login por RUT), login, registro
+usuarios/          # modelo Usuario (custom, login por RUT), login, registro,
+                    # portada pública (landing_view)
 academico/         # Curso, Estudiante, Asistencia, Observacion,
                     # JustificacionRetiro, Evento (nuevo) + homes de docente/apoderado
 comunicacion/       # MensajeComunicacion, envío de comunicados, bandeja,
                     # panel de notificaciones (HTMX)
 templates/          # todas las plantillas, organizadas por app
+                    # (landing.html es la portada, en la raíz)
 static/css/         # tokens de diseño (paleta, tipografía) que Tailwind CDN no cubre
 ```
 

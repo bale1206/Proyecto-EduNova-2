@@ -38,13 +38,19 @@
             {% endif %}
         </div>
 
-        <a href="{% url 'comunicacion:enviar_comunicado' %}" class="btn-primary w-full text-center block py-2.5 font-medium sm:hidden">
-            Nuevo comunicado
-        </a>
+        <div class="flex gap-3">
+            <a href="{% url 'academico:crear_observacion' %}" class="btn btn-primary flex-1 text-center py-2.5 font-medium">
+                <i class="fas fa-plus"></i> NuevaObservación
+            </a>
+        </div>
+
     </div>
 
     <div class="lg:col-span-2">
         {% include "academico/_calendario.html" %}
     </div>
+
+    
+
 </div>
 {% endblock %}

@@ -1,1 +1,2 @@
 Django==6.1.1
+django_extensions==4.1

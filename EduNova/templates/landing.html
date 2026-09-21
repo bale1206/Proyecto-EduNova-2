@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+{% block title %}EduNova · Comunicación entre el colegio y las familias{% endblock %}
+
+{% block main_clases %}w-full{% endblock %}
+{% block mensajes_clases %}max-w-6xl mx-auto px-4 sm:px-6 pt-6{% endblock %}
+
+{% block nav_publica %}
+<nav class="hidden md:flex items-center gap-6 text-sm" style="color: var(--tinta-muted);">
+    <a href="#que-hace" class="hover:opacity-70">Qué hace</a>
+    <a href="#roles" class="hover:opacity-70">Para cada rol</a>
+    <a href="#establecimientos" class="hover:opacity-70">Escuelas y colegios</a>
+</nav>
+{% endblock %}
+
+{% block content %}
+
+{# ---------------------------------------------------------------- Portada #}
+<section class="max-w-6xl mx-auto px-4 sm:px-6 pt-14 pb-20 grid lg:grid-cols-[1.15fr_1fr] gap-14 lg:gap-16 items-center">
+
+    <div>
+        <p class="text-sm mb-5" style="color: var(--tinta-muted);">
+            Plataforma de comunicación colegio–familia
+        </p>
+
+        <h1 class="font-display font-semibold tracking-tight text-[2.1rem] sm:text-[2.6rem] xl:text-[2.9rem] leading-[1.08]" style="color: var(--tinta);">
+            El comunicado llega,<br class="hidden sm:inline">
+            y sabes quién lo leyó.
+        </h1>
+
+        <p class="mt-6 text-lg leading-relaxed max-w-[34rem]" style="color: var(--tinta-muted);">
+            EduNova reúne comunicados, asistencia, observaciones y permisos de retiro
+            en un solo lugar. Docentes y apoderados mirando la misma información, sin
+            papeles en la mochila ni cadenas de WhatsApp.
+        </p>
+
+        <div class="mt-9 flex flex-wrap items-center gap-3">
+            <a href="{% url 'usuarios:login' %}" class="btn-primary px-6 py-3 font-medium">
+                Entrar a la plataforma
+            </a>
+            <a href="{% url 'usuarios:registro' %}" class="btn-secondary px-6 py-3 font-medium">
+                Crear una cuenta
+            </a>
+        </div>
+
+        <p class="mt-6 text-sm" style="color: var(--tinta-faint);">
+            Ingreso con RUT. Cuentas para docentes, apoderados y dirección.
+        </p>
+    </div>
+
+    {# Maqueta del producto: es el elemento protagonista de la portada. #}
+    <div>
+        <div class="card p-6 sm:p-7" style="box-shadow: 0 18px 40px -28px rgba(41,36,29,.45);">
+
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <span class="chip chip-reunion">Reunión</span>
+                <span class="text-xs" style="color: var(--tinta-faint);">Hoy, 09:14</span>
+            </div>
+
+            <h2 class="font-display text-xl font-semibold leading-snug" style="color: var(--tinta);">
+                Reunión de apoderados · 3° B
+            </h2>
+            <p class="mt-2 text-sm leading-relaxed" style="color: var(--tinta-muted);">
+                Martes 23 a las 18:30 en la sala del curso. Revisaremos los avances del
+                semestre y el calendario de evaluaciones.
+            </p>
+
+            <div class="mt-5 pt-5" style="border-top: 1px solid var(--linea);">
+                <div class="flex items-baseline justify-between mb-2">
+                    <p class="text-sm font-medium" style="color: var(--tinta);">Acuse de recibo</p>
+                    <p class="text-sm" style="color: var(--tinta-muted);">18 de 24 familias</p>
+                </div>
+
+                <div class="h-1.5 rounded-full overflow-hidden" style="background: var(--lino-2);">
+                    <div class="h-full rounded-full" style="width: 75%; background: var(--rio);"></div>
+                </div>
+
+                <ul class="mt-4 space-y-3 text-sm">
+                    <li class="flex items-center justify-between gap-3">
+                        <span style="color: var(--tinta);">Familia Araya Soto</span>
+                        <span class="flex items-center gap-1.5" style="color: var(--rio);">
+                            <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z" clip-rule="evenodd"/>
+                            </svg>
+                            Leído 09:31
+                        </span>
+                    </li>
+                    <li class="flex items-center justify-between gap-3">
+                        <span style="color: var(--tinta);">Familia Pérez Muñoz</span>
+                        <span class="flex items-center gap-1.5" style="color: var(--rio);">
+                            <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z" clip-rule="evenodd"/>
+                            </svg>
+                            Leído 10:02
+                        </span>
+                    </li>
+                    <li class="flex items-center justify-between gap-3">
+                        <span style="color: var(--tinta);">Familia Quinteros Lara</span>
+                        <span style="color: var(--tinta-faint);">Sin abrir</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card px-5 py-4 mt-4 flex items-center justify-between gap-4">
+            <p class="text-sm" style="color: var(--tinta-muted);">Asistencia de hoy · 3° B</p>
+            <p class="font-display text-2xl font-semibold leading-none" style="color: var(--tinta);">94%</p>
+        </div>
+    </div>
+</section>
+
+{# -------------------------------------------------------- Qué reemplaza #}
+<section id="que-hace" class="py-20" style="background: var(--superficie); border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea);">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+
+        <div class="max-w-2xl">
+            <h2 class="font-display text-3xl sm:text-4xl font-semibold tracking-tight" style="color: var(--tinta);">
+                Lo que hoy se hace a mano, ordenado
+            </h2>
+            <p class="mt-4 leading-relaxed" style="color: var(--tinta-muted);">
+                Nada de procesos nuevos que aprender: son las mismas tareas de siempre,
+                con registro y fecha.
+            </p>
+        </div>
+
+        <ul class="mt-12">
+            {% comment %}
+            Lista con reglas finas en vez de tarjetas: son pares
+            "situación actual → cómo queda", no bloques independientes.
+            {% endcomment %}
+            <li class="grid sm:grid-cols-[1fr_1.3fr] gap-2 sm:gap-10 py-6" style="border-top: 1px solid var(--linea);">
+                <p class="text-base" style="color: var(--tinta-faint);">La circular impresa en la mochila</p>
+                <div>
+                    <p class="font-display text-lg font-semibold" style="color: var(--tinta);">Comunicados con acuse de recibo</p>
+                    <p class="mt-1 text-sm leading-relaxed" style="color: var(--tinta-muted);">
+                        Se envía a un curso o a una familia, y queda a la vista quién lo abrió
+                        y a qué hora. Los que exigen confirmación se marcan aparte.
+                    </p>
+                </div>
+            </li>
+            <li class="grid sm:grid-cols-[1fr_1.3fr] gap-2 sm:gap-10 py-6" style="border-top: 1px solid var(--linea);">
+                <p class="text-base" style="color: var(--tinta-faint);">El grupo de WhatsApp del curso</p>
+                <div>
+                    <p class="font-display text-lg font-semibold" style="color: var(--tinta);">Una bandeja por curso y por familia</p>
+                    <p class="mt-1 text-sm leading-relaxed" style="color: var(--tinta-muted);">
+                        Conversaciones ordenadas por estudiante, con notificaciones de lo no
+                        leído. Cada mensaje tiene autor, fecha y destinatario.
+                    </p>
+                </div>
+            </li>
+            <li class="grid sm:grid-cols-[1fr_1.3fr] gap-2 sm:gap-10 py-6" style="border-top: 1px solid var(--linea);">
+                <p class="text-base" style="color: var(--tinta-faint);">La planilla de asistencia en otro archivo</p>
+                <div>
+                    <p class="font-display text-lg font-semibold" style="color: var(--tinta);">Asistencia y porcentaje al día</p>
+                    <p class="mt-1 text-sm leading-relaxed" style="color: var(--tinta-muted);">
+                        Registro diario por estudiante con el porcentaje acumulado siempre
+                        visible, tanto para el docente como para el apoderado.
+                    </p>
+                </div>
+            </li>
+            <li class="grid sm:grid-cols-[1fr_1.3fr] gap-2 sm:gap-10 py-6" style="border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea);">
+                <p class="text-base" style="color: var(--tinta-faint);">El llamado para avisar un retiro</p>
+                <div>
+                    <p class="font-display text-lg font-semibold" style="color: var(--tinta);">Permisos y retiros con respaldo</p>
+                    <p class="mt-1 text-sm leading-relaxed" style="color: var(--tinta-muted);">
+                        El apoderado justifica desde su cuenta y adjunta el certificado
+                        médico. La solicitud queda pendiente, aprobada o rechazada.
+                    </p>
+                </div>
+            </li>
+        </ul>
+    </div>
+</section>
+
+{# ------------------------------------------------------------ Por roles #}
+<section id="roles" class="max-w-6xl mx-auto px-4 sm:px-6 py-20">
+
+    <div class="max-w-2xl">
+        <h2 class="font-display text-3xl sm:text-4xl font-semibold tracking-tight" style="color: var(--tinta);">
+            La misma información, tres vistas
+        </h2>
+        <p class="mt-4 leading-relaxed" style="color: var(--tinta-muted);">
+            Cada persona entra y ve lo que le toca: sin permisos que configurar uno por uno.
+        </p>
+    </div>
+
+    <div class="mt-12 grid md:grid-cols-3 gap-6">
+        <div class="card p-6">
+            <span class="chip chip-clase">Docente</span>
+            <h3 class="font-display text-lg font-semibold mt-4" style="color: var(--tinta);">Su curso en una pantalla</h3>
+            <ul class="mt-4 space-y-2.5 text-sm leading-relaxed" style="color: var(--tinta-muted);">
+                <li>Lista del curso con asistencia del día</li>
+                <li>Observaciones por estudiante, con opción de confidencial</li>
+                <li>Envío de comunicados al curso o a una familia</li>
+                <li>Calendario de clases, evaluaciones y reuniones</li>
+            </ul>
+        </div>
+
+        <div class="card p-6">
+            <span class="chip chip-evaluacion">Apoderado</span>
+            <h3 class="font-display text-lg font-semibold mt-4" style="color: var(--tinta);">Sus hijos, juntos</h3>
+            <ul class="mt-4 space-y-2.5 text-sm leading-relaxed" style="color: var(--tinta-muted);">
+                <li>Hermanos agrupados bajo una misma familia</li>
+                <li>Asistencia, observaciones y próximas fechas</li>
+                <li>Justificación de inasistencias y retiros</li>
+                <li>Aviso de comunicados sin leer</li>
+            </ul>
+        </div>
+
+        <div class="card p-6">
+            <span class="chip chip-reunion">Dirección</span>
+            <h3 class="font-display text-lg font-semibold mt-4" style="color: var(--tinta);">El establecimiento completo</h3>
+            <ul class="mt-4 space-y-2.5 text-sm leading-relaxed" style="color: var(--tinta-muted);">
+                <li>Creación de cursos y asignación de docente jefe</li>
+                <li>Calendario mensual de todo el colegio</li>
+                <li>Agenda de evaluaciones y reuniones en cualquier curso</li>
+                <li>Vista de lo que se está comunicando</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+{# ------------------------------------------------ Escuelas y colegios #}
+<section id="establecimientos" class="py-20" style="background: var(--superficie); border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea);">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-16">
+
+        <div>
+            <h2 class="font-display text-3xl sm:text-4xl font-semibold tracking-tight" style="color: var(--tinta);">
+                Pensado para escuelas de lenguaje y colegios
+            </h2>
+            <p class="mt-4 leading-relaxed" style="color: var(--tinta-muted);">
+                Cursos chicos donde el contacto con la familia es parte del trabajo diario,
+                y establecimientos grandes donde el registro tiene que estar ordenado.
+            </p>
+            <a href="{% url 'usuarios:login' %}" class="btn-primary inline-block mt-8 px-6 py-3 font-medium">
+                Ver la plataforma
+            </a>
+        </div>
+
+        <div x-data="{ abierto: 1 }" class="space-y-0">
+            <div style="border-top: 1px solid var(--linea);">
+                <button type="button" @click="abierto = (abierto === 1 ? 0 : 1)"
+                        class="w-full flex items-center justify-between gap-4 py-5 text-left"
+                        :aria-expanded="(abierto === 1).toString()">
+                    <span class="font-display font-semibold" style="color: var(--tinta);">Asistencia que se puede mostrar</span>
+                    <span class="text-xl leading-none" style="color: var(--tinta-faint);" x-text="abierto === 1 ? '−' : '+'">−</span>
+                </button>
+                <p x-show="abierto === 1" x-transition.opacity class="pb-5 text-sm leading-relaxed max-w-prose" style="color: var(--tinta-muted);">
+                    El porcentaje de asistencia se calcula solo y queda por estudiante, con
+                    las justificaciones y sus certificados adjuntos en el mismo lugar. Útil
+                    cuando hay que rendir cuentas del cumplimiento.
+                </p>
+            </div>
+
+            <div style="border-top: 1px solid var(--linea);">
+                <button type="button" @click="abierto = (abierto === 2 ? 0 : 2)"
+                        class="w-full flex items-center justify-between gap-4 py-5 text-left"
+                        :aria-expanded="(abierto === 2).toString()">
+                    <span class="font-display font-semibold" style="color: var(--tinta);">Familias con más de un hijo</span>
+                    <span class="text-xl leading-none" style="color: var(--tinta-faint);" x-text="abierto === 2 ? '−' : '+'">+</span>
+                </button>
+                <p x-show="abierto === 2" x-cloak x-transition.opacity class="pb-5 text-sm leading-relaxed max-w-prose" style="color: var(--tinta-muted);">
+                    Los hermanos aparecen agrupados en una sola tarjeta familiar, así el
+                    apoderado no tiene que cambiar de cuenta ni revisar dos veces.
+                </p>
+            </div>
+
+            <div style="border-top: 1px solid var(--linea);">
+                <button type="button" @click="abierto = (abierto === 3 ? 0 : 3)"
+                        class="w-full flex items-center justify-between gap-4 py-5 text-left"
+                        :aria-expanded="(abierto === 3).toString()">
+                    <span class="font-display font-semibold" style="color: var(--tinta);">Accesible para todas las familias</span>
+                    <span class="text-xl leading-none" style="color: var(--tinta-faint);" x-text="abierto === 3 ? '−' : '+'">+</span>
+                </button>
+                <p x-show="abierto === 3" x-cloak x-transition.opacity class="pb-5 text-sm leading-relaxed max-w-prose" style="color: var(--tinta-muted);">
+                    Tamaño de texto ajustable, alto contraste, subrayado de enlaces, menos
+                    animaciones y modo oscuro, desde el botón de abajo a la derecha. La
+                    preferencia se recuerda en cada visita.
+                </p>
+            </div>
+
+            <div style="border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea);">
+                <button type="button" @click="abierto = (abierto === 4 ? 0 : 4)"
+                        class="w-full flex items-center justify-between gap-4 py-5 text-left"
+                        :aria-expanded="(abierto === 4).toString()">
+                    <span class="font-display font-semibold" style="color: var(--tinta);">Ingreso con RUT</span>
+                    <span class="text-xl leading-none" style="color: var(--tinta-faint);" x-text="abierto === 4 ? '−' : '+'">+</span>
+                </button>
+                <p x-show="abierto === 4" x-cloak x-transition.opacity class="pb-5 text-sm leading-relaxed max-w-prose" style="color: var(--tinta-muted);">
+                    Sin inventar nombres de usuario: cada persona entra con su RUT, el dato
+                    que el establecimiento ya tiene registrado. Funciona en el teléfono y en
+                    el computador de la sala.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# ---------------------------------------------------------- Cierre #}
+<section class="max-w-6xl mx-auto px-4 sm:px-6 py-20">
+    <div class="rounded-2xl px-6 sm:px-12 py-12 text-center" style="background: var(--lino-2); border: 1px solid var(--linea);">
+        <h2 class="font-display text-3xl sm:text-4xl font-semibold tracking-tight max-w-2xl mx-auto leading-tight" style="color: var(--tinta);">
+            Un curso basta para verlo funcionando
+        </h2>
+        <p class="mt-4 max-w-xl mx-auto leading-relaxed" style="color: var(--tinta-muted);">
+            Se crea el curso, se invita a los apoderados y el primer comunicado sale el
+            mismo día.
+        </p>
+        <div class="mt-8 flex flex-wrap justify-center gap-3">
+            <a href="{% url 'usuarios:registro' %}" class="btn-primary px-6 py-3 font-medium">Crear una cuenta</a>
+            <a href="{% url 'usuarios:login' %}" class="btn-secondary px-6 py-3 font-medium">Ya tengo cuenta</a>
+        </div>
+    </div>
+</section>
+
+<footer class="py-10" style="border-top: 1px solid var(--linea);">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm" style="color: var(--tinta-faint);">
+        <p class="flex items-center gap-2">
+            <span class="inline-block h-4 w-4 rounded-full" style="background: linear-gradient(135deg, var(--rio), var(--amanecer));"></span>
+            EduNova
+        </p>
+        <p>Versión de demostración con datos de ejemplo.</p>
+    </div>
+</footer>
+
+{% endblock %}

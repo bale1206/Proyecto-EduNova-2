@@ -9,8 +9,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from comunicacion.services import mensajes_no_leidos
 from usuarios.models import Usuario
 
-from .forms import CursoForm, EventoForm
-from .models import Asistencia, Curso, Estudiante, Evento
+from .forms import CursoForm, EventoForm, JustificacionRetiroForm, ObservacionForm, ActualizarObservacionForm
+from django.db.models import Case, When, Value, IntegerField
+from .models import Asistencia, Curso, Estudiante, Evento, JustificacionRetiro, ObservacionComportamiento
+from django.http import JsonResponse
+from comunicacion.models import MensajeComunicacion
 
 MESES_ES = [
     '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -141,12 +144,16 @@ def detalle_estudiante(request, estudiante_id):
         curso=estudiante.curso, tipo=Evento.Tipo.EVALUACION, fecha__gte=date.today(),
     ).order_by('fecha')[:5] if estudiante.curso else []
 
+    justificaciones = estudiante.justificaciones.order_by('-creado_en')[:10]
+
     contexto = {
         'estudiante': estudiante,
         'asistencia_actual': asistencia_actual,
         'resumen_asistencia': resumen_asistencia,
         'observaciones': observaciones,
         'proximas_evaluaciones': proximas_evaluaciones,
+        'justificaciones': justificaciones,
+        'justificacion_form': JustificacionRetiroForm(),
         'semanas': semanas,
         'mes_nombre': MESES_ES[month],
         'anio': year,
@@ -214,3 +221,151 @@ def crear_evento(request):
             return redirect('academico:home_administrativo')
         messages.error(request, 'Revisa los datos del evento: ' + '; '.join(form.errors))
     return redirect('academico:home_administrativo')
+
+
+@login_required
+def crear_justificacion(request, estudiante_id):
+    _requerir_rol(request, Usuario.Rol.APODERADO)
+    estudiante = get_object_or_404(Estudiante, id=estudiante_id, apoderado=request.user)
+
+    if request.method == 'POST':
+        form = JustificacionRetiroForm(request.POST, request.FILES)
+        if form.is_valid():
+            justificacion = form.save(commit=False)
+            justificacion.estudiante = estudiante
+            justificacion.apoderado = request.user
+            justificacion.save()
+            messages.success(request, 'Justificación enviada. Quedará pendiente hasta que el colegio la revise.')
+        else:
+            messages.error(request, 'Revisa los datos de la justificación: ' + '; '.join(form.errors))
+
+    return redirect('academico:detalle_estudiante', estudiante_id=estudiante.id)
+
+@login_required
+def crear_observacion(request):
+    if request.method == 'POST':
+        form = ObservacionForm(request.POST, user=request.user)
+        if form.is_valid():
+            observacion = form.save(commit=False)
+            # Se asigna automáticamente el docente logueado
+            observacion.docente = request.user
+            observacion.save()
+            # Necesario para guardar las relaciones Muchos-a-Muchos (Estudiantes)
+            form.save_m2m() 
+            return redirect('academico:home_docente')
+    else:
+        form = ObservacionForm(user=request.user)
+    
+    return render(request, 'academico/crear_observacion.html', {'form': form})
+
+@login_required
+def editar_observacion(request, pk):
+    observacion = get_object_or_404(ObservacionComportamiento, pk=pk)
+    
+    if request.method == 'POST':
+        form = ObservacionForm(request.POST, instance=observacion, user=request.user)
+        if form.is_valid():
+            obs = form.save(commit=False)
+            
+            # Si un administrativo está editando, queda registrado automáticamente
+            if request.user.groups.filter(name='Administrativo').exists():
+                obs.administrativo = request.user
+                
+            obs.save()
+            form.save_m2m()
+            return redirect('academico:home_docente')
+    else:
+        form = ObservacionForm(instance=observacion, user=request.user)
+        
+    return render(request, 'academico/editar_observacion.html', {'form': form})
+
+def cargar_estudiantes(request):
+    curso_id = request.GET.get('curso_id')
+    
+    # Filtramos los estudiantes que pertenecen al curso seleccionado
+    if curso_id:
+        estudiantes = Estudiante.objects.filter(curso_id=curso_id).order_by('nombre_completo')
+        
+        # OJO: Cambia 'nombre' por los campos que tengas en tu modelo Estudiante (ej: 'nombres', 'apellidos')
+        # values() transforma el QuerySet en una lista de diccionarios para poder convertirlo a JSON
+        data = list(estudiantes.values('id', 'nombre_completo')) 
+    else:
+        data = []
+        
+    return JsonResponse(data, safe=False)
+
+@login_required
+def lista_observaciones(request):
+    # Ocultamos las "RESUELTA" según las instrucciones
+    observaciones = ObservacionComportamiento.objects.exclude(estado='RESUELTA').annotate(
+        # Priorizamos Estados: 1. NO_VISTA, 2. EN_PROCESO
+        prioridad_estado=Case(
+            When(estado='NO_VISTA', then=Value(1)),
+            When(estado='EN_PROCESO', then=Value(2)),
+            default=Value(3),
+            output_field=IntegerField(),
+        ),
+        # Priorizamos Tipos: 1. NEGATIVA, 2. ESPECIALISTA
+        prioridad_tipo=Case(
+            When(tipo_observacion='NEGATIVA', then=Value(1)),
+            When(tipo_observacion='ESPECIALISTA', then=Value(2)),
+            default=Value(3),
+            output_field=IntegerField(),
+        )
+    ).order_by(
+        'prioridad_estado',       # Primero por estado
+        'prioridad_tipo',         # Luego por tipo
+        '-fecha_actualizacion'    # Finalmente por fecha descendente
+    )
+
+    return render(request, 'academico/lista_observaciones.html', {'observaciones': observaciones})
+
+@login_required
+def actualizar_observacion(request, pk):
+    observacion = get_object_or_404(ObservacionComportamiento, pk=pk)
+    
+    if request.method == 'POST':
+        form = ActualizarObservacionForm(request.POST, instance=observacion)
+        if form.is_valid():
+            obs = form.save(commit=False)
+            obs.administrativo = request.user
+            obs.save()
+            
+            # Si el administrativo marcó la casilla "Notificar apoderado"
+            if form.cleaned_data.get('notificar_apoderado'):
+                
+                # Iteramos sobre todos los estudiantes en esta observación
+                for estudiante in obs.estudiantes.all():
+                    # Verificamos que el estudiante tenga un apoderado asignado
+                    # (Ajusta 'estudiante.apoderado' a la relación exacta en tus modelos)
+                    if hasattr(estudiante, 'apoderado') and estudiante.apoderado:
+                        
+                        # Creamos la notificación interna
+                        # Creamos la notificación interna
+                        MensajeComunicacion.objects.create(
+                            remitente=request.user,  
+                            destinatario=estudiante.apoderado,
+                            asunto=f"Actualización de Observación: {obs.asunto}",
+                            cuerpo_mensaje=(
+                                f"Estimado apoderado,\n\n"
+                                f"Se ha actualizado una observación de comportamiento para su pupilo {estudiante.nombre_completo}.\n\n"
+                                f"Estado: {obs.get_estado_display()}\n"
+                                f"Resolución Administrativa:\n{obs.resolucion}\n\n"
+                                f"Saludos cordiales."
+                            ),
+                            tipo_comunicacion='disciplinario' # Aprovechamos las opciones de tu modelo
+                        )
+                
+                messages.success(request, "Observación actualizada y apoderado(s) notificado(s) correctamente.")
+            else:
+                messages.success(request, "Observación actualizada correctamente.")
+            
+            return redirect('academico:lista_observaciones')
+    else:
+        form = ActualizarObservacionForm(instance=observacion)
+        
+    return render(request, 'academico/actualizar_observacion.html', {
+        'form': form,
+        'observacion': observacion
+    })
+    
