@@ -16,12 +16,15 @@
 
   --tinta: #29241d;       /* texto principal */
   --tinta-muted: #756b57; /* texto secundario */
-  --tinta-faint: #a49a84; /* texto terciario */
+  --tinta-faint: #6b6253; /* texto terciario accesible */
 
   --rio: #55624a;         /* acento primario: musgo profundo */
   --rio-hover: #434e3a;
-  --amanecer: #b6603a;    /* acento secundario: arcilla quemada */
+  --amanecer: #984d30;    /* acento secundario: arcilla quemada accesible */
   --amanecer-soft: #f2ddca;
+  --texto-acento: #ffffff;
+  --notificacion-bg: #8b472d;
+  --notificacion-fg: #ffffff;
 
   --chip-clase-bg: #e6ebdd;      --chip-clase-fg: #47552e;
   --chip-evaluacion-bg: #f4e0cd; --chip-evaluacion-fg: #8a4b23;
@@ -45,12 +48,15 @@ html.dark {
 
   --tinta: #ece6d8;
   --tinta-muted: #b0a68f;
-  --tinta-faint: #82796758;
+  --tinta-faint: #9e957f;
 
   --rio: #9db088;
   --rio-hover: #b3c49f;
   --amanecer: #e0916a;
   --amanecer-soft: #4a3122;
+  --texto-acento: #1a1815;
+  --notificacion-bg: #8b472d;
+  --notificacion-fg: #ffffff;
 
   --chip-clase-bg: #333d29;      --chip-clase-fg: #c3d4ac;
   --chip-evaluacion-bg: #4a3421; --chip-evaluacion-fg: #edb488;
@@ -80,7 +86,7 @@ h1, h2, h3, .font-display { font-family: 'Sora', 'Inter', system-ui, sans-serif;
 
 .btn-primary {
   background-color: var(--rio);
-  color: #fff;
+  color: var(--texto-acento);
   border-radius: 0.6rem;
   transition: background-color 0.15s ease;
 }
@@ -150,6 +156,52 @@ html.a11y-reducir-movimiento *::after {
 }
 
 :focus-visible {
-  outline: 2px solid var(--amanecer);
+  outline: 3px solid var(--amanecer);
   outline-offset: 2px;
 }
+
+/* ---------- Utilidades de contraste compartidas ---------- */
+.text-main { color: var(--tinta) !important; }
+.text-on-accent { color: var(--texto-acento) !important; }
+.text-error { color: var(--error-fg) !important; }
+.text-muted { color: var(--tinta-muted) !important; }
+.text-faint { color: var(--tinta-faint) !important; }
+.surface-subtle { background-color: var(--lino-2) !important; }
+.surface-control {
+  background-color: var(--fondo-input) !important;
+  color: var(--tinta) !important;
+  border: 1px solid var(--linea) !important;
+}
+.surface-control:hover { background-color: var(--lino-2) !important; }
+.observation-card {
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: 0.9rem;
+}
+.observation-card:hover { background: var(--lino-2); }
+.observation-preview {
+  background: var(--lino-2);
+  border: 1px solid var(--linea);
+  border-radius: 0.6rem;
+}
+.badge-notification {
+  background: var(--notificacion-bg);
+  color: var(--notificacion-fg);
+}
+.choice-row {
+  color: var(--tinta);
+}
+.choice-row:hover { color: var(--rio); }
+
+/* Estas utilidades de Tailwind se usan en vistas heredadas; se remapean
+   a la paleta de la aplicación para que todas las pantallas compartan
+   los mismos niveles de contraste en claro y oscuro. */
+.text-gray-300, .text-gray-400, .text-gray-500, .text-gray-600 { color: var(--tinta-muted) !important; }
+.dark\:text-neutral-300, .dark\:text-neutral-400, .dark\:text-neutral-500 { color: var(--tinta-muted) !important; }
+
+html.a11y-alto-contraste {
+  --tinta-muted: var(--tinta);
+  --tinta-faint: var(--tinta);
+  --lino-2: var(--superficie);
+}
+

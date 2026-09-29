@@ -2,16 +2,16 @@
 {% block title %}{{ mensaje.asunto }} · EduNova{% endblock %}
 
 {% block content %}
-<a href="{% url 'comunicacion:bandeja' %}" class="text-sm text-gray-500 dark:text-neutral-400 hover:underline">‹ Volver a la bandeja</a>
+<a href="{% url 'comunicacion:bandeja' %}" class="text-sm text-muted hover:underline">‹ Volver a la bandeja</a>
 
 <div class="card p-8 max-w-2xl mx-auto mt-4">
     <div class="flex items-center justify-between mb-4">
         <span class="chip chip-{{ mensaje.tipo_comunicacion }}">{{ mensaje.get_tipo_comunicacion_display }}</span>
-        <span class="text-xs text-gray-400 dark:text-neutral-500">Folio {{ mensaje.folio }}</span>
+        <span class="text-xs text-faint">Folio {{ mensaje.folio }}</span>
     </div>
 
     <h1 class="font-display text-2xl font-semibold mb-1">{{ mensaje.asunto }}</h1>
-    <p class="text-sm text-gray-500 dark:text-neutral-400 mb-6">
+    <p class="text-sm text-muted mb-6">
         De {{ mensaje.remitente.nombre_completo|default:"EduNova" }}
         {% if mensaje.curso_destino %} · Para {{ mensaje.curso_destino }}{% endif %}
         · {{ mensaje.fecha_hora_envio|date:"d \d\e F, H:i" }}
@@ -26,7 +26,7 @@
     {% endif %}
 
     {% if mensaje.exige_recibo_lectura %}
-    <p class="text-xs text-gray-400 dark:text-neutral-500 mt-6">
+    <p class="text-xs text-faint mt-6">
         Este comunicado exige confirmación de lectura — quedó registrada al abrir el mensaje.
     </p>
     {% endif %}

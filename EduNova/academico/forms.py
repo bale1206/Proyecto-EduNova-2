@@ -72,8 +72,8 @@ class ObservacionForm(forms.ModelForm):
         model = ObservacionComportamiento
         fields = ['curso', 'estudiantes', 'tipo_observacion', 'asunto', 'descripcion', 'resolucion']
         
-        # Estilos compartidos para todos los inputs
-        estilo_input = 'w-full bg-[#1a1a1a] border border-[#333333] rounded-md p-2.5 text-white focus:outline-none focus:border-gray-500'
+        # Estilos compartidos: respetan el tema claro/oscuro del sitio.
+        estilo_input = 'w-full rounded-lg border px-3 py-2 text-sm surface-control focus:outline-none focus:ring-2'
         
         widgets = {
             'curso': forms.Select(attrs={'class': estilo_input}),
@@ -98,7 +98,7 @@ class ActualizarObservacionForm(forms.ModelForm):
         required=False,
         label="Notificar al apoderado",
         widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox h-5 w-5 rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-blue-500 cursor-pointer'
+            'class': 'h-5 w-5 rounded cursor-pointer accent-[var(--rio)]'
         })
     )
 
@@ -106,7 +106,7 @@ class ActualizarObservacionForm(forms.ModelForm):
         model = ObservacionComportamiento
         fields = ['tipo_observacion', 'estado', 'resolucion']
         
-        estilo_input = 'w-full bg-[#1a1a1a] border border-[#333333] rounded-md p-2.5 text-white focus:outline-none focus:border-gray-500'
+        estilo_input = 'w-full rounded-lg border px-3 py-2 text-sm surface-control focus:outline-none focus:ring-2'
         
         widgets = {
             'tipo_observacion': forms.Select(attrs={'class': estilo_input}),

@@ -11,7 +11,7 @@ from usuarios.models import Usuario
 
 from .forms import CursoForm, EventoForm, JustificacionRetiroForm, ObservacionForm, ActualizarObservacionForm
 from django.db.models import Case, When, Value, IntegerField
-from .models import Asistencia, Curso, Estudiante, Evento, JustificacionRetiro, ObservacionComportamiento
+from .models import Asistencia, Curso, Estudiante, Evento, JustificacionRetiro, ObservacionComportamiento, RegistroAsistencia
 from django.http import JsonResponse
 from comunicacion.models import MensajeComunicacion
 
@@ -368,4 +368,47 @@ def actualizar_observacion(request, pk):
         'form': form,
         'observacion': observacion
     })
+
+@login_required
+def tomar_asistencia(request):
+    if request.method == 'POST':
+        # Obtenemos la lista de todos los IDs de estudiantes enviados en el formulario
+        estudiantes_ids = request.POST.getlist('estudiante_id')
+        
+        for est_id in estudiantes_ids:
+            estudiante = get_object_or_404(Estudiante, pk=est_id)
+            # Rescatamos el valor del radio button para este estudiante en particular
+            estado = request.POST.get(f'estado_{est_id}')
+            presente = True if estado == 'presente' else False
+            
+            # Guardamos el registro en la base de datos
+            RegistroAsistencia.objects.create(
+                estudiante=estudiante,
+                docente=request.user,
+                presente=presente,
+                justificado=False # Se puede actualizar luego si traen justificativo
+            )
+            
+            # Si está ausente, disparamos la notificación al apoderado
+            if not presente and hasattr(estudiante, 'apoderado') and estudiante.apoderado:
+                MensajeComunicacion.objects.create(
+                    remitente=request.user,
+                    destinatario=estudiante.apoderado,
+                    asunto=f"Aviso de inasistencia: {estudiante.nombre_completo}",
+                    cuerpo_mensaje=(
+                        f"Estimado apoderado,\n\n"
+                        f"Le informamos que el estudiante {estudiante.nombre_completo} "
+                        f"(RUT: {estudiante.rut_estudiante}) no se presentó a clases el día de hoy.\n\n"
+                        f"Por favor, justifique su inasistencia a la brevedad.\n\n"
+                        f"Saludos cordiales."
+                    ),
+                    tipo_comunicacion='academico' # Clasificamos la notificación
+                )
+        
+        messages.success(request, "Lista de asistencia guardada y notificaciones enviadas correctamente.")
+        return redirect('academico:home_docente')
+
+    # Para la solicitud GET (cuando entra a la página) le pasamos los cursos
+    cursos = Curso.objects.all() # O Curso.objects.filter(docente=request.user) si lo prefieres
+    return render(request, 'academico/tomar_asistencia.html', {'cursos': cursos})
     

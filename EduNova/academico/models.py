@@ -196,3 +196,18 @@ class ObservacionComportamiento(models.Model):
 
     def __str__(self):
         return f"{self.asunto} - {self.get_tipo_observacion_display()}"
+
+class RegistroAsistencia(models.Model):
+    # Al relacionar con Estudiante, accedemos automáticamente a su RUT, nombre y Apoderado
+    estudiante = models.ForeignKey('Estudiante', on_delete=models.CASCADE, related_name='registros_asistencia')
+    docente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='registros_asistencia_docente')
+    
+    presente = models.BooleanField()
+    justificado = models.BooleanField(default=False, null=True, blank=True)
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        estado = "Presente" if self.presente else "Ausente"
+        return f"{self.estudiante.nombre_completo} - {estado} ({self.fecha.strftime('%H:%M - %d/%m/%Y')})"
+
+    

@@ -11,14 +11,14 @@
             <h2 class="font-display font-semibold mb-3">Tu próxima clase</h2>
             {% if proxima_clase %}
             <div class="rounded-lg p-4" style="background: var(--lino-2);">
-                <p class="text-sm text-gray-500 dark:text-neutral-400">{{ proxima_clase.fecha|date:"l j \d\e F" }}
+                <p class="text-sm text-muted">{{ proxima_clase.fecha|date:"l j \d\e F" }}
                     {% if proxima_clase.hora_inicio %} · {{ proxima_clase.hora_inicio|time:"H:i" }}{% endif %}
                 </p>
                 <p class="font-medium mt-1">{{ proxima_clase.titulo }}</p>
-                <p class="text-sm text-gray-500 dark:text-neutral-400">{{ proxima_clase.curso.grado_curso }}</p>
+                <p class="text-sm text-muted">{{ proxima_clase.curso.grado_curso }}</p>
             </div>
             {% else %}
-            <p class="text-sm text-gray-500 dark:text-neutral-400">No tienes clases próximas agendadas.</p>
+            <p class="text-sm text-muted">No tienes clases próximas agendadas.</p>
             {% endif %}
         </div>
 
@@ -29,18 +29,25 @@
                 {% for curso in cursos %}
                 <li class="flex items-center justify-between text-sm">
                     <span>{{ curso.grado_curso }}</span>
-                    <span class="text-gray-400 dark:text-neutral-500">{{ curso.estudiantes.count }} estudiantes</span>
+                    <span class="text-faint">{{ curso.estudiantes.count }} estudiantes</span>
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="text-sm text-gray-500 dark:text-neutral-400">Aún no tienes cursos asignados.</p>
+            <p class="text-sm text-muted">Aún no tienes cursos asignados.</p>
             {% endif %}
         </div>
 
         <div class="flex gap-3">
+            <a href="{% url 'academico:tomar_asistencia' %}" class="btn btn-primary flex-1 text-center py-2.5 font-medium">
+                <i class="fas fa-plus"></i> Lista de Estudiantes
+            </a>
+        </div>
+        
+        
+        <div class="flex gap-3">
             <a href="{% url 'academico:crear_observacion' %}" class="btn btn-primary flex-1 text-center py-2.5 font-medium">
-                <i class="fas fa-plus"></i> NuevaObservación
+                <i class="fas fa-plus"></i> Nueva Observación
             </a>
         </div>
 

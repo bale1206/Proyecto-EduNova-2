@@ -2,16 +2,16 @@
 {% block title %}{{ estudiante.nombre_completo }} · EduNova{% endblock %}
 
 {% block content %}
-<a href="{% url 'academico:home_apoderado' %}" class="text-sm text-gray-500 dark:text-neutral-400 hover:underline">‹ Volver a mi familia</a>
+<a href="{% url 'academico:home_apoderado' %}" class="text-sm text-muted hover:underline">‹ Volver a mi familia</a>
 
 <div class="flex items-center gap-3 mt-3 mb-6">
-    <span class="h-12 w-12 rounded-full flex items-center justify-center text-white font-medium font-display text-lg"
+    <span class="h-12 w-12 rounded-full flex items-center justify-center text-on-accent font-medium font-display text-lg"
           style="background: linear-gradient(135deg, var(--rio), var(--amanecer));">
         {{ estudiante.nombre_completo|first|upper }}
     </span>
     <div>
         <h1 class="font-display text-2xl font-semibold">{{ estudiante.nombre_completo }}</h1>
-        <p class="text-gray-500 dark:text-neutral-400 text-sm">{{ estudiante.curso|default:"Sin curso asignado" }}</p>
+        <p class="text-muted text-sm">{{ estudiante.curso|default:"Sin curso asignado" }}</p>
     </div>
 </div>
 
@@ -24,16 +24,16 @@
             <div class="flex items-center gap-4">
                 <div class="relative h-20 w-20 shrink-0 rounded-full"
                      style="background: conic-gradient(var(--rio) {{ resumen_asistencia|default:0 }}%, var(--lino-2) 0);">
-                    <div class="absolute inset-2 rounded-full bg-white dark:bg-neutral-900 flex items-center justify-center text-sm font-semibold">
+                    <div class="absolute inset-2 rounded-full surface-control flex items-center justify-center text-sm font-semibold">
                         {% if resumen_asistencia is not None %}{{ resumen_asistencia }}%{% else %}—{% endif %}
                     </div>
                 </div>
                 <div>
                     <p class="text-sm font-medium">Asistencia (últimos registros)</p>
                     {% if asistencia_actual %}
-                    <p class="text-xs text-gray-500 dark:text-neutral-400">Último estado: {{ asistencia_actual.get_estado_display }} ({{ asistencia_actual.fecha }})</p>
+                    <p class="text-xs text-muted">Último estado: {{ asistencia_actual.get_estado_display }} ({{ asistencia_actual.fecha }})</p>
                     {% else %}
-                    <p class="text-xs text-gray-500 dark:text-neutral-400">Sin registros de asistencia todavía.</p>
+                    <p class="text-xs text-muted">Sin registros de asistencia todavía.</p>
                     {% endif %}
                 </div>
             </div>
@@ -45,13 +45,13 @@
                     {% for obs in observaciones %}
                     <li class="text-sm rounded-lg p-3" style="background: var(--lino-2);">
                         <span class="chip chip-otro mb-1">{{ obs.get_tipo_display }}</span>
-                        <p class="text-gray-700 dark:text-neutral-300">{{ obs.contenido_texto|truncatewords:20 }}</p>
-                        <p class="text-xs text-gray-400 dark:text-neutral-500 mt-1">{{ obs.fecha }}</p>
+                        <p class="text-main">{{ obs.contenido_texto|truncatewords:20 }}</p>
+                        <p class="text-xs text-faint mt-1">{{ obs.fecha }}</p>
                     </li>
                     {% endfor %}
                 </ul>
                 {% else %}
-                <p class="text-sm text-gray-500 dark:text-neutral-400">Sin observaciones registradas.</p>
+                <p class="text-sm text-muted">Sin observaciones registradas.</p>
                 {% endif %}
             </div>
         </div>
@@ -63,12 +63,12 @@
                 {% for ev in proximas_evaluaciones %}
                 <li class="flex items-center justify-between text-sm">
                     <span>{{ ev.titulo }}</span>
-                    <span class="text-gray-400 dark:text-neutral-500">{{ ev.fecha|date:"d M" }}</span>
+                    <span class="text-faint">{{ ev.fecha|date:"d M" }}</span>
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="text-sm text-gray-500 dark:text-neutral-400">No hay evaluaciones próximas registradas.</p>
+            <p class="text-sm text-muted">No hay evaluaciones próximas registradas.</p>
             {% endif %}
         </div>
     </div>
@@ -87,13 +87,13 @@
                         <span>{{ j.get_tipo_solicitud_display }}</span>
                         <span class="chip chip-{{ j.estado_aprobacion }}">{{ j.get_estado_aprobacion_display }}</span>
                     </div>
-                    <p class="text-gray-700 dark:text-neutral-300 mt-1">{{ j.motivo_texto|truncatewords:25 }}</p>
-                    <p class="text-xs text-gray-400 dark:text-neutral-500 mt-1">Enviada el {{ j.creado_en|date:"d M Y" }}</p>
+                    <p class="text-main mt-1">{{ j.motivo_texto|truncatewords:25 }}</p>
+                    <p class="text-xs text-faint mt-1">Enviada el {{ j.creado_en|date:"d M Y" }}</p>
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="text-sm text-gray-500 dark:text-neutral-400 mb-4">Aún no has enviado justificaciones para {{ estudiante.nombre_completo }}.</p>
+            <p class="text-sm text-muted mb-4">Aún no has enviado justificaciones para {{ estudiante.nombre_completo }}.</p>
             {% endif %}
 
             <details>

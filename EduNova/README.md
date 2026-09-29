@@ -35,7 +35,7 @@ creado durante el desarrollo — no hace falta correr nada para usarlo:
 
 | Rol           | RUT          | Clave        |
 |---------------|--------------|--------------|
-| Administrador | 99999999-9   | edunova123     |
+| Administrador | 99999999-9   | admin123     |
 
 ⚠️ Es una cuenta de prueba con clave débil. Antes de mostrarle el proyecto a
 un cliente real, bórrala (o cámbiale la clave) desde `/admin/` y crea tu

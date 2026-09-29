@@ -4,7 +4,7 @@
 {% block content %}
 <div class="max-w-2xl mx-auto card p-8">
     <h1 class="font-display text-2xl font-semibold mb-1">Nuevo comunicado</h1>
-    <p class="text-sm text-gray-500 dark:text-neutral-400 mb-6">
+    <p class="text-sm text-muted mb-6">
         {% if user.rol == 'docente' %}
         Envíalo a un apoderado en particular o a todo un curso.
         {% else %}
@@ -16,7 +16,7 @@
         {% csrf_token %}
 
         {% if form.non_field_errors %}
-        <p class="text-sm text-red-600 dark:text-red-400">{{ form.non_field_errors.0 }}</p>
+        <p class="text-sm text-error">{{ form.non_field_errors.0 }}</p>
         {% endif %}
 
         <div class="grid sm:grid-cols-2 gap-4">

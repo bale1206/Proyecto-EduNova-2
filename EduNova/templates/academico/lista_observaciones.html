@@ -2,28 +2,28 @@
 
 {% block content %}
 <div class="max-w-5xl mx-auto mb-12">
-    <h1 class="font-display text-3xl font-bold text-white mb-2">Panel de Observaciones</h1>
-    <p class="text-gray-400 mb-8">Gestión de anotaciones de estudiantes para funcionarios.</p>
+    <h1 class="font-display text-3xl font-bold text-main mb-2">Panel de Observaciones</h1>
+    <p class="text-muted mb-8">Gestión de anotaciones de estudiantes para funcionarios.</p>
     
     <div class="space-y-4">
         {% for obs in observaciones %}
         <!-- Rectángulo horizontal -->
-        <div class="bg-[#1a1a1a] border border-[#333333] rounded-lg p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 transition-colors hover:bg-[#222222]">
+        <div class="observation-card p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 transition-colors hover:bg-[var(--lino-2)]">
             
             <!-- Columna Izquierda: Información -->
             <div class="flex-1 min-w-0 w-full">
                 <!-- Asunto en negritas -->
-                <h3 class="text-lg font-bold text-white mb-1 truncate">{{ obs.asunto }}</h3>
+                <h3 class="text-lg font-bold text-main mb-1 truncate">{{ obs.asunto }}</h3>
                 
                 <!-- Docente/Responsable -->
-                <p class="text-sm text-gray-400 mb-2 truncate">
-                    <i class="fas fa-user-circle text-gray-500 mr-1"></i> 
+                <p class="text-sm text-muted mb-2 truncate">
+                    <i class="fas fa-user-circle text-faint mr-1"></i> 
                     Docente: {{ obs.docente.first_name }} {{ obs.docente.last_name }} 
-                    <span class="text-gray-600 text-xs">(@{{ obs.docente.username }})</span>
+                    <span class="text-muted text-xs">(@{{ obs.docente.username }})</span>
                 </p>
                 
                 <!-- Estudiantes asociados -->
-                <p class="text-xs text-gray-500 mb-2 truncate">
+                <p class="text-xs text-faint mb-2 truncate">
                     <i class="fas fa-users mr-1"></i> Estudiantes: 
                     {% for est in obs.estudiantes.all %}
                         {{ est.nombre_completo }}{% if not forloop.last %}, {% endif %}
@@ -31,7 +31,7 @@
                 </p>
 
                 <!-- Fecha -->
-                <p class="text-xs text-gray-500">
+                <p class="text-xs text-faint">
                     <i class="far fa-clock mr-1"></i> 
                     {% if obs.fecha_actualizacion|date:"YmdHi" != obs.fecha_creacion|date:"YmdHi" %}
                         Actualizado el {{ obs.fecha_actualizacion|date:"d M Y, H:i" }}
@@ -48,40 +48,40 @@
                 <div class="flex flex-col gap-2">
                     <!-- Estado -->
                     {% if obs.estado == 'NO_VISTA' %}
-                        <span class="px-3 py-1 w-full text-center text-xs font-semibold rounded bg-red-900/40 text-red-400 border border-red-800">
+                        <span class="px-3 py-1 w-full text-center text-xs font-semibold rounded chip chip-rechazada">
                             No vista
                         </span>
                     {% elif obs.estado == 'EN_PROCESO' %}
-                        <span class="px-3 py-1 w-full text-center text-xs font-semibold rounded bg-yellow-900/40 text-yellow-400 border border-yellow-800">
+                        <span class="px-3 py-1 w-full text-center text-xs font-semibold rounded chip chip-pendiente">
                             En proceso
                         </span>
                     {% endif %}
 
                     <!-- Tipo de Anotación -->
                     {% if obs.tipo_observacion == 'NEGATIVA' %}
-                        <span class="px-3 py-1 w-full text-center text-xs font-medium rounded bg-gray-800 text-gray-300 border border-gray-700">
+                        <span class="px-3 py-1 w-full text-center text-xs font-medium rounded chip chip-rechazada">
                             Negativa
                         </span>
                     {% elif obs.tipo_observacion == 'ESPECIALISTA' %}
-                        <span class="px-3 py-1 w-full text-center text-xs font-medium rounded bg-purple-900/40 text-purple-400 border border-purple-800">
+                        <span class="px-3 py-1 w-full text-center text-xs font-medium rounded chip chip-reunion">
                             Req. Especialista
                         </span>
                     {% elif obs.tipo_observacion == 'POSITIVA' %}
-                        <span class="px-3 py-1 w-full text-center text-xs font-medium rounded bg-green-900/40 text-green-400 border border-green-800">
+                        <span class="px-3 py-1 w-full text-center text-xs font-medium rounded chip chip-aprobada">
                             Positiva
                         </span>
                     {% endif %}
                 </div>
 
                 <!-- Botón de Actualizar -->
-                <a href="{% url 'academico:actualizar_observacion' obs.pk %}" class="block w-full text-center px-3 py-2 text-sm font-semibold rounded bg-blue-900/30 text-blue-400 border border-blue-800/50 hover:bg-blue-800/50 hover:text-white transition-colors">
+                <a href="{% url 'academico:actualizar_observacion' obs.pk %}" class="btn-secondary block w-full text-center px-3 py-2 text-sm font-semibold">
                     <i class="fas fa-edit mr-1"></i> Actualizar
                 </a>
 
             </div>
         </div>
         {% empty %}
-        <div class="bg-[#1a1a1a] border border-[#333333] rounded-lg p-8 text-center text-gray-400">
+        <div class="observation-card p-8 text-center text-muted">
             <p>Excelente. No hay observaciones pendientes por revisar.</p>
         </div>
         {% endfor %}

@@ -9,7 +9,7 @@
         <h1 class="font-display text-4xl font-semibold leading-tight" style="color: var(--tinta);">
             Un solo lugar para lo que pasa en el colegio.
         </h1>
-        <p class="mt-4 text-gray-600 dark:text-neutral-400 max-w-sm">
+        <p class="mt-4 text-muted max-w-sm">
             Comunicados, asistencia, evaluaciones y reuniones — docentes y familias
             viendo la misma información, sin cadenas de WhatsApp perdidas.
         </p>
@@ -17,7 +17,7 @@
 
     <div class="card p-8 max-w-md w-full mx-auto">
         <h2 class="font-display text-2xl font-semibold mb-1">Inicia sesión</h2>
-        <p class="text-sm text-gray-500 dark:text-neutral-400 mb-6">Usa tu RUT y contraseña.</p>
+        <p class="text-sm text-muted mb-6">Usa tu RUT y contraseña.</p>
 
         <form method="post" class="space-y-4">
             {% csrf_token %}
@@ -31,13 +31,13 @@
             </div>
 
             {% if form.non_field_errors %}
-            <p class="text-sm text-red-600 dark:text-red-400">{{ form.non_field_errors.0 }}</p>
+            <p class="text-sm text-error">{{ form.non_field_errors.0 }}</p>
             {% endif %}
 
             <button type="submit" class="btn-primary w-full py-2.5 font-medium">Entrar</button>
         </form>
 
-        <p class="text-sm text-gray-500 dark:text-neutral-400 mt-6 text-center">
+        <p class="text-sm text-muted mt-6 text-center">
             ¿Aún no tienes cuenta?
             <a href="{% url 'usuarios:registro' %}" class="font-medium" style="color: var(--rio);">Regístrate aquí</a>
         </p>

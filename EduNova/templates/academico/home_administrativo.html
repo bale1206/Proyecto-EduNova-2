@@ -3,15 +3,15 @@
 
 {% block content %}
 <h1 class="font-display text-2xl font-semibold mb-1">Hola, {{ user.first_name }}</h1>
-<p class="text-gray-500 dark:text-neutral-400 mb-6">Panel de dirección: cursos, evaluaciones y reuniones del colegio.</p>
+<p class="text-muted mb-6">Panel de dirección: cursos, evaluaciones y reuniones del colegio.</p>
 
 <div class="grid sm:grid-cols-2 gap-4 mb-6">
     <div class="card p-5">
-        <p class="text-sm text-gray-500 dark:text-neutral-400">Cursos</p>
+        <p class="text-sm text-muted">Cursos</p>
         <p class="font-display text-3xl font-semibold">{{ cursos.count }}</p>
     </div>
     <div class="card p-5">
-        <p class="text-sm text-gray-500 dark:text-neutral-400">Estudiantes matriculados</p>
+        <p class="text-sm text-muted">Estudiantes matriculados</p>
         <p class="font-display text-3xl font-semibold">{{ total_estudiantes }}</p>
     </div>
 </div>
@@ -26,12 +26,12 @@
                 {% for curso in cursos %}
                 <li class="flex items-center justify-between text-sm rounded-lg px-3 py-2" style="background: var(--lino-2);">
                     <span>{{ curso.grado_curso }}</span>
-                    <span class="text-gray-500 dark:text-neutral-400 text-xs">{{ curso.docente_jefe.nombre_completo|default:"Sin docente jefe" }}</span>
+                    <span class="text-muted text-xs">{{ curso.docente_jefe.nombre_completo|default:"Sin docente jefe" }}</span>
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="text-sm text-gray-500 dark:text-neutral-400 mb-4">Aún no hay cursos creados.</p>
+            <p class="text-sm text-muted mb-4">Aún no hay cursos creados.</p>
             {% endif %}
 
             <details>
@@ -59,14 +59,14 @@
                 <li class="text-sm">
                     <div class="flex items-center justify-between">
                         <span class="chip chip-{{ ev.tipo }}">{{ ev.get_tipo_display }}</span>
-                        <span class="text-gray-400 dark:text-neutral-500 text-xs">{{ ev.fecha|date:"d M" }}</span>
+                        <span class="text-faint text-xs">{{ ev.fecha|date:"d M" }}</span>
                     </div>
-                    <p class="mt-1">{{ ev.titulo }} <span class="text-gray-400 dark:text-neutral-500">· {{ ev.curso.grado_curso }}</span></p>
+                    <p class="mt-1">{{ ev.titulo }} <span class="text-faint">· {{ ev.curso.grado_curso }}</span></p>
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="text-sm text-gray-500 dark:text-neutral-400">No hay evaluaciones ni reuniones agendadas.</p>
+            <p class="text-sm text-muted">No hay evaluaciones ni reuniones agendadas.</p>
             {% endif %}
         </div>
 

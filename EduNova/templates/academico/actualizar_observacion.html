@@ -3,23 +3,23 @@
 {% block content %}
 <div class="max-w-3xl mb-12">
     <div class="flex items-center gap-4 mb-6">
-        <a href="{% url 'academico:lista_observaciones' %}" class="text-gray-400 hover:text-white transition-colors">
+        <a href="{% url 'academico:lista_observaciones' %}" class="text-muted hover:text-main transition-colors">
             <i class="fas fa-arrow-left"></i> Volver
         </a>
-        <h1 class="font-display text-3xl font-bold text-white">Actualizar Observación</h1>
+        <h1 class="font-display text-3xl font-bold text-main">Actualizar Observación</h1>
     </div>
     
     <!-- Contexto original de la observación -->
-    <div class="bg-[#1a1a1a] border border-[#333333] rounded-lg p-5 mb-8">
-        <h3 class="text-xl font-bold text-white mb-2">{{ observacion.asunto }}</h3>
-        <p class="text-sm text-gray-400 mb-1"><strong>Docente:</strong> {{ observacion.docente.first_name }} {{ observacion.docente.last_name }}</p>
-        <p class="text-sm text-gray-400 mb-4"><strong>Estudiantes:</strong> 
+    <div class="observation-card rounded-lg p-5 mb-8">
+        <h3 class="text-xl font-bold text-main mb-2">{{ observacion.asunto }}</h3>
+        <p class="text-sm text-muted mb-1"><strong>Docente:</strong> {{ observacion.docente.first_name }} {{ observacion.docente.last_name }}</p>
+        <p class="text-sm text-muted mb-4"><strong>Estudiantes:</strong> 
             {% for est in observacion.estudiantes.all %}
                 {{ est.nombre_completo }}{% if not forloop.last %}, {% endif %}
             {% endfor %}
         </p>
-        <div class="p-4 bg-[#111111] rounded border border-[#222222]">
-            <p class="text-gray-300 text-sm whitespace-pre-line">{{ observacion.descripcion }}</p>
+        <div class="p-4 observation-preview">
+            <p class="text-main text-sm whitespace-pre-line">{{ observacion.descripcion }}</p>
         </div>
     </div>
 
@@ -29,32 +29,32 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-                <label for="{{ form.estado.id_for_label }}" class="block font-medium text-white mb-2">Estado de la observación</label>
+                <label for="{{ form.estado.id_for_label }}" class="block font-medium text-main mb-2">Estado de la observación</label>
                 {{ form.estado }}
             </div>
             <div>
-                <label for="{{ form.tipo_observacion.id_for_label }}" class="block font-medium text-white mb-2">Tipo de observación</label>
+                <label for="{{ form.tipo_observacion.id_for_label }}" class="block font-medium text-main mb-2">Tipo de observación</label>
                 {{ form.tipo_observacion }}
             </div>
         </div>
 
         <!-- Resolución -->
         <div>
-            <label for="{{ form.resolucion.id_for_label }}" class="block font-medium text-white mb-2">Resolución administrativa</label>
+            <label for="{{ form.resolucion.id_for_label }}" class="block font-medium text-main mb-2">Resolución administrativa</label>
             {{ form.resolucion }}
         </div>
 
         <!-- NUEVO: Checkbox de Notificación -->
-        <div class="flex items-center gap-3 bg-[#111111] p-4 rounded border border-[#222222]">
+        <div class="flex items-center gap-3 observation-preview p-4">
             {{ form.notificar_apoderado }}
-            <label for="{{ form.notificar_apoderado.id_for_label }}" class="text-gray-300 font-medium cursor-pointer select-none">
+            <label for="{{ form.notificar_apoderado.id_for_label }}" class="text-main font-medium cursor-pointer select-none">
                 Enviar una notificación al apoderado sobre esta resolución
             </label>
         </div>
 
         <!-- Botón de guardar -->
         <div class="pt-4">
-            <button type="submit" class="w-full py-3 rounded-lg text-black font-medium transition-colors hover:bg-opacity-90" style="background-color: #a3b899;">
+            <button type="submit" class="btn-primary w-full py-3 font-medium">
                 Guardar cambios
             </button>
         </div>

@@ -2,8 +2,8 @@
 
 {% block content %}
 <div class="max-w-3xl mb-12">
-    <h1 class="font-display text-3xl font-bold text-white mb-2">Nueva observación</h1>
-    <p class="text-gray-400 mb-8">Registra un comportamiento en la hoja de vida del estudiante.</p>
+    <h1 class="font-display text-3xl font-bold text-main mb-2">Nueva observación</h1>
+    <p class="text-muted mb-8">Registra un comportamiento en la hoja de vida del estudiante.</p>
     
     <form method="post" id="observacionForm" data-estudiantes-url="{% url 'academico:ajax_cargar_estudiantes' %}" class="space-y-6">
         {% csrf_token %}
@@ -12,13 +12,13 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Curso -->
             <div>
-                <label for="{{ form.curso.id_for_label }}" class="block font-medium text-white mb-2">Curso asociado</label>
+                <label for="{{ form.curso.id_for_label }}" class="block font-medium text-main mb-2">Curso asociado</label>
                 {{ form.curso }}
             </div>
             
             <!-- Estudiantes (Menú desplegable personalizado) -->
             <div>
-                <label class="block font-medium text-white mb-2">Estudiante(s)</label>
+                <label class="block font-medium text-main mb-2">Estudiante(s)</label>
                 
                 <!-- Ocultamos el select real de Django para que no se vea el cuadro gigante -->
                 <div class="hidden">
@@ -27,14 +27,14 @@
                 
                 <!-- Nuestro Dropdown Personalizado -->
                 <div class="relative">
-                    <div id="estudiantes-btn" class="w-full bg-[#1a1a1a] border border-[#333333] rounded-md p-2.5 text-white cursor-pointer flex justify-between items-center focus:outline-none focus:border-gray-500">
-                        <span id="estudiantes-text" class="truncate pr-2 text-gray-400">Seleccione un curso primero...</span>
-                        <svg class="w-4 h-4 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <div id="estudiantes-btn" class="w-full surface-control rounded-md p-2.5 text-main cursor-pointer flex justify-between items-center focus:outline-none focus:border-[var(--rio)]">
+                        <span id="estudiantes-text" class="truncate pr-2 text-muted">Seleccione un curso primero...</span>
+                        <svg class="w-4 h-4 text-main flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     
                     <!-- Panel de la lista de estudiantes (oculto por defecto) -->
-                    <div id="estudiantes-menu" class="hidden absolute z-10 w-full mt-1 bg-[#1a1a1a] border border-[#333333] rounded-md shadow-lg max-h-48 overflow-y-auto">
-                        <div class="p-3 text-gray-400 text-sm italic text-center">Esperando selección de curso...</div>
+                    <div id="estudiantes-menu" class="hidden absolute z-10 w-full mt-1 surface-control rounded-md rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        <div class="p-3 text-muted text-sm italic text-center">Esperando selección de curso...</div>
                     </div>
                 </div>
             </div>
@@ -42,33 +42,33 @@
 
         <!-- Tipo de observación -->
         <div>
-            <label for="{{ form.tipo_observacion.id_for_label }}" class="block font-medium text-white mb-2">Tipo de observación</label>
+            <label for="{{ form.tipo_observacion.id_for_label }}" class="block font-medium text-main mb-2">Tipo de observación</label>
             {{ form.tipo_observacion }}
         </div>
 
         <!-- Asunto -->
         <div>
-            <label for="{{ form.asunto.id_for_label }}" class="block font-medium text-white mb-2">Asunto</label>
+            <label for="{{ form.asunto.id_for_label }}" class="block font-medium text-main mb-2">Asunto</label>
             {{ form.asunto }}
         </div>
 
         <!-- Mensaje / Descripción -->
         <div>
-            <label for="{{ form.descripcion.id_for_label }}" class="block font-medium text-white mb-2">Mensaje</label>
+            <label for="{{ form.descripcion.id_for_label }}" class="block font-medium text-main mb-2">Mensaje</label>
             {{ form.descripcion }}
         </div>
 
         <!-- Resolución (Oculto para docentes) -->
         {% if form.resolucion %}
         <div>
-            <label for="{{ form.resolucion.id_for_label }}" class="block font-medium text-white mb-2">Resolución administrativa (Opcional)</label>
+            <label for="{{ form.resolucion.id_for_label }}" class="block font-medium text-main mb-2">Resolución administrativa (Opcional)</label>
             {{ form.resolucion }}
         </div>
         {% endif %}
 
         <!-- Botón de envío -->
         <div class="pt-4">
-            <button type="submit" class="w-full py-3 rounded-lg text-black font-medium transition-colors" style="background-color: #a3b899;">
+            <button type="submit" class="btn-primary w-full py-3 font-medium">
                 Guardar observación
             </button>
         </div>
@@ -107,7 +107,7 @@
 
             if (cursoId) {
                 estudiantesText.textContent = "Cargando...";
-                estudiantesText.classList.add("text-gray-400");
+                estudiantesText.classList.add("text-muted");
                 
                 fetch(`${url}?curso_id=${cursoId}`)
                     .then(response => response.json())
@@ -118,7 +118,7 @@
                         estudiantesText.textContent = 'Seleccionar estudiante(s)...';
                         
                         if(data.length === 0){
-                            estudiantesMenu.innerHTML = '<div class="p-3 text-gray-400 text-sm italic text-center">No hay estudiantes en este curso.</div>';
+                            estudiantesMenu.innerHTML = '<div class="p-3 text-muted text-sm italic text-center">No hay estudiantes en este curso.</div>';
                             return;
                         }
 
@@ -132,11 +132,11 @@
 
                             // 2. Crear elemento visual interactivo para el menú custom
                             const menuItem = document.createElement('label');
-                            menuItem.className = 'flex items-center gap-3 p-3 hover:bg-[#333333] cursor-pointer text-white border-b border-[#2a2a2a] last:border-0 m-0';
+                            menuItem.className = 'flex items-center gap-3 p-3 hover:bg-[var(--lino-2)] cursor-pointer text-main border-b last:border-0 m-0';
                             
                             const checkbox = document.createElement('input');
                             checkbox.type = 'checkbox';
-                            checkbox.className = 'form-checkbox h-4 w-4 rounded border-gray-600 bg-gray-700 focus:ring-0 cursor-pointer';
+                            checkbox.className = 'h-4 w-4 rounded cursor-pointer accent-[var(--rio)]';
                             checkbox.value = estudiante.id;
                             
                             const span = document.createElement('span');
@@ -163,9 +163,9 @@
                     });
             } else {
                 estudiantesSelect.innerHTML = '';
-                estudiantesMenu.innerHTML = '<div class="p-3 text-gray-400 text-sm italic text-center">Esperando selección de curso...</div>';
+                estudiantesMenu.innerHTML = '<div class="p-3 text-muted text-sm italic text-center">Esperando selección de curso...</div>';
                 estudiantesText.textContent = 'Seleccione un curso primero...';
-                estudiantesText.classList.add("text-gray-400");
+                estudiantesText.classList.add("text-muted");
             }
         });
 
@@ -175,13 +175,13 @@
             
             if (seleccionados.length === 0) {
                 estudiantesText.textContent = 'Seleccionar estudiante(s)...';
-                estudiantesText.classList.add("text-gray-400");
+                estudiantesText.classList.add("text-muted");
             } else if (seleccionados.length <= 2) {
                 estudiantesText.textContent = seleccionados.join(', ');
-                estudiantesText.classList.remove("text-gray-400");
+                estudiantesText.classList.remove("text-muted");
             } else {
                 estudiantesText.textContent = `${seleccionados.length} estudiantes seleccionados`;
-                estudiantesText.classList.remove("text-gray-400");
+                estudiantesText.classList.remove("text-muted");
             }
         }
     });

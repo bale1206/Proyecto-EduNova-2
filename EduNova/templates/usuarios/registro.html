@@ -4,7 +4,7 @@
 {% block content %}
 <div class="max-w-lg mx-auto card p-8">
     <h2 class="font-display text-2xl font-semibold mb-1">Crea tu cuenta</h2>
-    <p class="text-sm text-gray-500 dark:text-neutral-400 mb-6">
+    <p class="text-sm text-muted mb-6">
         Por ahora EduNova está habilitado para docentes y apoderados/tutores legales.
     </p>
 
@@ -21,14 +21,14 @@
                 </label>
                 {% endfor %}
             </div>
-            {% if form.rol.errors %}<p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.rol.errors.0 }}</p>{% endif %}
+            {% if form.rol.errors %}<p class="text-sm text-error mt-1">{{ form.rol.errors.0 }}</p>{% endif %}
         </div>
 
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium mb-1">RUT</label>
                 {{ form.rut }}
-                {% if form.rut.errors %}<p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.rut.errors.0 }}</p>{% endif %}
+                {% if form.rut.errors %}<p class="text-sm text-error mt-1">{{ form.rut.errors.0 }}</p>{% endif %}
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Teléfono</label>
@@ -56,19 +56,19 @@
             <div>
                 <label class="block text-sm font-medium mb-1">Contraseña</label>
                 {{ form.password1 }}
-                {% if form.password1.errors %}<p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.password1.errors.0 }}</p>{% endif %}
+                {% if form.password1.errors %}<p class="text-sm text-error mt-1">{{ form.password1.errors.0 }}</p>{% endif %}
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Confirmar contraseña</label>
                 {{ form.password2 }}
-                {% if form.password2.errors %}<p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.password2.errors.0 }}</p>{% endif %}
+                {% if form.password2.errors %}<p class="text-sm text-error mt-1">{{ form.password2.errors.0 }}</p>{% endif %}
             </div>
         </div>
 
         <button type="submit" class="btn-primary w-full py-2.5 font-medium">Crear cuenta</button>
     </form>
 
-    <p class="text-sm text-gray-500 dark:text-neutral-400 mt-6 text-center">
+    <p class="text-sm text-muted mt-6 text-center">
         ¿Ya tienes cuenta?
         <a href="{% url 'usuarios:login' %}" class="font-medium" style="color: var(--rio);">Inicia sesión</a>
     </p>

@@ -8,25 +8,25 @@
 <div class="card divide-y divide-gray-100 dark:divide-neutral-800">
     {% for m in mensajes %}
     <a href="{% url 'comunicacion:detalle_mensaje' m.id %}"
-       class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-neutral-800/60 {% if not m.leido %}bg-gray-50 dark:bg-neutral-800/60{% endif %}">
+       class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--lino-2)] {% if not m.leido %}surface-subtle{% endif %}">
         <div class="min-w-0">
             <div class="flex items-center gap-2">
                 <span class="chip chip-{{ m.tipo_comunicacion }}">{{ m.get_tipo_comunicacion_display }}</span>
                 {% if not m.leido %}<span class="h-2 w-2 rounded-full" style="background: var(--amanecer);"></span>{% endif %}
             </div>
             <p class="font-medium truncate mt-1">{{ m.asunto }}</p>
-            <p class="text-sm text-gray-500 dark:text-neutral-400 truncate">
+            <p class="text-sm text-muted truncate">
                 De {{ m.remitente.nombre_completo|default:"EduNova" }}
                 {% if m.curso_destino %} · Para {{ m.curso_destino }}{% endif %}
             </p>
         </div>
-        <span class="text-xs text-gray-400 dark:text-neutral-500 whitespace-nowrap">{{ m.fecha_hora_envio|date:"d M, H:i" }}</span>
+        <span class="text-xs text-faint whitespace-nowrap">{{ m.fecha_hora_envio|date:"d M, H:i" }}</span>
     </a>
     {% endfor %}
 </div>
 {% else %}
 <div class="card p-8 text-center">
-    <p class="text-gray-500 dark:text-neutral-400">No tienes mensajes por ahora.</p>
+    <p class="text-muted">No tienes mensajes por ahora.</p>
 </div>
 {% endif %}
 {% endblock %}
