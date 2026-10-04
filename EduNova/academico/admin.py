@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Asistencia, Curso, Estudiante, Evento, JustificacionRetiro, Observacion, ObservacionComportamiento
+from .models import Asistencia, Curso, Estudiante, Evento, JustificacionRetiro, Observacion, ObservacionComportamiento, RegistroAsistencia, Usuario
 
 
 @admin.register(Curso)
@@ -50,3 +50,9 @@ class JustificacionRetiroAdmin(admin.ModelAdmin):
 class EventoAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'curso', 'tipo', 'fecha', 'hora_inicio')
     list_filter = ('tipo', 'curso')
+
+@admin.register(RegistroAsistencia)
+class RegistroAsistenciaAdmin(admin.ModelAdmin):
+    list_display = ('estudiante', 'docente', 'fecha', 'presente', 'justificado')
+    list_filter = ('presente', 'justificado', 'fecha', 'docente')
+    search_fields = ('estudiante__nombre_completo', 'docente__first_name', 'docente__last_name')

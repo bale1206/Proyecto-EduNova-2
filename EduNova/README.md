@@ -14,6 +14,8 @@ py -m venv venv
 source venv/bin/activate        # en Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
+python manage.py check
+python manage.py makemigratrions
 python manage.py migrate
 python manage.py seed_demo      # crea usuarios y datos de ejemplo
 python manage.py runserver
