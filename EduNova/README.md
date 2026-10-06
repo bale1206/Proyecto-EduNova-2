@@ -15,7 +15,7 @@ py -m venv venv
 
 Activa el entorno según la terminal que estés usando:
 
-**PowerShell (Windows):**
+PowerShell (Windows):
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
