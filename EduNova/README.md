@@ -11,11 +11,49 @@ integración con un colegio real todavía.
 
 ```bash
 py -m venv venv
-source venv/bin/activate        # en Windows: venv\Scripts\activate
+```
+
+Activa el entorno según la terminal que estés usando:
+
+**PowerShell (Windows):**
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\venv\Scripts\Activate.ps1
+```
+
+La política `Bypass` solo aplica a la ventana actual de PowerShell. Si no
+quieres activar el entorno ni cambiar la política, puedes ejecutar sus
+comandos usando directamente el intérprete del entorno:
+
+```powershell
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+.\venv\Scripts\python.exe manage.py check
+.\venv\Scripts\python.exe manage.py makemigrations
+.\venv\Scripts\python.exe manage.py migrate
+.\venv\Scripts\python.exe manage.py seed_demo
+.\venv\Scripts\python.exe manage.py runserver
+```
+
+**Símbolo del sistema (Windows):**
+
+```bat
+venv\Scripts\activate.bat
+```
+
+**macOS o Linux:**
+
+```bash
+source venv/bin/activate
+```
+
+Con el entorno activado, instala las dependencias y prepara la aplicación:
+
+```bash
 pip install -r requirements.txt
 
 python manage.py check
-python manage.py makemigratrions
+python manage.py makemigrations
 python manage.py migrate
 python manage.py seed_demo      # crea usuarios y datos de ejemplo
 python manage.py runserver
