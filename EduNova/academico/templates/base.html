@@ -14,6 +14,9 @@
             var guardado = function (clave, porDefecto) {
                 try { return localStorage.getItem(clave) || porDefecto; } catch (e) { return porDefecto; }
             };
+            var paleta = guardado('edunova-paleta', 'azul');
+            if (['azul','terracota','ambar','oliva'].indexOf(paleta) === -1) paleta = 'azul';
+            raiz.setAttribute('data-palette', paleta);
             var modo = guardado('edunova-modo', 'sistema');
             var prefiereOscuro = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
             if (modo === 'oscuro' || (modo === 'sistema' && prefiereOscuro)) raiz.classList.add('dark');
@@ -45,8 +48,8 @@
 
             <div class="flex items-center gap-4">
                 {% if user.rol == 'administrativo' %}
-                <a href="{% url 'academico:configurar_csv' %}" class="btn-secondary text-sm px-3 py-2">Permisos CSV</a>
-                <a href="{% url 'academico:panel_csv' %}" class="btn-secondary text-sm px-3 py-2">CSV</a>
+                <a href="{% url 'academico:configurar_csv' %}" class="btn-secondary text-sm px-3 py-2">Accesos a archivos</a>
+                <a href="{% url 'academico:panel_csv' %}" class="btn-secondary text-sm px-3 py-2">Archivos y reportes</a>
                 {% endif %}
                 <span class="hidden sm:block text-sm text-right leading-tight">
                     <span class="block font-medium">{{ user.nombre_completo }}</span>

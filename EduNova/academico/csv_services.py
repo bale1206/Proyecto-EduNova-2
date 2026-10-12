@@ -176,3 +176,42 @@ def cargar_csv(model, archivo, permiso_pk):
             except IntegrityError as exc:
                 raise ErrorCSV(f'Fila {number}: viola una restricción de la tabla (duplicado o referencia inválida).') from exc
     return len(rows)
+
+
+# Ejemplos orientativos; nunca se guardan en la base de datos.
+# Los IDs de relaciones se dejan vacíos o como marcadores para evitar
+# insinuar que corresponden a registros existentes en Supabase.
+EJEMPLOS_CSV = {
+    'academico_curso': [
+        {'grado_curso': '7° A', 'docente_jefe_id': NULL},
+        {'grado_curso': '8° B', 'docente_jefe_id': NULL},
+    ],
+    'academico_estudiante': [
+        {'rut_estudiante': '11.111.111-1', 'nombre_completo': 'Camila Torres Soto',
+         'curso_id': NULL, 'apoderado_id': 'ID_APODERADO', 'apellido_familiar': 'Torres'},
+        {'rut_estudiante': '22.222.222-2', 'nombre_completo': 'Diego Rojas Pérez',
+         'curso_id': NULL, 'apoderado_id': 'ID_APODERADO', 'apellido_familiar': 'Rojas'},
+    ],
+}
+
+
+def filas_ejemplo_csv(model):
+    """Ejemplos en el orden físico de columnas para mostrar/descargar, sin consultar datos."""
+    examples = EJEMPLOS_CSV.get(model._meta.db_table, [])
+    fields = campos_tabla(model)
+    return [[example.get(f.column, '') for f in fields] for example in examples]
+
+
+def respuesta_ejemplo_csv(model):
+    """CSV demostrativo separado de exportación real y plantilla vacía."""
+    if model._meta.db_table not in EJEMPLOS_CSV:
+        raise ErrorCSV('No hay ejemplos disponibles para esta tabla.')
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="{model._meta.db_table}_ejemplo.csv"'
+    response['Cache-Control'] = 'no-store'
+    response['X-Content-Type-Options'] = 'nosniff'
+    response.write('\ufeff')
+    writer = csv.writer(response)
+    writer.writerow([field.column for field in campos_tabla(model)])
+    writer.writerows(filas_ejemplo_csv(model))
+    return response

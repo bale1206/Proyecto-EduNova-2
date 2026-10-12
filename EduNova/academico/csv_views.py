@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from usuarios.models import Usuario
-from .csv_services import ErrorCSV, cargar_csv, esquema, respuesta_csv, tablas_disponibles
+from .csv_services import ErrorCSV, cargar_csv, esquema, respuesta_csv, respuesta_ejemplo_csv, filas_ejemplo_csv, tablas_disponibles
 from .models import PermisoTablaCSV
 
 
@@ -62,7 +62,8 @@ def panel_csv(request):
         model = available.get(permission.tabla)
         if model and (permission.exportar or permission.importar):
             tables.append({'nombre': permission.tabla, 'permiso': permission,
-                           'etiqueta': model._meta.verbose_name_plural, 'columnas': esquema(model)})
+                           'etiqueta': model._meta.verbose_name_plural, 'columnas': esquema(model),
+                           'ejemplos': filas_ejemplo_csv(model) if permission.tabla in ('academico_curso', 'academico_estudiante') else []})
     return render(request, 'academico/panel_csv.html', {'tablas': tables})
 
 
@@ -95,3 +96,12 @@ def importar_csv(request, tabla):
         else:
             messages.success(request, f'Se añadieron {count} registros a {tabla}.')
     return redirect('academico:panel_csv')
+
+
+@login_required
+@require_GET
+def ejemplo_csv(request, tabla):
+    model, _ = _tabla_autorizada(request, tabla, 'importar')
+    if tabla not in ('academico_curso', 'academico_estudiante'):
+        raise PermissionDenied('No hay ejemplos disponibles para esta tabla.')
+    return respuesta_ejemplo_csv(model)

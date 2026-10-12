@@ -9,6 +9,7 @@ urlpatterns = [
     path('direccion/csv/', csv_views.configurar_csv, name='configurar_csv'),
     path('administrativo/csv/', csv_views.panel_csv, name='panel_csv'),
     path('administrativo/csv/<str:tabla>/exportar/', csv_views.exportar_csv, name='exportar_csv'),
+    path('administrativo/csv/<str:tabla>/ejemplo/', csv_views.ejemplo_csv, name='ejemplo_csv'),
     path('administrativo/csv/<str:tabla>/plantilla/', csv_views.plantilla_csv, name='plantilla_csv'),
     path('administrativo/csv/<str:tabla>/importar/', csv_views.importar_csv, name='importar_csv'),
     path('docente/', views.home_docente, name='home_docente'),

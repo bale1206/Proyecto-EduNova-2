@@ -1,21 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Permisos CSV · EduNova{% endblock %}
 {% block content %}
-<h1 class="font-display text-2xl font-semibold mb-3">Tablas disponibles para administrativos</h1>
-<p class="text-muted mb-6">El rol administrativo también representa a dirección. Selecciona las tablas y las operaciones disponibles. Todas las cuentas administrativas pueden modificar esta selección; los permisos se aplican a todas ellas. Las tablas están deshabilitadas inicialmente.</p>
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4"><h1 class="font-display text-2xl font-semibold">Accesos a los archivos</h1><button type="button" class="btn-secondary px-4 py-2" onclick="document.getElementById('ayuda-permisos').showModal()" aria-haspopup="dialog">? Ayuda paso a paso</button></div>
+<p class="text-muted mb-6">Elige qué información pueden descargar o agregar las personas con acceso administrativo. Los cambios se aplican a todas las cuentas administrativas.</p>
+<dialog id="ayuda-permisos" class="edunova-help-dialog" aria-labelledby="titulo-ayuda-permisos"><div class="p-6"><div class="flex justify-between items-start gap-4"><h2 id="titulo-ayuda-permisos" class="font-display text-xl font-semibold">¿Cómo configurar los accesos?</h2><button type="button" class="btn-secondary px-3 py-1" onclick="this.closest('dialog').close()" aria-label="Cerrar ayuda">✕</button></div><ol class="list-decimal pl-6 space-y-3 my-5"><li>Busca el tipo de información que quieres habilitar.</li><li>Marca <strong>Permitir descarga</strong> para que puedan obtener un archivo con los datos.</li><li>Marca <strong>Permitir agregar</strong> para que puedan subir una planilla con registros nuevos.</li><li>Desmarca las opciones que no quieras permitir.</li><li>Selecciona <strong>Guardar cambios</strong> al terminar.</li></ol><p class="text-sm text-muted">Importante: estos permisos son compartidos por todas las cuentas administrativas. Habilita únicamente lo necesario.</p><button type="button" class="btn-primary px-5 py-2 mt-5" onclick="this.closest('dialog').close()">Entendido</button></div></dialog>
 <form method="post" class="space-y-4">
     {% csrf_token %}
     {% for tabla in tablas %}
     <section class="card p-5">
         <h2 class="font-display font-semibold">{{ tabla.etiqueta|capfirst }}</h2>
-        <p class="text-muted text-sm mb-3">{{ tabla.nombre }}</p>
+        
         <div class="flex gap-6 mb-3">
-            <label><input type="checkbox" name="exportar" value="{{ tabla.nombre }}" {% if tabla.permiso.exportar %}checked{% endif %}> Exportar datos</label>
-            <label><input type="checkbox" name="importar" value="{{ tabla.nombre }}" {% if tabla.permiso.importar %}checked{% endif %}> Importar registros nuevos</label>
+            <label><input type="checkbox" name="exportar" value="{{ tabla.nombre }}" {% if tabla.permiso.exportar %}checked{% endif %}> Permitir descarga</label>
+            <label><input type="checkbox" name="importar" value="{{ tabla.nombre }}" {% if tabla.permiso.importar %}checked{% endif %}> Permitir agregar</label>
         </div>
         {% include "academico/_esquema_csv.html" %}
     </section>
     {% endfor %}
-    <button class="btn-primary px-5 py-3" type="submit">Guardar permisos</button>
+    <button class="btn-primary px-5 py-3" type="submit">Guardar cambios</button>
 </form>
 {% endblock %}

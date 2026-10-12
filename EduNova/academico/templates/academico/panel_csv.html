@@ -1,38 +1,49 @@
 {% extends "base.html" %}
 {% block title %}Reportes e importación CSV · EduNova{% endblock %}
 {% block content %}
-<h1 class="font-display text-2xl font-semibold mb-3">Reportes e importación CSV</h1>
-<a class="btn-secondary inline-block px-4 py-2 mb-4" href="{% url 'academico:configurar_csv' %}">Seleccionar tablas y operaciones</a>
-<p class="text-muted mb-4">Cada reporte contiene todas las columnas y todos los registros de la tabla autorizada por dirección.</p>
-<p class="text-sm mb-4">Los reportes y plantillas usan punto y coma e incluyen una indicación de separador para que Excel abra cada campo en su propia columna.</p>
-<div class="card p-5 mb-6 text-sm space-y-2">
-    <p>Para importar, descarga la plantilla y conserva exactamente sus columnas y su orden. Usa CSV UTF-8, separado por coma o punto y coma (máximo 5 MB y 10.000 registros).</p>
-    <p>Deja el ID vacío para generarlo automáticamente, o usa un ID nuevo. La carga añade datos: nunca reemplaza ni elimina registros existentes. Si una fila falla, se cancela todo el archivo.</p>
-    <p>Las relaciones usan IDs existentes. Fechas: AAAA-MM-DD. Horas: HH:MM:SS. Fecha y hora: formato ISO 8601 con zona horaria. Booleanos: true/false. NULL: <code>\N</code>. Un texto vacío y NULL son valores distintos. Para una barra invertida literal usa dos barras invertidas.</p>
-    <p>Los campos de archivo contienen rutas, no los archivos adjuntos. Las relaciones de varios estudiantes se cargan por separado en su tabla de vínculos.</p>
-</div>
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4"><h1 class="font-display text-2xl font-semibold">Archivos y reportes de estudiantes</h1><button type="button" class="btn-secondary px-4 py-2" onclick="document.getElementById('ayuda-csv').showModal()" aria-haspopup="dialog">? Ayuda paso a paso</button></div>
+<p class="text-muted mb-4">Desde aquí puedes descargar información o agregar registros usando una planilla CSV (un archivo que puedes abrir con Excel).</p>
+<a class="btn-secondary inline-block px-4 py-2 mb-5" href="{% url 'academico:configurar_csv' %}">Administrar accesos a los archivos</a>
+<dialog id="ayuda-csv" class="edunova-help-dialog" aria-labelledby="titulo-ayuda-csv"><div class="p-6"><div class="flex justify-between items-start gap-4"><h2 id="titulo-ayuda-csv" class="font-display text-xl font-semibold">¿Cómo usar los archivos?</h2><button type="button" class="btn-secondary px-3 py-1" onclick="this.closest('dialog').close()" aria-label="Cerrar ayuda">✕</button></div><ol class="list-decimal pl-6 space-y-3 my-5"><li><strong>Para descargar:</strong> busca el listado que necesitas y selecciona «Descargar datos».</li><li><strong>Para agregar información:</strong> selecciona «Descargar plantilla» (vacía) o «Descargar CSV de ejemplo» (con dos filas ficticias) y ábrelo en Excel.</li><li>Completa las filas sin cambiar los nombres ni el orden de las columnas. Si hay códigos o campos que no conoces, consulta antes de subir el archivo.</li><li>Guarda la planilla como <strong>CSV</strong> y selecciónala en «Elegir archivo».</li><li>Presiona «Revisar y agregar». Si aparece un error, corrige la planilla y vuelve a intentarlo.</li></ol><p class="text-sm text-muted">Importante: al subir un archivo se agregan registros nuevos; no se modifican ni eliminan los existentes. Límite: 5 MB y 10.000 filas.</p><button type="button" class="btn-primary px-5 py-2 mt-5" onclick="this.closest('dialog').close()">Entendido</button></div></dialog>
 <div class="space-y-4">
 {% for tabla in tablas %}
 <section class="card p-5">
     <h2 class="font-display font-semibold">{{ tabla.etiqueta|capfirst }}</h2>
-    <p class="text-muted text-sm mb-4">{{ tabla.nombre }}</p>
+    
     <div class="flex flex-wrap gap-3 mb-4">
-        {% if tabla.permiso.exportar %}<a class="btn-primary px-4 py-2" href="{% url 'academico:exportar_csv' tabla.nombre %}">Exportar CSV</a>{% endif %}
+        {% if tabla.permiso.exportar %}<a class="btn-primary px-4 py-2" href="{% url 'academico:exportar_csv' tabla.nombre %}">Descargar datos</a>{% endif %}
         {% if tabla.permiso.importar %}<a class="btn-secondary px-4 py-2" href="{% url 'academico:plantilla_csv' tabla.nombre %}">Descargar plantilla</a>{% endif %}
     </div>
+    {% if tabla.ejemplos and tabla.permiso.importar %}
+    <div class="rounded-lg border p-4 mb-4" style="border-color:var(--border,#d2c8bb);background:var(--surface,#f6f1e9)">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
+            <h3 class="font-semibold">Ejemplo de {{ tabla.etiqueta|lower }}</h3>
+            <a class="btn-secondary px-3 py-2" href="{% url 'academico:ejemplo_csv' tabla.nombre %}">Descargar CSV de ejemplo</a>
+        </div>
+        <p class="text-sm text-muted mb-3">Estos son dos registros ficticios para guiarte. No están guardados en la plataforma. Descarga el ejemplo y reemplaza sus datos antes de subirlo.</p>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead><tr>{% for columna in tabla.columnas %}<th scope="col" class="p-2">{{ columna.columna }}</th>{% endfor %}</tr></thead>
+                <tbody>{% for fila in tabla.ejemplos %}<tr class="border-t">{% for valor in fila %}<td class="p-2 whitespace-nowrap">{{ valor|default:"(vacío)" }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        {% if tabla.nombre == 'academico_estudiante' %}<p class="text-sm mt-3"><strong>Antes de importar estudiantes:</strong> cambia <code>ID_APODERADO</code> por el ID de un apoderado existente. El campo <code>curso_id</code> puede quedar con <code>\N</code> si no asignas un curso. Reemplaza también los RUT y nombres ficticios.</p>{% elif tabla.nombre == 'academico_curso' %}<p class="text-sm mt-3">El campo <code>docente_jefe_id</code> puede quedar como <code>\N</code> si todavía no hay un docente asignado.</p>{% endif %}
+        <p class="text-sm text-muted mt-2">«Descargar datos» conserva los registros reales. «Descargar plantilla» sigue entregando un CSV vacío. El ejemplo se descarga aparte.</p>
+    </div>
+    {% endif %}
     {% if tabla.permiso.importar %}
     <form method="post" enctype="multipart/form-data" action="{% url 'academico:importar_csv' tabla.nombre %}" class="mb-4 space-y-3">
         {% csrf_token %}
-        <label class="block text-sm">Archivo CSV para {{ tabla.nombre }}
+        <label class="block text-sm">Selecciona la planilla CSV
             <input class="block mt-2" type="file" name="archivo" accept=".csv,text/csv" required>
         </label>
-        <button class="btn-primary px-4 py-2" type="submit">Validar y añadir registros</button>
+        <button class="btn-primary px-4 py-2" type="submit">Revisar y agregar</button>
     </form>
     {% endif %}
     {% include "academico/_esquema_csv.html" %}
 </section>
 {% empty %}
-<p class="card p-5">Dirección todavía no ha habilitado tablas para exportar o importar.</p>
+<p class="card p-5">Todavía no tienes listados habilitados. Consulta con la persona encargada de los accesos.</p>
 {% endfor %}
 </div>
 <a href="{% url 'academico:home_administrativo' %}" class="btn-secondary inline-block px-4 py-2 mt-6">Volver al panel</a>

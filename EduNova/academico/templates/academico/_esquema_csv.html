@@ -1,8 +1,8 @@
 <details>
-    <summary class="cursor-pointer text-sm font-medium">Ver estructura de la tabla</summary>
+    <summary class="cursor-pointer text-sm font-medium">Ver detalles de las columnas (opcional)</summary>
     <div class="overflow-x-auto mt-3">
         <table class="w-full text-sm text-left">
-            <thead><tr><th class="p-2">Columna (en orden)</th><th class="p-2">Tipo</th><th class="p-2">Admite NULL</th><th class="p-2">Tabla relacionada</th></tr></thead>
+            <thead><tr><th class="p-2">Nombre de columna</th><th class="p-2">Tipo</th><th class="p-2">Puede quedar vacío</th><th class="p-2">Información relacionada</th></tr></thead>
             <tbody>{% for columna in tabla.columnas %}<tr>
                 <td class="p-2">{{ columna.columna }}</td><td class="p-2">{{ columna.tipo }}</td>
                 <td class="p-2">{{ columna.nulo|yesno:"Sí,No" }}</td><td class="p-2">{{ columna.referencia|default:"—" }}</td>

@@ -81,12 +81,26 @@ WSGI_APPLICATION = 'edunova_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# PostgreSQL cuando DB_ENGINE=postgresql; SQLite persistente como alternativa local.
+# Nunca se borran registros al iniciar runserver.
+import os
+
+if os.getenv('DB_ENGINE', 'sqlite').lower() in ('postgres', 'postgresql'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'edunova'),
+            'USER': os.getenv('DB_USER', 'edunova'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+            'CONN_MAX_AGE': 60,
+            'OPTIONS': {'connect_timeout': 5},
+        }
     }
-}
+else:
+    DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3',
+                             'NAME': BASE_DIR / 'db.sqlite3'}}
 
 
 # Password validation

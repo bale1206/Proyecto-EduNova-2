@@ -64,6 +64,25 @@ class CSVTests(TestCase):
         self.assertEqual(cargar_csv(Curso, SimpleUploadedFile('datos.csv', payload), self.permiso.pk), 1)
         self.assertEqual(Curso.objects.get().grado_curso, 'Niñez, "A"\nSegunda línea \\N')
 
+    def test_ejemplo_de_cursos_es_independiente_de_datos_reales(self):
+        Curso.objects.create(grado_curso='Curso privado')
+        self.client.force_login(self.administrativo)
+        response = self.client.get(reverse('academico:ejemplo_csv', args=[Curso._meta.db_table]))
+        self.assertEqual(response.status_code, 200)
+        rows = list(csv.reader(io.StringIO(response.content.decode('utf-8-sig'))))
+        self.assertEqual(rows[0], [f.column for f in campos_tabla(Curso)])
+        self.assertEqual(len(rows), 3)
+        self.assertNotIn('Curso privado', response.content.decode('utf-8-sig'))
+        self.assertEqual(Curso.objects.count(), 1)
+
+    def test_ejemplo_de_estudiantes_exige_permiso_de_importacion(self):
+        self.client.force_login(self.administrativo)
+        self.assertEqual(self.client.get(reverse('academico:ejemplo_csv', args=[Estudiante._meta.db_table])).status_code, 404)
+        PermisoTablaCSV.objects.create(tabla=Estudiante._meta.db_table, importar=True)
+        response = self.client.get(reverse('academico:ejemplo_csv', args=[Estudiante._meta.db_table]))
+        self.assertContains(response, 'ID_APODERADO')
+        self.assertEqual(Estudiante.objects.count(), 0)
+
     def test_plantilla_no_expone_datos_con_permiso_solo_importar(self):
         Curso.objects.create(grado_curso='Privado')
         self.permiso.exportar = False
