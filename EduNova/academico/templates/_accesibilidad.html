@@ -1,0 +1,115 @@
+{% load static %}
+<div x-data="edunovaAccesibilidad()" x-init="init()" class="fixed bottom-4 right-4 z-50" x-cloak>
+    <button @click="abierto = !abierto" @click.outside="abierto = false"
+            class="h-12 w-12 rounded-full shadow-lg flex items-center justify-center"
+            style="background: var(--rio); color: #fff;"
+            aria-label="Opciones de accesibilidad y apariencia" :aria-expanded="abierto.toString()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6">
+            <path d="M12 2a2 2 0 110 4 2 2 0 010-4zm7 6.5c0 .55-.45 1-1 1h-4.5v2.24l3.3 7.8a1 1 0 11-1.84.78l-2.46-5.8-2.46 5.8a1 1 0 11-1.84-.78l3.3-7.8V9.5H6a1 1 0 010-2h12a1 1 0 011 1z"/>
+        </svg>
+    </button>
+
+    <div x-show="abierto" x-transition
+         class="absolute bottom-16 right-0 w-80 card shadow-xl p-5 space-y-5 max-h-[80vh] overflow-y-auto">
+
+        <div>
+            <p class="font-display font-semibold text-sm mb-2">Apariencia</p>
+            <div class="grid grid-cols-3 gap-2">
+                <button @click="fijarModo('claro')" :class="modo === 'claro' ? 'btn-primary' : 'btn-secondary'" class="text-xs py-2 rounded-lg">Claro</button>
+                <button @click="fijarModo('oscuro')" :class="modo === 'oscuro' ? 'btn-primary' : 'btn-secondary'" class="text-xs py-2 rounded-lg">Oscuro</button>
+                <button @click="fijarModo('sistema')" :class="modo === 'sistema' ? 'btn-primary' : 'btn-secondary'" class="text-xs py-2 rounded-lg">Auto</button>
+            </div>
+        </div>
+
+        <div>
+            <p class="font-display font-semibold text-sm mb-2">Tamaño de texto</p>
+            <div class="grid grid-cols-3 gap-2">
+                <button @click="fijarTamano('normal')" :class="tamano === 'normal' ? 'btn-primary' : 'btn-secondary'" class="text-xs py-2 rounded-lg">A</button>
+                <button @click="fijarTamano('grande')" :class="tamano === 'grande' ? 'btn-primary' : 'btn-secondary'" class="text-sm py-2 rounded-lg">A+</button>
+                <button @click="fijarTamano('xl')" :class="tamano === 'xl' ? 'btn-primary' : 'btn-secondary'" class="text-base py-2 rounded-lg">A++</button>
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            <p class="font-display font-semibold text-sm">Lectura y movimiento</p>
+
+            <label class="flex items-center justify-between text-sm cursor-pointer">
+                <span>Alto contraste</span>
+                <input type="checkbox" x-model="contraste" @change="aplicarContraste()" class="h-4 w-4">
+            </label>
+            <label class="flex items-center justify-between text-sm cursor-pointer">
+                <span>Subrayar enlaces</span>
+                <input type="checkbox" x-model="subrayado" @change="aplicarSubrayado()" class="h-4 w-4">
+            </label>
+            <label class="flex items-center justify-between text-sm cursor-pointer">
+                <span>Reducir animaciones</span>
+                <input type="checkbox" x-model="movimiento" @change="aplicarMovimiento()" class="h-4 w-4">
+            </label>
+        </div>
+
+        <button @click="restablecer()" class="btn-secondary w-full text-xs py-2 rounded-lg">
+            Restablecer preferencias
+        </button>
+    </div>
+</div>
+
+<script>
+    function edunovaAccesibilidad() {
+        return {
+            abierto: false,
+            modo: 'sistema',
+            tamano: 'normal',
+            contraste: false,
+            subrayado: false,
+            movimiento: false,
+
+            init() {
+                this.modo = localStorage.getItem('edunova-modo') || 'sistema';
+                this.tamano = localStorage.getItem('edunova-a11y-tamano') || 'normal';
+                this.contraste = localStorage.getItem('edunova-a11y-contraste') === '1';
+                this.subrayado = localStorage.getItem('edunova-a11y-subrayado') === '1';
+                this.movimiento = localStorage.getItem('edunova-a11y-movimiento') === '1';
+            },
+
+            fijarModo(valor) {
+                this.modo = valor;
+                localStorage.setItem('edunova-modo', valor);
+                const raiz = document.documentElement;
+                const prefiereOscuro = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                raiz.classList.toggle('dark', valor === 'oscuro' || (valor === 'sistema' && prefiereOscuro));
+            },
+
+            fijarTamano(valor) {
+                this.tamano = valor;
+                localStorage.setItem('edunova-a11y-tamano', valor);
+                const raiz = document.documentElement;
+                raiz.classList.remove('a11y-texto-grande', 'a11y-texto-xl');
+                if (valor === 'grande') raiz.classList.add('a11y-texto-grande');
+                if (valor === 'xl') raiz.classList.add('a11y-texto-xl');
+            },
+
+            aplicarContraste() {
+                localStorage.setItem('edunova-a11y-contraste', this.contraste ? '1' : '0');
+                document.documentElement.classList.toggle('a11y-alto-contraste', this.contraste);
+            },
+
+            aplicarSubrayado() {
+                localStorage.setItem('edunova-a11y-subrayado', this.subrayado ? '1' : '0');
+                document.documentElement.classList.toggle('a11y-subrayado', this.subrayado);
+            },
+
+            aplicarMovimiento() {
+                localStorage.setItem('edunova-a11y-movimiento', this.movimiento ? '1' : '0');
+                document.documentElement.classList.toggle('a11y-reducir-movimiento', this.movimiento);
+            },
+
+            restablecer() {
+                this.fijarModo('sistema');
+                this.fijarTamano('normal');
+                this.contraste = false; this.aplicarContraste();
+                this.subrayado = false; this.aplicarSubrayado();
+                this.movimiento = false; this.aplicarMovimiento();
+            },
+        };
+    }
+</script>

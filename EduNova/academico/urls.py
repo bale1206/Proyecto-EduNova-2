@@ -1,10 +1,16 @@
 from django.urls import path
 
 from . import views
+from . import csv_views
 
 app_name = 'academico'
 
 urlpatterns = [
+    path('direccion/csv/', csv_views.configurar_csv, name='configurar_csv'),
+    path('administrativo/csv/', csv_views.panel_csv, name='panel_csv'),
+    path('administrativo/csv/<str:tabla>/exportar/', csv_views.exportar_csv, name='exportar_csv'),
+    path('administrativo/csv/<str:tabla>/plantilla/', csv_views.plantilla_csv, name='plantilla_csv'),
+    path('administrativo/csv/<str:tabla>/importar/', csv_views.importar_csv, name='importar_csv'),
     path('docente/', views.home_docente, name='home_docente'),
     path('apoderado/', views.home_apoderado, name='home_apoderado'),
     path('apoderado/estudiante/<int:estudiante_id>/', views.detalle_estudiante, name='detalle_estudiante'),

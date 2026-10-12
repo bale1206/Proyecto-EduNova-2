@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Permisos CSV · EduNova{% endblock %}
+{% block content %}
+<h1 class="font-display text-2xl font-semibold mb-3">Tablas disponibles para administrativos</h1>
+<p class="text-muted mb-6">El rol administrativo también representa a dirección. Selecciona las tablas y las operaciones disponibles. Todas las cuentas administrativas pueden modificar esta selección; los permisos se aplican a todas ellas. Las tablas están deshabilitadas inicialmente.</p>
+<form method="post" class="space-y-4">
+    {% csrf_token %}
+    {% for tabla in tablas %}
+    <section class="card p-5">
+        <h2 class="font-display font-semibold">{{ tabla.etiqueta|capfirst }}</h2>
+        <p class="text-muted text-sm mb-3">{{ tabla.nombre }}</p>
+        <div class="flex gap-6 mb-3">
+            <label><input type="checkbox" name="exportar" value="{{ tabla.nombre }}" {% if tabla.permiso.exportar %}checked{% endif %}> Exportar datos</label>
+            <label><input type="checkbox" name="importar" value="{{ tabla.nombre }}" {% if tabla.permiso.importar %}checked{% endif %}> Importar registros nuevos</label>
+        </div>
+        {% include "academico/_esquema_csv.html" %}
+    </section>
+    {% endfor %}
+    <button class="btn-primary px-5 py-3" type="submit">Guardar permisos</button>
+</form>
+{% endblock %}

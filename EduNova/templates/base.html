@@ -44,6 +44,10 @@
             </a>
 
             <div class="flex items-center gap-4">
+                {% if user.rol == 'administrativo' %}
+                <a href="{% url 'academico:configurar_csv' %}" class="btn-secondary text-sm px-3 py-2">Permisos CSV</a>
+                <a href="{% url 'academico:panel_csv' %}" class="btn-secondary text-sm px-3 py-2">CSV</a>
+                {% endif %}
                 <span class="hidden sm:block text-sm text-right leading-tight">
                     <span class="block font-medium">{{ user.nombre_completo }}</span>
                     <span class="block text-xs text-muted">{{ user.get_rol_display }}</span>

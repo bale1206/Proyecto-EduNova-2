@@ -4,6 +4,16 @@ from django.db import models
 Usuario = settings.AUTH_USER_MODEL
 
 
+class PermisoTablaCSV(models.Model):
+    tabla = models.CharField(max_length=150, unique=True)
+    exportar = models.BooleanField(default=False)
+    importar = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Permiso de tabla CSV'
+        verbose_name_plural = 'Permisos de tablas CSV'
+
+
 class Curso(models.Model):
     grado_curso = models.CharField('Curso', max_length=50)
     docente_jefe = models.ForeignKey(
