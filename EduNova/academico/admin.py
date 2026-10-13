@@ -10,7 +10,7 @@ class CursoAdmin(admin.ModelAdmin):
 
 @admin.register(Estudiante)
 class EstudianteAdmin(admin.ModelAdmin):
-    list_display = ('nombre_completo', 'rut_estudiante', 'curso', 'apoderado', 'apellido_familiar')
+    list_display = ('codigo_edunova', 'nombre_completo', 'rut_estudiante', 'curso', 'apoderado', 'apellido_familiar')
     list_filter = ('curso',)
     search_fields = ('nombre_completo', 'rut_estudiante')
 

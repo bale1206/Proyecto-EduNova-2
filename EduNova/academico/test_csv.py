@@ -80,7 +80,7 @@ class CSVTests(TestCase):
         self.assertEqual(self.client.get(reverse('academico:ejemplo_csv', args=[Estudiante._meta.db_table])).status_code, 404)
         PermisoTablaCSV.objects.create(tabla=Estudiante._meta.db_table, importar=True)
         response = self.client.get(reverse('academico:ejemplo_csv', args=[Estudiante._meta.db_table]))
-        self.assertContains(response, 'ID_APODERADO')
+        self.assertContains(response, 'EN-P0001')
         self.assertEqual(Estudiante.objects.count(), 0)
 
     def test_plantilla_no_expone_datos_con_permiso_solo_importar(self):

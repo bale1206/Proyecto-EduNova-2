@@ -9,6 +9,7 @@ from django.db.models import AutoField, BooleanField
 from django.http import HttpResponse
 
 from .models import PermisoTablaCSV
+from usuarios.codigos import leer_codigo
 
 MAX_BYTES = 5 * 1024 * 1024
 MAX_ROWS = 10000
@@ -89,6 +90,23 @@ def _convertir(field, cell):
         return None
     if cell == '' and isinstance(field, AutoField):
         return None  # ID automático al añadir registros nuevos.
+    # El CSV puede usar códigos públicos sin conocer el ID interno de Supabase.
+    # Nunca se convierten RUT en IDs: solo códigos EN-A / EN-D / EN-P.
+    code_types = {
+        ('academico', 'Estudiante', 'id'): 'A',
+        ('academico', 'Estudiante', 'apoderado_id'): 'P',
+        ('academico', 'Curso', 'docente_jefe_id'): 'D',
+    }
+    tipo = code_types.get((field.model._meta.app_label, field.model.__name__, field.column))
+    if tipo and cell.upper().startswith('EN-'):
+        numero = leer_codigo(cell, tipo)
+        if numero is None:
+            raise ErrorCSV(f'{field.column}: código EduNova incorrecto. Usa EN-{tipo} seguido de números.')
+        if field.is_relation:
+            related = field.related_model
+            if not related._default_manager.filter(pk=numero, rol={'P': 'apoderado', 'D': 'docente'}[tipo]).exists():
+                raise ErrorCSV(f'{field.column}: no existe un {"apoderado" if tipo == "P" else "docente"} con código {cell}.')
+        cell = str(numero)
     value = cell.replace('\\\\', '\\')
     target = field.target_field if field.is_relation else field
     if isinstance(target, BooleanField):
@@ -188,9 +206,9 @@ EJEMPLOS_CSV = {
     ],
     'academico_estudiante': [
         {'rut_estudiante': '11.111.111-1', 'nombre_completo': 'Camila Torres Soto',
-         'curso_id': NULL, 'apoderado_id': 'ID_APODERADO', 'apellido_familiar': 'Torres'},
+         'curso_id': NULL, 'apoderado_id': 'EN-P0001', 'apellido_familiar': 'Torres'},
         {'rut_estudiante': '22.222.222-2', 'nombre_completo': 'Diego Rojas Pérez',
-         'curso_id': NULL, 'apoderado_id': 'ID_APODERADO', 'apellido_familiar': 'Rojas'},
+         'curso_id': NULL, 'apoderado_id': 'EN-P0001', 'apellido_familiar': 'Rojas'},
     ],
 }
 

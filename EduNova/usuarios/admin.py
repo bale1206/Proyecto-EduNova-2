@@ -7,7 +7,7 @@ from .models import Usuario
 @admin.register(Usuario)
 class UsuarioAdmin(UserAdmin):
     model = Usuario
-    list_display = ('rut', 'first_name', 'apellidos', 'rol', 'email', 'is_staff')
+    list_display = ('codigo_edunova', 'rut', 'first_name', 'apellidos', 'rol', 'email', 'is_staff')
     list_filter = ('rol', 'is_staff', 'is_active')
     search_fields = ('rut', 'first_name', 'apellidos', 'email')
     ordering = ('apellidos',)

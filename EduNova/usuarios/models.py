@@ -86,6 +86,13 @@ class Usuario(AbstractUser):
         super().save(*args, **kwargs)
 
     @property
+    def codigo_edunova(self):
+        """Código estable para docentes y apoderados, sin cambiar la PK interna."""
+        from .codigos import crear_codigo
+        tipo = {'docente': 'D', 'apoderado': 'P'}.get(self.rol)
+        return crear_codigo(tipo, self.pk) if tipo else ''
+
+    @property
     def nombre_completo(self):
         return f"{self.first_name} {self.apellidos}".strip()
 

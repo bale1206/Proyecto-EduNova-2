@@ -11,7 +11,46 @@ integración con un colegio real todavía.
 
 ```bash
 py -m venv venv
-source venv/bin/activate        # en Windows: venv\Scripts\activate
+```
+
+Activa el entorno según la terminal que estés usando:
+
+PowerShell (Windows):
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\venv\Scripts\Activate.ps1
+```
+
+La política `Bypass` solo aplica a la ventana actual de PowerShell. Si no
+quieres activar el entorno ni cambiar la política, puedes ejecutar sus
+comandos usando directamente el intérprete del entorno:
+
+```powershell
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+.\venv\Scripts\python.exe manage.py check
+pip install python-dotenv "psycopg[binary]"    
+.\venv\Scripts\python.exe manage.py makemigrations
+.\venv\Scripts\python.exe manage.py migrate
+.\venv\Scripts\python.exe manage.py seed_demo
+.\venv\Scripts\python.exe manage.py runserver
+```
+
+**Símbolo del sistema (Windows):**
+
+```bat
+venv\Scripts\activate.bat
+```
+
+**macOS o Linux:**
+
+```bash
+source venv/bin/activate
+```
+
+Con el entorno activado, instala las dependencias y prepara la aplicación:
+
+```bash
 pip install -r requirements.txt
 
 python manage.py check
@@ -157,10 +196,6 @@ static/css/         # tokens de diseño (paleta, tipografía) que Tailwind CDN n
   listado y creación rápida de cursos, asignación de docente jefe,
   calendario mensual del colegio completo, y formulario para agendar
   evaluaciones/reuniones/clases en cualquier curso.
-  También selecciona las tablas disponibles para exportar e importar CSV
-  en `/direccion/csv/`, y realiza las cargas y reportes desde
-  `/administrativo/csv/`. Todas las cuentas de este rol pueden configurar
-  la selección común. Ver `GUIA_CSV.md`.
 - **administrador**: rol para quienes desarrollamos y administramos el
   sitio (no para el colegio) — el acceso técnico vía `/admin/`. Se asigna
   automáticamente al correr `createsuperuser` y no puede elegirse de

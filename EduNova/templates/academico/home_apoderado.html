@@ -20,7 +20,7 @@
                 </span>
                 <span>
                     <span class="block font-medium text-sm">{{ estudiante.nombre_completo }}</span>
-                    <span class="block text-xs text-muted">{{ estudiante.curso|default:"Sin curso asignado" }}</span>
+                    <span class="block text-xs text-muted">{{ estudiante.codigo_edunova }} · {{ estudiante.curso|default:"Sin curso asignado" }}</span>
                 </span>
             </a>
             {% endfor %}

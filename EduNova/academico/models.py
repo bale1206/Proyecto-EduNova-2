@@ -42,6 +42,12 @@ class Estudiante(models.Model):
     # Apellido paterno del alumno, usado para agrupar hermanos como "Familia X"
     apellido_familiar = models.CharField(max_length=50, blank=True)
 
+    @property
+    def codigo_edunova(self):
+        """Código del alumno derivado de su PK estable en PostgreSQL."""
+        from usuarios.codigos import crear_codigo
+        return crear_codigo('A', self.pk)
+
     def save(self, *args, **kwargs):
         if not self.apellido_familiar and self.nombre_completo:
             partes = self.nombre_completo.strip().split()
