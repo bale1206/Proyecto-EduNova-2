@@ -153,6 +153,15 @@ class EventoForm(forms.ModelForm):
             field.widget.attrs.update({'class': INPUT_CLASSES, 'style': INPUT_STYLE})
 
 
+class ActividadAdministrativaForm(EventoForm):
+    """La misma lista de secciones al mostrar la agenda y al guardar."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['curso'].queryset = Curso.objects.select_related('asignatura_catalogo').order_by('asignatura', 'seccion')
+        self.fields['curso'].empty_label = 'Seleccionar asignatura y sección'
+        self.fields['tipo'].choices = [(Evento.Tipo.REUNION, 'Reunión'), (Evento.Tipo.OTRO, 'Otro evento')]
+
+
 class JustificacionRetiroForm(forms.ModelForm):
     """Formulario que llena el apoderado para justificar un retiro,
     inasistencia o atraso de un estudiante suyo. El estudiante y el

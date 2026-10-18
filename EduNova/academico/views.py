@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from comunicacion.services import mensajes_no_leidos
 from usuarios.models import Usuario
 
-from .forms import CrearSeccionForm, CarreraForm, AsignarCarreraForm, MatricularSeccionForm, CursoForm, EventoForm, JustificacionRetiroForm, ObservacionForm, ActualizarObservacionForm
+from .forms import ActividadAdministrativaForm, CrearSeccionForm, CarreraForm, AsignarCarreraForm, MatricularSeccionForm, CursoForm, EventoForm, JustificacionRetiroForm, ObservacionForm, ActualizarObservacionForm
 from django.db.models import Case, When, Value, IntegerField, Count, Q
 from .models import Asignatura, Asistencia, Carrera, Curso, Estudiante, Evento, JustificacionRetiro, ObservacionComportamiento, RegistroAsistencia, SesionClase, MarcaAsistencia, AvisoAsistencia
 from django.http import JsonResponse
@@ -178,15 +178,11 @@ def detalle_estudiante(request, estudiante_id):
 
 
 @login_required
-def home_administrativo(request):
+def home_administrativo(request, evento_form=None):
     _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
     carrera = request.user.carrera_dirigida
-    if carrera is None:
-        return render(request, 'academico/home_administrativo.html', {'sin_carrera': True})
-
-    # Solo secciones explícitamente vinculadas al catálogo de la carrera.
-    cursos = Curso.objects.filter(asignatura_catalogo__carreras=carrera).select_related(
-        'docente_jefe', 'asignatura_catalogo').distinct().order_by('asignatura', 'seccion')
+    # La agenda permite usar todas las secciones, incluidas las históricas sin catálogo.
+    cursos = Curso.objects.select_related('docente_jefe', 'asignatura_catalogo').order_by('asignatura', 'seccion')
     seleccion = request.GET.get('seccion', '')
     if not seleccion.isdecimal() or not cursos.filter(pk=seleccion).exists():
         seleccion = ''
@@ -195,13 +191,11 @@ def home_administrativo(request):
     (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
     eventos = Evento.objects.filter(curso__in=visibles, fecha__year=year, fecha__month=month)
     proximos = Evento.objects.filter(curso__in=cursos, fecha__gte=date.today()).select_related('curso').order_by('fecha','hora_inicio')[:8]
-    form = EventoForm()
-    form.fields['curso'].queryset = cursos
-    form.fields['tipo'].choices = [(Evento.Tipo.REUNION, 'Reunión'), (Evento.Tipo.OTRO, 'Otro evento')]
+    form = evento_form if evento_form is not None else ActividadAdministrativaForm()
     contexto = {
         'carrera': carrera, 'cursos': cursos, 'seccion_seleccionada': seleccion,
-        'curso_form': CrearSeccionForm(user=request.user, initial={'carrera': carrera.pk}),
-        'total_estudiantes': Estudiante.objects.filter(carrera=carrera).count(),
+        'curso_form': CrearSeccionForm(user=request.user, initial={'carrera': carrera.pk} if carrera else {}),
+        'total_estudiantes': Estudiante.objects.count(),
         'proximos_eventos': proximos, 'evento_form': form,
         'semanas': _construir_calendario(year, month, eventos),
         'mes_nombre': MESES_ES[month], 'anio': year, 'mes': month,
@@ -308,19 +302,15 @@ def opciones_seccion(request):
 def crear_evento(request):
     _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
     if request.method == 'POST':
-        form = EventoForm(request.POST)
-        carrera = request.user.carrera_dirigida
-        if not carrera:
-            raise PermissionDenied('No tienes una carrera asignada.')
-        form.fields['curso'].queryset = Curso.objects.filter(asignatura_catalogo__carreras=carrera).distinct()
-        form.fields['tipo'].choices = [(Evento.Tipo.REUNION, 'Reunión'), (Evento.Tipo.OTRO, 'Otro evento')]
+        form = ActividadAdministrativaForm(request.POST)
         if form.is_valid():
             evento = form.save(commit=False)
             evento.creado_por = request.user
             evento.save()
             messages.success(request, f'"{evento.titulo}" agendado para {evento.curso}.')
             return redirect('academico:home_administrativo')
-        messages.error(request, 'Revisa los datos del evento: ' + '; '.join(form.errors))
+        messages.error(request, 'Revisa los datos del evento.')
+        return home_administrativo(request, evento_form=form)
     return redirect('academico:home_administrativo')
 
 

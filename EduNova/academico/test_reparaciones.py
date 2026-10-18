@@ -216,3 +216,30 @@ class ReparacionesFlujosTests(TestCase):
         self.assertEqual(creada.seccion, 'HIS-000-V')
         opcion = self.client.get(reverse('academico:opciones_seccion'),{'carrera':self.otra.pk,'asignatura':self.ajena.pk})
         self.assertEqual(opcion.json()['numero'],'001')
+
+    def test_agenda_incluye_secciones_de_otras_carreras_e_historicas(self):
+        nueva = Curso.objects.create(asignatura_catalogo=self.ajena, turno=False)
+        historica = Curso.objects.create(asignatura='Lenguaje histórico', turno=True)
+        self.client.force_login(self.director)
+        respuesta = self.client.get(reverse('academico:home_administrativo'))
+        opciones = respuesta.context['evento_form'].fields['curso'].queryset
+        self.assertSetEqual(set(opciones.values_list('pk', flat=True)), {self.seccion.pk, nueva.pk, historica.pk})
+        for seccion in (nueva, historica):
+            self.assertContains(respuesta, seccion.seccion)
+            datos = {'curso': seccion.pk, 'tipo':'reunion', 'titulo':'Actividad '+seccion.seccion,
+                     'descripcion':'Revisión', 'fecha':timezone.localdate().isoformat(), 'hora_inicio':'09:00', 'hora_fin':'10:00'}
+            self.assertRedirects(self.client.post(reverse('academico:crear_evento'),datos), reverse('academico:home_administrativo'))
+            from .models import Evento
+            self.assertTrue(Evento.objects.filter(curso=seccion, titulo=datos['titulo'], creado_por=self.director).exists())
+            self.assertContains(self.client.get(reverse('academico:home_administrativo')), datos['titulo'])
+
+    def test_agenda_sin_carrera_y_error_de_evento_conserva_formulario(self):
+        self.director.carrera_dirigida = None
+        self.director.save()
+        self.client.force_login(self.director)
+        self.assertContains(self.client.get(reverse('academico:home_administrativo')), self.seccion.seccion)
+        respuesta = self.client.post(reverse('academico:crear_evento'), {'curso':self.seccion.pk,'tipo':'reunion','titulo':'Conservar título','fecha':'fecha inválida'})
+        self.assertEqual(respuesta.status_code,200)
+        self.assertIn('fecha',respuesta.context['evento_form'].errors)
+        self.assertContains(respuesta,'Conservar título')
+        self.assertContains(respuesta,self.seccion.seccion)
