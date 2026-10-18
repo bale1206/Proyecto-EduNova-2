@@ -3,11 +3,11 @@
         <h3 class="font-display font-semibold">{{ mes_nombre }} {{ anio }}</h3>
         <div class="flex gap-2">
             <button
-                hx-get="?year={{ prev_year }}&month={{ prev_month }}{% if estudiante %}&estudiante={{ estudiante.id }}{% endif %}"
+                hx-get="?year={{ prev_year }}&month={{ prev_month }}{% if estudiante %}&estudiante={{ estudiante.id }}{% endif %}{% if seccion_seleccionada %}&seccion={{ seccion_seleccionada }}{% endif %}"
                 hx-target="#calendario-mensual" hx-swap="outerHTML"
                 class="btn-secondary text-sm px-2 py-1" aria-label="Mes anterior">‹</button>
             <button
-                hx-get="?year={{ next_year }}&month={{ next_month }}{% if estudiante %}&estudiante={{ estudiante.id }}{% endif %}"
+                hx-get="?year={{ next_year }}&month={{ next_month }}{% if estudiante %}&estudiante={{ estudiante.id }}{% endif %}{% if seccion_seleccionada %}&seccion={{ seccion_seleccionada }}{% endif %}"
                 hx-target="#calendario-mensual" hx-swap="outerHTML"
                 class="btn-secondary text-sm px-2 py-1" aria-label="Mes siguiente">›</button>
         </div>

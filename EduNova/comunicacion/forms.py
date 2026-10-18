@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 
 from academico.models import Curso
 from usuarios.models import Usuario
@@ -10,11 +11,11 @@ class ComunicadoForm(forms.ModelForm):
     destinatario = forms.ModelChoiceField(
         queryset=Usuario.objects.none(), required=False,
         label='Destinatario individual (opcional)',
-        help_text='Déjalo vacío si vas a enviar a todo un curso.',
+        help_text='Déjalo vacío si vas a enviar a toda una sección.',
     )
     curso_destino = forms.ModelChoiceField(
         queryset=Curso.objects.none(), required=False,
-        label='Curso destino (opcional)',
+        label='Asignatura y sección (opcional)',
     )
 
     class Meta:
@@ -43,17 +44,17 @@ class ComunicadoForm(forms.ModelForm):
                 field.widget.attrs.update({'class': input_classes, 'style': 'border-color: var(--linea);'})
 
         if usuario and usuario.rol == Usuario.Rol.DOCENTE:
-            # Un docente puede escribir a estudiantes de sus cursos o a todo el curso
+            # Un docente puede escribir a estudiantes de sus secciones o a toda la sección
             self.fields['destinatario'].queryset = Usuario.objects.filter(
                 rol=Usuario.Rol.ESTUDIANTE,
-                perfil_estudiante__curso__docente_jefe=usuario,
+                perfil_estudiante__secciones__in=Curso.objects.filter(Q(docentes=usuario) | Q(docente_jefe=usuario)),
             ).distinct()
-            self.fields['curso_destino'].queryset = Curso.objects.filter(docente_jefe=usuario)
+            self.fields['curso_destino'].queryset = Curso.objects.filter(Q(docentes=usuario) | Q(docente_jefe=usuario)).distinct()
         elif usuario and usuario.rol == Usuario.Rol.ESTUDIANTE:
-            # Un estudiante puede escribir al docente jefe de su curso actual (modelo transitorio).
+            # Un estudiante puede escribir al docente jefe de su sección inscrita.
             self.fields['destinatario'].queryset = Usuario.objects.filter(
                 rol=Usuario.Rol.DOCENTE,
-                cursos_a_cargo__estudiantes__usuario=usuario,
+                secciones_impartidas__matriculados__usuario=usuario,
             ).distinct()
             self.fields['curso_destino'].widget = forms.HiddenInput()
             self.fields.pop('copia_utp_direccion', None)
@@ -61,5 +62,5 @@ class ComunicadoForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         if not cleaned.get('destinatario') and not cleaned.get('curso_destino'):
-            raise forms.ValidationError('Debes elegir un destinatario individual o un curso.')
+            raise forms.ValidationError('Debes elegir un destinatario individual o una sección.')
         return cleaned

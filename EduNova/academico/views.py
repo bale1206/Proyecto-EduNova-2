@@ -2,6 +2,8 @@ import calendar as cal
 from datetime import date
 
 from django.db import transaction
+from django.utils import timezone
+from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -10,11 +12,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from comunicacion.services import mensajes_no_leidos
 from usuarios.models import Usuario
 
-from .forms import CursoForm, EventoForm, JustificacionRetiroForm, ObservacionForm, ActualizarObservacionForm
-from django.db.models import Case, When, Value, IntegerField
-from .models import Asistencia, Curso, Estudiante, Evento, JustificacionRetiro, ObservacionComportamiento, RegistroAsistencia
+from .forms import CarreraForm, AsignarCarreraForm, MatricularSeccionForm, CursoForm, EventoForm, JustificacionRetiroForm, ObservacionForm, ActualizarObservacionForm
+from django.db.models import Case, When, Value, IntegerField, Count, Q
+from .models import Asignatura, Asistencia, Carrera, Curso, Estudiante, Evento, JustificacionRetiro, ObservacionComportamiento, RegistroAsistencia, SesionClase, MarcaAsistencia, AvisoAsistencia
 from django.http import JsonResponse
 from comunicacion.models import MensajeComunicacion
+from .notificaciones_asistencia import avisar_estudiante
 
 MESES_ES = [
     '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -68,11 +71,18 @@ def _mes_anterior_siguiente(year, month):
 def home_docente(request):
     _requerir_rol(request, Usuario.Rol.DOCENTE)
 
-    cursos = Curso.objects.filter(docente_jefe=request.user)
+    cursos = Curso.objects.filter(Q(docentes=request.user) | Q(docente_jefe=request.user)).distinct().order_by('asignatura', 'seccion')
+    seccion_seleccionada = request.GET.get('seccion', '')
+    if not seccion_seleccionada.isdecimal():
+        seccion_seleccionada = ''
+    # Nunca permitir consultar el calendario de un docente ajeno.
+    if seccion_seleccionada and not cursos.filter(pk=seccion_seleccionada).exists():
+        seccion_seleccionada = ''
+    cursos_calendario = cursos.filter(pk=seccion_seleccionada) if seccion_seleccionada else cursos
     ahora = date.today()
 
     proxima_clase = (
-        Evento.objects.filter(curso__in=cursos, tipo=Evento.Tipo.CLASE, fecha__gte=ahora)
+        Evento.objects.filter(curso__in=cursos_calendario, tipo=Evento.Tipo.CLASE, fecha__gte=ahora)
         .order_by('fecha', 'hora_inicio')
         .first()
     )
@@ -82,11 +92,11 @@ def home_docente(request):
 
     year, month = _mes_actual_o_parametro(request)
     (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
-    eventos_mes = Evento.objects.filter(curso__in=cursos, fecha__year=year, fecha__month=month)
+    eventos_mes = Evento.objects.filter(curso__in=cursos_calendario, fecha__year=year, fecha__month=month)
     semanas = _construir_calendario(year, month, eventos_mes)
 
     contexto = {
-        'cursos': cursos,
+        'cursos': cursos, 'seccion_seleccionada': seccion_seleccionada,
         'proxima_clase': proxima_clase,
         'notificaciones': notificaciones,
         'total_no_leidos': total_no_leidos,
@@ -170,24 +180,30 @@ def detalle_estudiante(request, estudiante_id):
 @login_required
 def home_administrativo(request):
     _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
+    carrera = request.user.carrera_dirigida
+    if carrera is None:
+        return render(request, 'academico/home_administrativo.html', {'sin_carrera': True})
 
-    cursos = Curso.objects.select_related('docente_jefe').all()
-
+    # Solo secciones explícitamente vinculadas al catálogo de la carrera.
+    cursos = Curso.objects.filter(asignatura_catalogo__carreras=carrera).select_related(
+        'docente_jefe', 'asignatura_catalogo').distinct().order_by('asignatura', 'seccion')
+    seleccion = request.GET.get('seccion', '')
+    if not seleccion.isdecimal() or not cursos.filter(pk=seleccion).exists():
+        seleccion = ''
+    visibles = cursos.filter(pk=seleccion) if seleccion else cursos
     year, month = _mes_actual_o_parametro(request)
     (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
-    eventos_mes = Evento.objects.filter(fecha__year=year, fecha__month=month).select_related('curso')
-    semanas = _construir_calendario(year, month, eventos_mes)
-
+    eventos = Evento.objects.filter(curso__in=visibles, fecha__year=year, fecha__month=month)
+    proximos = Evento.objects.filter(curso__in=cursos, fecha__gte=date.today()).select_related('curso').order_by('fecha','hora_inicio')[:8]
+    form = EventoForm()
+    form.fields['curso'].queryset = cursos
+    form.fields['tipo'].choices = [(Evento.Tipo.REUNION, 'Reunión'), (Evento.Tipo.OTRO, 'Otro evento')]
     contexto = {
-        'cursos': cursos,
-        'total_estudiantes': Estudiante.objects.count(),
-        'proximos_eventos': Evento.objects.filter(fecha__gte=date.today()).select_related('curso').order_by('fecha', 'hora_inicio')[:8],
-        'curso_form': CursoForm(),
-        'evento_form': EventoForm(),
-        'semanas': semanas,
-        'mes_nombre': MESES_ES[month],
-        'anio': year,
-        'mes': month,
+        'carrera': carrera, 'cursos': cursos, 'seccion_seleccionada': seleccion,
+        'total_estudiantes': Estudiante.objects.filter(carrera=carrera).count(),
+        'proximos_eventos': proximos, 'evento_form': form,
+        'semanas': _construir_calendario(year, month, eventos),
+        'mes_nombre': MESES_ES[month], 'anio': year, 'mes': month,
         'prev_year': prev_y, 'prev_month': prev_m,
         'next_year': next_y, 'next_month': next_m,
     }
@@ -197,16 +213,59 @@ def home_administrativo(request):
 
 
 @login_required
-def crear_curso(request):
+def analitica_carrera(request):
+    """Asistencia por carrera, asignatura y sección, sin mostrar otras carreras."""
     _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
-    if request.method == 'POST':
-        form = CursoForm(request.POST)
-        if form.is_valid():
-            curso = form.save()
-            messages.success(request, f'Curso "{curso.asignatura}" creado.')
-            return redirect('academico:home_administrativo')
-        messages.error(request, 'Revisa los datos del curso: ' + '; '.join(form.errors))
-    return redirect('academico:home_administrativo')
+    carrera = request.user.carrera_dirigida
+    if carrera is None:
+        return render(request, 'academico/analitica_carrera.html', {'sin_carrera': True})
+    asignaturas = Asignatura.objects.filter(carreras=carrera, activa=True).distinct().order_by('nombre')
+    codigo = request.GET.get('asignatura', '')
+    elegida = asignaturas.filter(pk=codigo).first() if codigo.isdecimal() else None
+    if not elegida:
+        elegida = asignaturas.first()
+    disponibles = Curso.objects.filter(asignatura_catalogo=elegida).order_by('seccion') if elegida else Curso.objects.none()
+    seccion_id = request.GET.get('seccion', '')
+    if not seccion_id.isdecimal() or not disponibles.filter(pk=seccion_id).exists():
+        seccion_id = ''
+    visibles = disponibles.filter(pk=seccion_id) if seccion_id else disponibles
+    marcas = MarcaAsistencia.objects.filter(sesion__seccion__in=visibles, estudiante__carrera=carrera)
+    total = marcas.count()
+    presentes = marcas.filter(presente=True).count()
+    ausentes = total - presentes
+    porcentaje = round(presentes * 100 / total, 1) if total else None
+    detalle = []
+    for sec in visibles:
+        base = marcas.filter(sesion__seccion=sec)
+        n = base.count()
+        p = base.filter(presente=True).count()
+        detalle.append({'seccion':sec, 'total':n, 'presentes':p, 'porcentaje':round(p*100/n,1) if n else None})
+    return render(request, 'academico/analitica_carrera.html', {
+        'carrera':carrera, 'asignaturas':asignaturas, 'asignatura_seleccionada':elegida,
+        'secciones_disponibles':disponibles, 'seccion_seleccionada':seccion_id,
+        'total_registros':total, 'presentes':presentes, 'ausentes':ausentes,
+        'porcentaje':porcentaje, 'detalle':detalle,
+    })
+
+
+@login_required
+def crear_carrera(request):
+    raise PermissionDenied('Esta administración se realiza exclusivamente en Django Admin.')
+
+
+@login_required
+def asignar_carrera(request):
+    raise PermissionDenied('Esta administración se realiza exclusivamente en Django Admin.')
+
+
+@login_required
+def matricular_seccion(request):
+    raise PermissionDenied('Esta administración se realiza exclusivamente en Django Admin.')
+
+
+@login_required
+def crear_curso(request):
+    raise PermissionDenied('Esta administración se realiza exclusivamente en Django Admin.')
 
 
 @login_required
@@ -214,6 +273,11 @@ def crear_evento(request):
     _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
     if request.method == 'POST':
         form = EventoForm(request.POST)
+        carrera = request.user.carrera_dirigida
+        if not carrera:
+            raise PermissionDenied('No tienes una carrera asignada.')
+        form.fields['curso'].queryset = Curso.objects.filter(asignatura_catalogo__carreras=carrera).distinct()
+        form.fields['tipo'].choices = [(Evento.Tipo.REUNION, 'Reunión'), (Evento.Tipo.OTRO, 'Otro evento')]
         if form.is_valid():
             evento = form.save(commit=False)
             evento.creado_por = request.user
@@ -260,8 +324,32 @@ def crear_observacion(request):
     return render(request, 'academico/crear_observacion.html', {'form': form})
 
 @login_required
+def lista_observaciones(request):
+    """Lista de observaciones visible únicamente para personal autorizado."""
+    if request.user.rol == Usuario.Rol.DOCENTE:
+        observaciones = ObservacionComportamiento.objects.filter(docente=request.user)
+    elif request.user.rol == Usuario.Rol.ADMINISTRATIVO:
+        if not request.user.carrera_dirigida_id:
+            raise PermissionDenied('No tienes una carrera asignada.')
+        observaciones = ObservacionComportamiento.objects.filter(
+            estudiantes__carrera_id=request.user.carrera_dirigida_id
+        ).distinct()
+    else:
+        raise PermissionDenied('No tienes acceso a las observaciones.')
+
+    observaciones = observaciones.prefetch_related('estudiantes').order_by('-fecha', '-pk')[:100]
+    return render(request, 'academico/lista_observaciones.html', {
+        'observaciones': observaciones,
+    })
+
+@login_required
 def editar_observacion(request, pk):
-    observacion = get_object_or_404(ObservacionComportamiento, pk=pk)
+    registros = ObservacionComportamiento.objects.all()
+    if request.user.rol == Usuario.Rol.ADMINISTRATIVO:
+        if not request.user.carrera_dirigida_id:
+            raise PermissionDenied('No tienes una carrera asignada.')
+        registros = registros.filter(estudiantes__carrera_id=request.user.carrera_dirigida_id).distinct()
+    observacion = get_object_or_404(registros, pk=pk)
     
     if request.method == 'POST':
         form = ObservacionForm(request.POST, instance=observacion, user=request.user)
@@ -280,161 +368,95 @@ def editar_observacion(request, pk):
         
     return render(request, 'academico/editar_observacion.html', {'form': form})
 
+@login_required
 def cargar_estudiantes(request):
-    curso_id = request.GET.get('curso_id')
-    
-    # Filtramos los estudiantes que pertenecen al curso seleccionado
-    if curso_id:
-        estudiantes = Estudiante.objects.filter(curso_id=curso_id).order_by('nombre_completo')
-        
-        # OJO: Cambia 'nombre' por los campos que tengas en tu modelo Estudiante (ej: 'nombres', 'apellidos')
-        # values() transforma el QuerySet en una lista de diccionarios para poder convertirlo a JSON
-        data = list(estudiantes.values('id', 'nombre_completo')) 
-    else:
-        data = []
-        
-    return JsonResponse(data, safe=False)
+    _requerir_rol(request, Usuario.Rol.DOCENTE)
+    seccion = get_object_or_404(Curso.objects.filter(Q(docentes=request.user) | Q(docente_jefe=request.user)).distinct(), pk=request.GET.get('curso_id'))
+    alumnado = Estudiante.objects.filter(secciones=seccion).distinct().order_by('nombre_completo')
+    if not alumnado.exists():
+        alumnado = Estudiante.objects.filter(curso=seccion).order_by('nombre_completo')
+    sesion = SesionClase.objects.filter(seccion=seccion, fecha=timezone.localdate()).first()
+    previas = dict(sesion.marcas.values_list('estudiante_id', 'presente')) if sesion else {}
+    return JsonResponse([{'id':e.id, 'nombre_completo':e.nombre_completo, 'presente':previas.get(e.id)} for e in alumnado])
+
 
 @login_required
-def lista_observaciones(request):
-    # Ocultamos las "RESUELTA" según las instrucciones
-    observaciones = ObservacionComportamiento.objects.exclude(estado='RESUELTA').exclude(tipo_observacion='POSITIVA').annotate(
-        # Priorizamos Estados: 1. NO_VISTA, 2. EN_PROCESO
-        prioridad_estado=Case(
-            When(estado='NO_VISTA', then=Value(1)),
-            When(estado='EN_PROCESO', then=Value(2)),
-            default=Value(3),
-            output_field=IntegerField(),
-        ),
-        # Priorizamos Tipos: 1. SANCION, 2. ESPECIALISTA
-        prioridad_tipo=Case(
-            When(tipo_observacion='SANCION', then=Value(1)),
-            When(tipo_observacion='ESPECIALISTA', then=Value(2)),
-            default=Value(3),
-            output_field=IntegerField(),
-        )
-    ).order_by(
-        'prioridad_estado',       # Primero por estado
-        'prioridad_tipo',         # Luego por tipo
-        '-fecha_actualizacion'    # Finalmente por fecha descendente
-    )
-
-    return render(request, 'academico/lista_observaciones.html', {'observaciones': observaciones})
-
-@login_required
-def actualizar_observacion(request, pk):
-    observacion = get_object_or_404(ObservacionComportamiento, pk=pk)
-    
-    if request.method == 'POST':
-        form = ActualizarObservacionForm(request.POST, instance=observacion)
-        if form.is_valid():
-            with transaction.atomic():
-                obs = form.save(commit=False)
-                obs.administrativo = request.user
-                obs.save()
-                notificados = 0
-                sin_cuenta = []
-                if form.cleaned_data.get('notificar_apoderado'):
-                    for estudiante in obs.estudiantes.select_related('usuario'):
-                        destinatario = estudiante.usuario
-                        if not destinatario or destinatario.rol != Usuario.Rol.ESTUDIANTE:
-                            sin_cuenta.append(estudiante.nombre_completo)
-                            continue
-                        MensajeComunicacion.objects.create(
-                            remitente=request.user,
-                            destinatario=destinatario,
-                            asunto=f"Actualización de observación: {obs.asunto}"[:150],
-                            cuerpo_mensaje=(
-                                f"Hola {estudiante.nombre_completo},\n\n"
-                                f"Se ha actualizado una observación de comportamiento.\n\n"
-                                f"Asunto: {obs.asunto}\n"
-                                f"Tipo: {obs.get_tipo_observacion_display()}\n"
-                                f"Estado: {obs.get_estado_display()}\n"
-                                f"Resolución administrativa:\n{obs.resolucion or 'Sin resolución registrada.'}\n"
-                            ),
-                            tipo_comunicacion=MensajeComunicacion.TipoComunicacion.DISCIPLINARIO,
-                        )
-                        notificados += 1
-
-            if form.cleaned_data.get('notificar_apoderado'):
-                messages.success(request, f"Observación actualizada. Estudiantes notificados: {notificados}.")
-                if sin_cuenta:
-                    messages.warning(request, "No se pudo notificar a los siguientes estudiantes porque no tienen una cuenta con rol estudiante vinculada: " + ", ".join(sin_cuenta))
-            else:
-                messages.success(request, "Observación actualizada correctamente.")
-
-            return redirect('academico:lista_observaciones')
-    else:
-        form = ActualizarObservacionForm(instance=observacion)
-        
-    return render(request, 'academico/actualizar_observacion.html', {
-        'form': form,
-        'observacion': observacion
-    })
-
-@login_required
+@require_http_methods(['GET','POST'])
 def tomar_asistencia(request):
+    _requerir_rol(request, Usuario.Rol.DOCENTE)
+    secciones = Curso.objects.filter(Q(docentes=request.user) | Q(docente_jefe=request.user)).distinct().order_by('asignatura', 'seccion')
     if request.method == 'POST':
-        # Obtenemos la lista de todos los IDs de estudiantes enviados en el formulario
-        estudiantes_ids = request.POST.getlist('estudiante_id')
-        
-        for est_id in estudiantes_ids:
-            estudiante = get_object_or_404(Estudiante, pk=est_id)
-            # Rescatamos el valor del radio button para este estudiante en particular
-            estado = request.POST.get(f'estado_{est_id}')
-            presente = True if estado == 'presente' else False
-            
-            # Guardamos el registro en la base de datos
-            RegistroAsistencia.objects.create(
-                estudiante=estudiante,
-                docente=request.user,
-                presente=presente,
-                justificado=False # Se puede actualizar luego si traen justificativo
-            )
-            
-            # Si está ausente, disparamos la notificación al apoderado
-            if not presente and hasattr(estudiante, 'apoderado') and estudiante.apoderado:
-                MensajeComunicacion.objects.create(
-                    remitente=request.user,
-                    destinatario=estudiante.apoderado,
-                    asunto=f"Aviso de inasistencia: {estudiante.nombre_completo}",
-                    cuerpo_mensaje=(
-                        f"Estimado apoderado,\n\n"
-                        f"Le informamos que el estudiante {estudiante.nombre_completo} "
-                        f"(RUT: {estudiante.rut_estudiante}) no se presentó a clases el día de hoy.\n\n"
-                        f"Por favor, justifique su inasistencia a la brevedad.\n\n"
-                        f"Saludos cordiales."
-                    ),
-                    tipo_comunicacion='academico' # Clasificamos la notificación
-                )
-        
-        messages.success(request, "Lista de asistencia guardada y notificaciones enviadas correctamente.")
-        return redirect('academico:home_docente')
+        seccion = get_object_or_404(secciones, pk=request.POST.get('curso'))
+        alumnado = Estudiante.objects.filter(secciones=seccion).distinct()
+        if not alumnado.exists():
+            alumnado = Estudiante.objects.filter(curso=seccion)
+        alumnos = list(alumnado.select_related('usuario'))
+        if not alumnos:
+            messages.error(request, 'Esta sección no tiene estudiantes matriculados.')
+            return redirect('academico:tomar_asistencia')
+        estados = {}
+        for alumno in alumnos:
+            valor = request.POST.get(f'estado_{alumno.pk}')
+            if valor not in ('presente','ausente'):
+                messages.error(request, 'Debes marcar presente o ausente para cada estudiante.')
+                return redirect('academico:tomar_asistencia')
+            estados[alumno.pk] = valor == 'presente'
+        with transaction.atomic():
+            sesion, _ = SesionClase.objects.get_or_create(
+                seccion=seccion, fecha=timezone.localdate(),
+                defaults={'docente':request.user})
+            if sesion.docente_id != request.user.pk:
+                raise PermissionDenied('La asistencia del día pertenece a otro docente.')
+            cambios = []
+            for alumno in alumnos:
+                anterior = MarcaAsistencia.objects.filter(sesion=sesion, estudiante=alumno).values_list('presente', flat=True).first()
+                presente = estados[alumno.pk]
+                marca, _ = MarcaAsistencia.objects.update_or_create(
+                    sesion=sesion, estudiante=alumno, defaults={'presente':presente})
+                if anterior is None or anterior != presente:
+                    if alumno.usuario_id and alumno.usuario.rol == Usuario.Rol.ESTUDIANTE:
+                        texto = (f'¡Qué bueno que asististe a {seccion.asignatura}, sigue así!'
+                                 if presente else
+                                 f'No te vimos hoy en {seccion.asignatura}, esperamos verte pronto.')
+                        aviso = AvisoAsistencia.objects.create(destinatario_id=alumno.usuario_id, marca=marca, texto=texto)
+                        cambios.append((alumno.usuario_id, aviso.pk, texto))
+            # Publicar tras el commit: el aviso queda guardado aun si no hay WebSocket conectado.
+            transaction.on_commit(lambda cambios=cambios: [avisar_estudiante(uid, aid, texto) for uid, aid, texto in cambios])
+        messages.success(request, 'Asistencia del día guardada. Puedes corregirla durante el mismo día.')
+        return redirect('academico:tomar_asistencia')
+    return render(request, 'academico/tomar_asistencia.html', {'cursos':secciones, 'fecha_hoy':timezone.localdate()})
 
-    # Para la solicitud GET (cuando entra a la página) le pasamos los cursos
-    cursos = Curso.objects.all() # O Curso.objects.filter(docente=request.user) si lo prefieres
-    return render(request, 'academico/tomar_asistencia.html', {'cursos': cursos})
-    
 
 @login_required
 def home_estudiante(request):
     """Portal privado del estudiante; no depende del vínculo con apoderados."""
     from .models import TareaEstudio
     _requerir_rol(request, Usuario.Rol.ESTUDIANTE)
-    perfil = Estudiante.objects.filter(usuario=request.user).select_related('curso').first()
+    perfil = Estudiante.objects.filter(usuario=request.user).select_related('carrera', 'curso').first()
     tareas = TareaEstudio.objects.filter(estudiante=request.user)
-    eventos = Evento.objects.filter(curso=perfil.curso).order_by('fecha', 'hora_inicio') if perfil and perfil.curso_id else Evento.objects.none()
+    secciones = Curso.objects.filter(matriculados=perfil).order_by('asignatura', 'seccion') if perfil else Curso.objects.none()
+    # Compatibilidad con registros antiguos, sin duplicar secciones.
+    if perfil and not secciones.exists() and perfil.curso_id:
+        secciones = Curso.objects.filter(pk=perfil.curso_id)
+    seccion_seleccionada = request.GET.get('seccion', '')
+    if not seccion_seleccionada.isdecimal():
+        seccion_seleccionada = ''
+    if seccion_seleccionada and not secciones.filter(pk=seccion_seleccionada).exists():
+        seccion_seleccionada = ''
+    visibles = secciones.filter(pk=seccion_seleccionada) if seccion_seleccionada else secciones
+    eventos = Evento.objects.filter(curso__in=visibles).order_by('fecha', 'hora_inicio')
     today = date.today()
     year, month = _mes_actual_o_parametro(request)
     (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
     semanas = _construir_calendario(year, month, eventos.filter(fecha__year=year, fecha__month=month))
     contexto = {
-        'perfil': perfil, 'tareas': tareas, 'pendientes': tareas.filter(completada=False),
+        'perfil': perfil, 'secciones': secciones, 'seccion_seleccionada': seccion_seleccionada, 'tareas': tareas, 'pendientes': tareas.filter(completada=False),
         'eventos_proximos': eventos.filter(fecha__gte=today)[:6],
         'mes_nombre': MESES_ES[month], 'anio': year, 'mes': month,
         'semanas': semanas, 'prev_year': prev_y, 'prev_month': prev_m,
         'next_year': next_y, 'next_month': next_m,
         'total_no_leidos': mensajes_no_leidos(request.user).count(),
+        'avisos_asistencia': AvisoAsistencia.objects.filter(destinatario=request.user)[:5],
     }
     # HTMX sustituye solo #calendario-mensual: nunca enviar toda la página.
     if request.headers.get('HX-Request') == 'true':

@@ -1,23 +1,101 @@
 from django.contrib import admin
+from django import forms
+from django.core.exceptions import ValidationError
 
+from usuarios.models import Usuario
 from .forms import CursoForm
 
-from .models import Asistencia, Curso, Estudiante, Evento, JustificacionRetiro, Observacion, ObservacionComportamiento, RegistroAsistencia, Usuario
+from .models import Asignatura, CarreraAsignatura, Asistencia, Carrera, Curso, Estudiante, Evento, JustificacionRetiro, Observacion, ObservacionComportamiento, RegistroAsistencia, SesionClase, MarcaAsistencia, AvisoAsistencia
+
+
+@admin.register(Carrera)
+class CarreraAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "escuela", "activa")
+    list_filter = ("escuela", "activa")
+    search_fields = ("nombre",)
+
+
+class CarreraAsignaturaInline(admin.TabularInline):
+    model = CarreraAsignatura
+    extra = 0
+
+
+@admin.register(Asignatura)
+class AsignaturaAdmin(admin.ModelAdmin):
+    list_display = ('codigo', 'nombre', 'activa')
+    search_fields = ('codigo', 'nombre')
+    list_filter = ('activa',)
+    inlines = [CarreraAsignaturaInline]
+
+
+class SeccionAdminForm(CursoForm):
+    docentes = forms.ModelMultipleChoiceField(
+        queryset=Usuario.objects.filter(rol='docente'),
+        required=True, label='Docentes que imparten esta sección',
+        widget=forms.SelectMultiple(attrs={'size': 7}),
+    )
+
+    class Meta(CursoForm.Meta):
+        fields = ['asignatura_catalogo', 'turno', 'docentes']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop('docente_jefe', None)
+        if self.instance.pk:
+            docentes = self.instance.docentes.all()
+            if not docentes.exists() and self.instance.docente_jefe_id:
+                docentes = Usuario.objects.filter(pk=self.instance.docente_jefe_id)
+            self.fields['docentes'].initial = docentes
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        docentes = list(self.cleaned_data['docentes'])
+        # Campo heredado para compatibilidad con código y relaciones antiguas.
+        obj.docente_jefe = docentes[0]
+        if commit:
+            obj.save()
+            obj.docentes.set(docentes)
+            self.save_m2m()
+        return obj
+
+
+class EstudianteSeccionesForm(forms.ModelForm):
+    class Meta:
+        model = Estudiante
+        fields = ['usuario', 'rut_estudiante', 'nombre_completo', 'carrera', 'secciones']
+        widgets = {'secciones': forms.SelectMultiple(attrs={'size': 10})}
+
+    def clean(self):
+        data = super().clean()
+        if not data.get('secciones'):
+            raise ValidationError('El estudiante debe estar inscrito en al menos una asignatura y sección.')
+        return data
 
 
 @admin.register(Curso)
 class CursoAdmin(admin.ModelAdmin):
-    list_display = ('seccion', 'asignatura', 'turno', 'docente_jefe')
+    list_display = ('seccion', 'asignatura_catalogo', 'turno', 'docentes_resumen')
     readonly_fields = ('seccion',)
     search_fields = ('seccion', 'asignatura')
     list_filter = ('turno',)
-    form = CursoForm
+    form = SeccionAdminForm
+    exclude = ('docente_jefe', 'asignatura')
+
+    @admin.display(description='Docentes')
+    def docentes_resumen(self, obj):
+        return ', '.join(str(docente) for docente in obj.docentes.all()) or str(obj.docente_jefe or 'Sin asignar')
 
 
 @admin.register(Estudiante)
 class EstudianteAdmin(admin.ModelAdmin):
-    list_display = ('codigo_edunova', 'nombre_completo', 'rut_estudiante', 'curso', 'apoderado', 'apellido_familiar')
-    list_filter = ('curso',)
+    list_display = ('codigo_edunova', 'nombre_completo', 'rut_estudiante', 'carrera', 'secciones_resumen')
+    list_filter = ('carrera', 'secciones')
+    form = EstudianteSeccionesForm
+    exclude = ('curso', 'apoderado', 'apellido_familiar')
+
+    @admin.display(description='Asignaturas y secciones')
+    def secciones_resumen(self, obj):
+        return ', '.join(str(sec) for sec in obj.secciones.all()) or 'Sin matrícula'
     search_fields = ('nombre_completo', 'rut_estudiante')
 
 
@@ -62,3 +140,22 @@ class RegistroAsistenciaAdmin(admin.ModelAdmin):
     list_display = ('estudiante', 'docente', 'fecha', 'presente', 'justificado')
     list_filter = ('presente', 'justificado', 'fecha', 'docente')
     search_fields = ('estudiante__nombre_completo', 'docente__first_name', 'docente__last_name')
+
+
+@admin.register(SesionClase)
+class SesionClaseAdmin(admin.ModelAdmin):
+    list_display = ('seccion', 'fecha', 'docente', 'actualizada_en')
+    list_filter = ('fecha', 'seccion')
+
+
+@admin.register(MarcaAsistencia)
+class MarcaAsistenciaAdmin(admin.ModelAdmin):
+    list_display = ('sesion', 'estudiante', 'presente', 'actualizado_en')
+    list_filter = ('presente',)
+
+
+@admin.register(AvisoAsistencia)
+class AvisoAsistenciaAdmin(admin.ModelAdmin):
+    list_display = ('destinatario', 'creado_en', 'leido')
+    list_filter = ('leido',)
+    readonly_fields = ('destinatario', 'marca', 'texto', 'creado_en')

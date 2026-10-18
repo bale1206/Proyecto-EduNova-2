@@ -18,7 +18,56 @@ class PermisoTablaCSV(models.Model):
         verbose_name_plural = 'Permisos de tablas CSV'
 
 
+class Carrera(models.Model):
+    """Catálogo de carreras de la sede; no vincula directamente al docente."""
+    escuela = models.CharField(max_length=120)
+    nombre = models.CharField(max_length=180, unique=True)
+    activa = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['escuela', 'nombre']
+        verbose_name = 'Carrera'
+        verbose_name_plural = 'Carreras'
+
+    def __str__(self):
+        return self.nombre
+
+
+class Asignatura(models.Model):
+    """Catálogo institucional. Su mantenimiento corresponde a Django Admin."""
+    codigo = models.CharField(max_length=24, unique=True)
+    nombre = models.CharField(max_length=180)
+    carreras = models.ManyToManyField(Carrera, through='CarreraAsignatura', related_name='asignaturas')
+    activa = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['nombre', 'codigo']
+        verbose_name = 'Asignatura de catálogo'
+        verbose_name_plural = 'Asignaturas de catálogo'
+
+    def __str__(self):
+        return f'{self.codigo} · {self.nombre}'
+
+
+class CarreraAsignatura(models.Model):
+    carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE, related_name='malla')
+    asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE, related_name='planes')
+    fuente_malla = models.URLField(blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['carrera', 'asignatura'], name='uq_carrera_asignatura')]
+        verbose_name = 'Asignatura de una carrera'
+        verbose_name_plural = 'Mallas de carreras'
+
+
 class Curso(models.Model):
+    # Nombre histórico del modelo para conservar FK y tablas existentes en Supabase.
+    # En la interfaz y Django Admin se gestiona exclusivamente como una sección.
+    docentes = models.ManyToManyField(
+        Usuario, blank=True, related_name='secciones_impartidas',
+        limit_choices_to={'rol': 'docente'}, verbose_name='Docentes asignados',
+    )
+    asignatura_catalogo = models.ForeignKey(Asignatura, null=True, blank=True, on_delete=models.PROTECT, related_name="secciones")
     asignatura = models.CharField('Asignatura', max_length=150, validators=[validar_asignatura])
     turno = models.BooleanField('Turno', default=True, choices=[(True, 'Diurno'), (False, 'Vespertino')])
     seccion = models.CharField('Sección', max_length=50, unique=True, editable=False, validators=[validar_seccion])
@@ -38,6 +87,8 @@ class Curso(models.Model):
 
     def save(self, *args, **kwargs):
         using = kwargs.get('using') or self._state.db or 'default'
+        if self.asignatura_catalogo_id:
+            self.asignatura = self.asignatura_catalogo.nombre
         validar_asignatura(self.asignatura)
         prefijo = prefijo_asignatura(self.asignatura)
         sufijo = 'D' if self.turno else 'V'
@@ -65,8 +116,8 @@ class Curso(models.Model):
         return f"{self.seccion} · {self.asignatura} ({self.get_turno_display()})"
 
     class Meta:
-        verbose_name = 'Curso'
-        verbose_name_plural = 'Cursos'
+        verbose_name = 'Sección de asignatura'
+        verbose_name_plural = 'Secciones de asignaturas'
         ordering = ['seccion']
         constraints = [
             models.UniqueConstraint(Substr('seccion', 1, Length('seccion') - 1), name='curso_correlativo_prefijo_unico'),
@@ -74,6 +125,8 @@ class Curso(models.Model):
 
 
 class Estudiante(models.Model):
+    carrera = models.ForeignKey(Carrera, on_delete=models.SET_NULL, null=True, blank=True, related_name="estudiantes")
+    secciones = models.ManyToManyField(Curso, blank=True, related_name="matriculados", verbose_name="Asignaturas / secciones inscritas")
     usuario = models.OneToOneField(
         Usuario, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='perfil_estudiante', limit_choices_to={'rol': 'estudiante'},
@@ -94,8 +147,6 @@ class Estudiante(models.Model):
         if self.usuario_id:
             if self.usuario.rol != 'estudiante':
                 raise ValidationError({'usuario': 'La cuenta vinculada debe tener rol estudiante.'})
-            if not self.curso_id:
-                raise ValidationError({'curso': 'Debes asociar al estudiante a un curso.'})
 
     @property
     def codigo_edunova(self):
@@ -280,6 +331,43 @@ class RegistroAsistencia(models.Model):
         return f"{self.estudiante.nombre_completo} - {estado} ({self.fecha.strftime('%H:%M - %d/%m/%Y')})"
 
     
+
+
+class SesionClase(models.Model):
+    """Una lista por sección y día. No se crean duplicados al corregirla."""
+    seccion = models.ForeignKey(Curso, on_delete=models.PROTECT, related_name='sesiones_clase')
+    fecha = models.DateField()
+    docente = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name='sesiones_clase')
+    actualizada_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['seccion', 'fecha'], name='uq_sesion_seccion_fecha')]
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return f'{self.seccion} · {self.fecha}'
+
+
+class MarcaAsistencia(models.Model):
+    sesion = models.ForeignKey(SesionClase, on_delete=models.CASCADE, related_name='marcas')
+    estudiante = models.ForeignKey(Estudiante, on_delete=models.PROTECT, related_name='marcas_asistencia')
+    presente = models.BooleanField()
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['sesion', 'estudiante'], name='uq_marca_sesion_estudiante')]
+
+
+class AvisoAsistencia(models.Model):
+    """Avisos privados persistentes; WebSocket solo avisa en tiempo real."""
+    destinatario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='avisos_asistencia')
+    marca = models.ForeignKey(MarcaAsistencia, on_delete=models.CASCADE, related_name='avisos')
+    texto = models.CharField(max_length=250)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    leido = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-creado_en']
 
 
 class TareaEstudio(models.Model):

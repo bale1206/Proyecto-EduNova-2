@@ -73,6 +73,11 @@ class Usuario(AbstractUser):
     apellidos = models.CharField('Apellidos', max_length=50)
     rol = models.CharField(max_length=30, choices=Rol.choices)
     telefono = models.CharField('Teléfono', max_length=15, blank=True)
+    carrera_dirigida = models.ForeignKey(
+        'academico.Carrera', on_delete=models.PROTECT, null=True, blank=True,
+        related_name='directores', verbose_name='Carrera dirigida',
+        help_text='Solo para directores de carrera; una carrera por director.',
+    )
     curso = models.ForeignKey(
         'academico.Curso', on_delete=models.PROTECT, null=True, blank=True,
         related_name='usuarios_estudiantes', verbose_name='Curso',
@@ -86,8 +91,8 @@ class Usuario(AbstractUser):
 
     def clean(self):
         super().clean()
-        if self.rol == self.Rol.ESTUDIANTE and not self.curso_id:
-            raise ValidationError({'curso': 'Debes asociar al estudiante a un curso.'})
+        if self.carrera_dirigida_id and self.rol != self.Rol.ADMINISTRATIVO:
+            raise ValidationError({'carrera_dirigida': 'Solo un director de carrera puede tener una carrera asignada.'})
         if self.rol != self.Rol.ESTUDIANTE and self.curso_id:
             raise ValidationError({'curso': 'El curso corresponde solamente a usuarios estudiantes.'})
         if self.rol == self.Rol.ESTUDIANTE:
@@ -105,7 +110,7 @@ class Usuario(AbstractUser):
         with transaction.atomic(using=using):
             super().save(*args, **kwargs)
             relevantes = {'rol', 'curso', 'curso_id', 'rut', 'first_name', 'apellidos'}
-            if self.rol == self.Rol.ESTUDIANTE and self.curso_id and (kwargs.get('update_fields') is None or relevantes.intersection(kwargs['update_fields'])):
+            if self.rol == self.Rol.ESTUDIANTE and (kwargs.get('update_fields') is None or relevantes.intersection(kwargs['update_fields'])):
                 from academico.models import Estudiante
                 perfiles = Estudiante.objects.using(using)
                 perfil = perfiles.filter(usuario_id=self.pk).first()

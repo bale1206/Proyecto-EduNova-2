@@ -2,7 +2,7 @@ from django import forms
 
 from usuarios.models import Usuario
 
-from .models import Curso, Evento, JustificacionRetiro, ObservacionComportamiento
+from .models import Carrera, Curso, Evento, JustificacionRetiro, ObservacionComportamiento
 
 INPUT_CLASSES = (
     'w-full rounded-lg border px-3 py-2 text-sm focus:outline-none '
@@ -18,15 +18,64 @@ class CursoForm(forms.ModelForm):
     )
     class Meta:
         model = Curso
-        fields = ['asignatura', 'turno', 'docente_jefe']
-        labels = {'docente_jefe': 'Docente jefe'}
+        fields = ['asignatura_catalogo', 'turno', 'docente_jefe']
+        labels = {'docente_jefe': 'Docente asignado', 'asignatura_catalogo': 'Asignatura del catálogo'}
+
+    def clean(self):
+        datos = super().clean()
+        catalogo = datos.get('asignatura_catalogo')
+        if catalogo:
+            self.instance.asignatura = catalogo.nombre
+        return datos
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
+            self.fields['asignatura_catalogo'].required = False
             self.initial['turno'] = 'true' if self.instance.turno else 'false'
-        self.fields['docente_jefe'].queryset = Usuario.objects.filter(rol=Usuario.Rol.DOCENTE)
-        self.fields['docente_jefe'].required = False
+        if 'docente_jefe' in self.fields:
+            self.fields['docente_jefe'].queryset = Usuario.objects.filter(rol=Usuario.Rol.DOCENTE)
+        if not self.instance.pk:
+            self.fields['asignatura_catalogo'].required = True
+        if 'docente_jefe' in self.fields:
+            self.fields['docente_jefe'].required = False
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': INPUT_CLASSES, 'style': INPUT_STYLE})
+
+
+class CarreraForm(forms.ModelForm):
+    class Meta:
+        model = Carrera
+        fields = ['nombre', 'escuela']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': INPUT_CLASSES, 'style': INPUT_STYLE})
+
+
+class AsignarCarreraForm(forms.Form):
+    estudiante = forms.ModelChoiceField(queryset=None, label='Estudiante')
+    carrera = forms.ModelChoiceField(queryset=None, label='Carrera')
+
+    def __init__(self, *args, **kwargs):
+        from .models import Estudiante
+        super().__init__(*args, **kwargs)
+        self.fields['estudiante'].queryset = Estudiante.objects.order_by('nombre_completo')
+        self.fields['carrera'].queryset = Carrera.objects.filter(activa=True)
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': INPUT_CLASSES, 'style': INPUT_STYLE})
+
+
+class MatricularSeccionForm(forms.Form):
+    estudiante = forms.ModelChoiceField(queryset=None, label='Estudiante')
+    seccion = forms.ModelChoiceField(queryset=None, label='Asignatura y sección')
+
+    def __init__(self, *args, **kwargs):
+        from .models import Estudiante
+        super().__init__(*args, **kwargs)
+        self.fields['estudiante'].queryset = Estudiante.objects.order_by('nombre_completo')
+        self.fields['seccion'].queryset = Curso.objects.order_by('asignatura', 'seccion')
         for field in self.fields.values():
             field.widget.attrs.update({'class': INPUT_CLASSES, 'style': INPUT_STYLE})
 
@@ -34,6 +83,7 @@ class CursoForm(forms.ModelForm):
 class EventoForm(forms.ModelForm):
     class Meta:
         model = Evento
+        labels = {"curso": "Asignatura y sección"}
         fields = ['curso', 'tipo', 'titulo', 'descripcion', 'fecha', 'hora_inicio', 'hora_fin']
         widgets = {
             'descripcion': forms.Textarea(attrs={'rows': 3}),

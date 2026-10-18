@@ -206,15 +206,19 @@ def cargar_csv(model, archivo, permiso_pk):
 # Los IDs de relaciones se dejan vacíos o como marcadores para evitar
 # insinuar que corresponden a registros existentes en Supabase.
 EJEMPLOS_CSV = {
+     'academico_carrera': [
+        {'nombre': 'Carrera de ejemplo Alfa', 'escuela': 'Escuela de ejemplo', 'activa': 'true'},
+        {'nombre': 'Carrera de ejemplo Beta', 'escuela': 'Escuela de ejemplo', 'activa': 'true'},
+    ],
     'academico_curso': [
         {'asignatura': 'Matemática', 'seccion': '', 'turno': 'true', 'docente_jefe_id': NULL},
         {'asignatura': 'Programación', 'seccion': '', 'turno': 'false', 'docente_jefe_id': NULL},
     ],
     'academico_estudiante': [
         {'rut_estudiante': '11.111.111-1', 'nombre_completo': 'Camila Torres Soto',
-         'curso_id': NULL, 'apoderado_id': 'EN-P0001', 'apellido_familiar': 'Torres'},
+         'curso_id': NULL, 'apoderado_id': NULL, 'carrera_id': NULL, 'apellido_familiar': 'Torres'},
         {'rut_estudiante': '22.222.222-2', 'nombre_completo': 'Diego Rojas Pérez',
-         'curso_id': NULL, 'apoderado_id': 'EN-P0001', 'apellido_familiar': 'Rojas'},
+         'curso_id': NULL, 'apoderado_id': NULL, 'carrera_id': NULL, 'apellido_familiar': 'Rojas'},
     ],
 }
 

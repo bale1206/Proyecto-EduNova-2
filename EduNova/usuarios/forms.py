@@ -27,7 +27,7 @@ class RegistroForm(UserCreationForm):
 
     class Meta:
         model = Usuario
-        fields = ['rut', 'first_name', 'apellidos', 'email', 'telefono', 'rol', 'curso']
+        fields = ['rut', 'first_name', 'apellidos', 'email', 'telefono', 'rol']
         labels = {
             'first_name': 'Nombre',
             'apellidos': 'Apellidos',
@@ -68,7 +68,7 @@ class LoginForm(forms.Form):
 class UsuarioAdminCreationForm(UserCreationForm):
     class Meta:
         model = Usuario
-        fields = ('rut', 'first_name', 'apellidos', 'email', 'telefono', 'rol', 'curso')
+        fields = ('rut', 'first_name', 'apellidos', 'email', 'telefono', 'rol', 'carrera_dirigida')
 
     def clean(self):
         cleaned = super().clean()

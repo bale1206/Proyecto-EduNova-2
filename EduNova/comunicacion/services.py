@@ -7,9 +7,9 @@ from .models import MensajeComunicacion
 def cursos_relacionados(usuario):
     """Cursos vinculados al usuario; compatibilidad temporal con el modelo escolar."""
     if usuario.rol == usuario.Rol.DOCENTE:
-        return Curso.objects.filter(docente_jefe=usuario)
+        return Curso.objects.filter(Q(docentes=usuario) | Q(docente_jefe=usuario)).distinct()
     if usuario.rol == usuario.Rol.ESTUDIANTE:
-        return Curso.objects.filter(estudiantes__usuario=usuario).distinct()
+        return Curso.objects.filter(Q(matriculados__usuario=usuario) | Q(estudiantes__usuario=usuario)).distinct()
     return Curso.objects.none()
 
 

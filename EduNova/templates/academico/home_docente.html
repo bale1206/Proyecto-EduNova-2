@@ -8,7 +8,7 @@
 
     <div class="lg:col-span-1 space-y-6">
         <div class="card p-5">
-            <h2 class="font-display font-semibold mb-3">Tu próxima clase</h2>
+            <h2 class="font-display font-semibold mb-3">Próxima actividad docente</h2>
             {% if proxima_clase %}
             <div class="rounded-lg p-4" style="background: var(--lino-2);">
                 <p class="text-sm text-muted">{{ proxima_clase.fecha|date:"l j \d\e F" }}
@@ -23,18 +23,18 @@
         </div>
 
         <div class="card p-5">
-            <h2 class="font-display font-semibold mb-3">Tus cursos</h2>
+            <h2 class="font-display font-semibold mb-3">Mis asignaturas y secciones</h2>
             {% if cursos %}
             <ul class="space-y-2">
                 {% for curso in cursos %}
                 <li class="flex items-center justify-between text-sm">
                     <span>{{ curso }}</span>
-                    <span class="text-faint">{{ curso.estudiantes.count }} estudiantes</span>
+                    <span class="text-faint">{{ curso.matriculados.count }} estudiantes</span>
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="text-sm text-muted">Aún no tienes cursos asignados.</p>
+            <p class="text-sm text-muted">Aún no tienes secciones asignadas.</p>
             {% endif %}
         </div>
 
@@ -54,6 +54,13 @@
     </div>
 
     <div class="lg:col-span-2">
+        <div class="card p-4 mb-4">
+            <label for="seccion-docente" class="block text-sm font-medium mb-2">Filtrar calendario por asignatura y sección</label>
+            <select id="seccion-docente" class="surface-control w-full rounded-lg border p-2" style="border-color:var(--linea)" onchange="location.href='?seccion='+encodeURIComponent(this.value)">
+                <option value="">Todas mis asignaturas</option>
+                {% for curso in cursos %}<option value="{{ curso.pk }}" {% if seccion_seleccionada == curso.pk|stringformat:'s' %}selected{% endif %}>{{ curso.asignatura }} · {{ curso.seccion }}</option>{% endfor %}
+            </select>
+        </div>
         {% include "academico/_calendario.html" %}
     </div>
 

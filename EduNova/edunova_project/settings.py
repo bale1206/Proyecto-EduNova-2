@@ -33,6 +33,8 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -153,3 +155,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'usuarios:login'
 LOGIN_REDIRECT_URL = 'usuarios:post_login_redirect'
 LOGOUT_REDIRECT_URL = 'usuarios:login'
+
+# WebSocket en ASGI. Para múltiples procesos usar Redis (ver guía).
+ASGI_APPLICATION = 'edunova_project.asgi.application'
+if os.getenv('REDIS_URL'):
+    CHANNEL_LAYERS = {'default':{'BACKEND':'channels_redis.core.RedisChannelLayer','CONFIG':{'hosts':[os.getenv('REDIS_URL')]}}}
+else:
+    CHANNEL_LAYERS = {'default':{'BACKEND':'channels.layers.InMemoryChannelLayer'}}

@@ -1,108 +1,42 @@
-{% extends "base.html" %}
-
-{% block content %}
-<div class="max-w-4xl mx-auto mb-12">
-    <div class="flex items-center gap-4 mb-6">
-        <a href="javascript:history.back()"
-           class="text-muted hover:text-main transition-colors inline-flex items-center justify-center text-xl"
-           aria-label="Volver"
-           title="Volver">
-            <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        </a>
-        <h1 class="font-display text-3xl font-bold text-main">Lista de Estudiantes</h1>
-    </div>
-    
-    <p class="text-muted mb-8">Seleccione un curso para pasar la asistencia. Los apoderados de los alumnos ausentes serán notificados automáticamente.</p>
-    
-    <form method="post" id="asistenciaForm" data-estudiantes-url="{% url 'academico:ajax_cargar_estudiantes' %}">
-        {% csrf_token %}
-        
-        <!-- Selector de Curso -->
-        <div class="mb-8">
-            <label for="id_curso" class="block font-medium text-main mb-2">Seleccionar curso</label>
-            <select id="id_curso" name="curso" class="w-full md:w-1/2 surface-control rounded-md p-3 focus:outline-none focus:border-[var(--rio)]" required>
-                <option value="">- Seleccione una opción -</option>
-                {% for curso in cursos %}
-                    <option value="{{ curso.id }}">{{ curso }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        
-        <!-- Listado dinámico de estudiantes -->
-        <div id="lista-estudiantes" class="space-y-3 mb-8">
-            <!-- Se llena vía JavaScript -->
-        </div>
-        
-        <!-- Botón de Guardar (Oculto por defecto hasta que se seleccione curso) -->
-        <div class="pt-4">
-            <button type="submit" id="btn-guardar" class="hidden btn-primary w-full py-3.5 font-semibold">
-                Guardar lista
-            </button>
-        </div>
-    </form>
-</div>
-
-<!-- Script para cargar alumnos y botones de radio -->
+{% extends 'base.html' %}
+{% block title %}Pasar lista · EduNova{% endblock %}
+{% block content %}<div class="max-w-3xl mx-auto space-y-5">
+<a class="text-muted" href="{% url 'academico:home_docente' %}">← Volver</a>
+<h1 class="font-display text-2xl font-semibold">Asistencia del día</h1>
+<p class="text-muted">{{ fecha_hoy|date:'d/m/Y' }} · Puedes corregir una marca durante el mismo día. Los cambios no crean listas duplicadas.</p>
+<form method="post" id="asistenciaForm" data-estudiantes-url="{% url 'academico:ajax_cargar_estudiantes' %}" class="card p-5 space-y-5">{% csrf_token %}
+<label class="block font-semibold" for="id_curso">Asignatura y sección</label>
+<select class="surface-control w-full rounded-lg border p-3" id="id_curso" name="curso" required><option value="">Seleccionar sección</option>{% for curso in cursos %}<option value="{{ curso.pk }}">{{ curso }}</option>{% endfor %}</select>
+<div id="lista-estudiantes" class="space-y-3" aria-live="polite"><p class="text-muted">Selecciona una sección para ver la lista.</p></div>
+<button class="btn-primary w-full p-3 hidden" id="btn-guardar" type="submit">Guardar asistencia</button>
+</form></div>
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const cursoSelect = document.getElementById('id_curso');
-        const listaEstudiantes = document.getElementById('lista-estudiantes');
-        const btnGuardar = document.getElementById('btn-guardar');
-        const form = document.getElementById('asistenciaForm');
-
-        cursoSelect.addEventListener('change', function() {
-            const url = form.getAttribute('data-estudiantes-url');
-            const cursoId = this.value;
-
-            if (cursoId) {
-                listaEstudiantes.innerHTML = '<p class="text-muted">Cargando estudiantes...</p>';
-                
-                fetch(`${url}?curso_id=${cursoId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        listaEstudiantes.innerHTML = '';
-                        
-                        if(data.length === 0){
-                            listaEstudiantes.innerHTML = '<p class="text-muted italic">Este curso no tiene estudiantes registrados.</p>';
-                            btnGuardar.classList.add('hidden');
-                            return;
-                        }
-
-                        // Construimos la lista de asistencia
-                        data.forEach(estudiante => {
-                            const rowHTML = `
-                                <div class="flex flex-col sm:flex-row sm:items-center justify-between observation-card p-4 hover:border-[var(--rio)] transition-colors">
-                                    <div class="mb-3 sm:mb-0">
-                                        <input type="hidden" name="estudiante_id" value="${estudiante.id}">
-                                        <p class="text-main font-medium text-lg">${estudiante.nombre_completo}</p>
-                                    </div>
-                                    <div class="flex gap-6">
-                                        <label class="flex items-center gap-2 cursor-pointer text-main hover:text-[var(--rio)]">
-                                            <input type="radio" name="estado_${estudiante.id}" value="presente" class="w-5 h-5 cursor-pointer accent-[var(--rio)]" required>
-                                            <span class="font-medium">Presente</span>
-                                        </label>
-                                        <label class="flex items-center gap-2 cursor-pointer text-main hover:text-[var(--amanecer)]">
-                                            <input type="radio" name="estado_${estudiante.id}" value="ausente" class="w-5 h-5 cursor-pointer accent-[var(--amanecer)]" required>
-                                            <span class="font-medium">Ausente</span>
-                                        </label>
-                                    </div>
-                                </div>
-                            `;
-                            listaEstudiantes.insertAdjacentHTML('beforeend', rowHTML);
-                        });
-                        
-                        // Mostramos el botón de guardar
-                        btnGuardar.classList.remove('hidden');
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        listaEstudiantes.innerHTML = '<p class="text-error">Error al cargar la lista.</p>';
-                    });
-            } else {
-                listaEstudiantes.innerHTML = '';
-                btnGuardar.classList.add('hidden');
-            }
-        });
-    });
+(function(){
+const selector=document.getElementById('id_curso'), lista=document.getElementById('lista-estudiantes'),guardar=document.getElementById('btn-guardar');
+let token=0;
+selector.addEventListener('change',async function(){
+ const ticket=++token; guardar.classList.add('hidden');lista.textContent='Cargando estudiantes…';
+ if(!this.value){lista.textContent='Selecciona una sección.';return;}
+ try {
+  const response=await fetch('{% url "academico:ajax_cargar_estudiantes" %}?curso_id='+encodeURIComponent(this.value),{credentials:'same-origin'});
+  if(!response.ok)throw new Error('No fue posible consultar la sección.');
+  const estudiantes=await response.json(); if(ticket!==token)return; lista.replaceChildren();
+  if(!estudiantes.length){lista.textContent='No hay estudiantes inscritos en esta sección.';return;}
+  for(const e of estudiantes){
+   const fila=document.createElement('div');fila.className='observation-card p-3 flex flex-wrap items-center justify-between gap-3';
+   const nombre=document.createElement('span');nombre.textContent=e.nombre_completo;fila.appendChild(nombre);
+   const opciones=document.createElement('div');opciones.className='flex gap-4';
+   for(const [valor,etiqueta] of [['presente','Presente'],['ausente','Ausente']]){
+    const label=document.createElement('label');label.className='flex items-center gap-1 cursor-pointer';
+    const input=document.createElement('input');input.type='radio';input.name='estado_'+e.id;input.value=valor;input.required=true;
+    input.checked=e.presente===null?valor==='presente':e.presente===(valor==='presente');
+    label.append(input,document.createTextNode(etiqueta));opciones.appendChild(label);
+   }
+   fila.appendChild(opciones);lista.appendChild(fila);
+  }
+  guardar.classList.remove('hidden');
+ }catch(error){if(ticket===token)lista.textContent='No se pudo cargar la lista. Inténtalo nuevamente.';}
+});
+})();
 </script>
 {% endblock %}

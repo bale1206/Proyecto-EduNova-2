@@ -1,16 +1,41 @@
 {% extends "base.html" %}
-{% block title %}Mi planificación · EduNova{% endblock %}
+{% block title %}Mi planificación · EduNova<script>
+(function(){
+  const lista=document.getElementById('avisos-asistencia-lista');
+  if(!lista || !window.WebSocket)return;
+  const scheme=location.protocol==='https:'?'wss:':'ws:';
+  const ws=new WebSocket(scheme+'//'+location.host+'/ws/avisos/estudiante/');
+  ws.addEventListener('message',event=>{
+    try {const data=JSON.parse(event.data);if(data.tipo!=='asistencia')return;
+      document.getElementById('sin-avisos')?.remove();
+      const li=document.createElement('li');li.className='rounded-lg p-2';li.style.background='var(--lino-2)';li.textContent=data.texto;lista.prepend(li);
+      while(lista.children.length>5)lista.lastElementChild.remove();
+    }catch(_e){}
+  });
+})();
+</script>
+{% endblock %}
 {% block content %}
 <div class="mb-6">
  <p class="text-sm text-muted">Mi espacio académico</p>
  <h1 class="font-display text-3xl font-semibold">Hola, {{ user.first_name }} 👋</h1>
  <p class="text-muted mt-2">Organiza tus actividades, revisa fechas importantes y avanza a tu ritmo.</p>
 </div>
+<section class="card p-4 mb-5" aria-label="Avisos de asistencia" id="avisos-asistencia">
+ <h2 class="font-semibold mb-2">Mis avisos de asistencia</h2><ul id="avisos-asistencia-lista" class="space-y-2 text-sm" aria-live="polite" aria-atomic="false">
+ {% for aviso in avisos_asistencia %}<li class="rounded-lg p-2" style="background:var(--lino-2)">{{ aviso.texto }}</li>{% empty %}<li class="text-muted" id="sin-avisos">Cuando tu docente pase lista, verás aquí tu aviso.</li>{% endfor %}
+ </ul></section>
 <div class="grid gap-6 lg:grid-cols-3">
  <div class="space-y-6 lg:col-span-2">
   <section class="card p-5" aria-labelledby="calendario-titulo">
    <h2 id="calendario-titulo" class="font-display text-xl font-semibold mb-4">Calendario académico</h2>
-   {% if perfil and perfil.curso %}<p class="text-sm text-muted mb-3">Curso: {{ perfil.curso }}.</p>{% else %}<p class="text-sm text-muted mb-3">Solicita que te asignen un curso para consultar sus eventos académicos.</p>{% endif %}
+   {% if secciones %}
+   <label for="seccion-estudiante" class="block text-sm font-medium mb-2">Mostrar actividades de</label>
+   <select id="seccion-estudiante" class="surface-control w-full rounded-lg border p-2 mb-4" style="border-color:var(--linea)" onchange="location.href='?seccion='+encodeURIComponent(this.value)">
+      <option value="">Todas mis asignaturas</option>
+      {% for sec in secciones %}<option value="{{ sec.pk }}" {% if seccion_seleccionada == sec.pk|stringformat:'s' %}selected{% endif %}>{{ sec.asignatura }} · {{ sec.seccion }}</option>{% endfor %}
+   </select>
+   {% else %}<p class="text-sm text-muted mb-3">Cuando te matriculen en secciones, aparecerán aquí sus evaluaciones y actividades.</p>{% endif %}
    {% include 'academico/_calendario.html' %}
   </section>
   <section class="card p-5" aria-labelledby="tareas-titulo">
@@ -38,7 +63,9 @@
    <p class="text-sm"><strong>Nombre:</strong> {{ user.nombre_completo }}</p>
    <p class="text-sm mt-2"><strong>Código EduNova:</strong> {{ user.codigo_edunova }}</p>
    {% if perfil %}<p class="text-sm mt-2"><strong>Registro:</strong> {{ perfil.codigo_edunova }}</p>{% endif %}
-   <p class="text-xs text-muted mt-4">Las notas, créditos, carrera y asignaturas se incorporarán al modelo universitario en una próxima etapa.</p>
+   <p class="text-sm mt-2"><strong>Carrera:</strong> {{ perfil.carrera.nombre|default:"Sin asignar" }}</p>
+   <p class="text-sm mt-2"><strong>Asignaturas inscritas:</strong> {{ secciones.count }}</p>
+   <p class="text-xs text-muted mt-4">Las calificaciones y créditos se incorporarán en una etapa posterior.</p>
   </div>
   <div class="card p-5"><h2 class="font-display font-semibold mb-3">Próximas actividades</h2>
    {% if eventos_proximos %}<ul class="space-y-2">{% for ev in eventos_proximos %}<li class="text-sm">{{ ev.fecha|date:'d/m' }} · {{ ev.titulo }}</li>{% endfor %}</ul>
@@ -46,4 +73,19 @@
   </div>
  </aside>
 </div>
+<script>
+(function(){
+  const lista=document.getElementById('avisos-asistencia-lista');
+  if(!lista || !window.WebSocket)return;
+  const scheme=location.protocol==='https:'?'wss:':'ws:';
+  const ws=new WebSocket(scheme+'//'+location.host+'/ws/avisos/estudiante/');
+  ws.addEventListener('message',event=>{
+    try {const data=JSON.parse(event.data);if(data.tipo!=='asistencia')return;
+      document.getElementById('sin-avisos')?.remove();
+      const li=document.createElement('li');li.className='rounded-lg p-2';li.style.background='var(--lino-2)';li.textContent=data.texto;lista.prepend(li);
+      while(lista.children.length>5)lista.lastElementChild.remove();
+    }catch(_e){}
+  });
+})();
+</script>
 {% endblock %}
