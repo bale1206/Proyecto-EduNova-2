@@ -58,17 +58,13 @@
                     {% endif %}
 
                     <!-- Tipo de Anotación -->
-                    {% if obs.tipo_observacion == 'NEGATIVA' %}
+                    {% if obs.tipo_observacion == 'SANCION' %}
                         <span class="px-3 py-1 w-full text-center text-xs font-medium rounded chip chip-rechazada">
-                            Negativa
+                            Sanción
                         </span>
                     {% elif obs.tipo_observacion == 'ESPECIALISTA' %}
                         <span class="px-3 py-1 w-full text-center text-xs font-medium rounded chip chip-reunion">
                             Req. Especialista
-                        </span>
-                    {% elif obs.tipo_observacion == 'POSITIVA' %}
-                        <span class="px-3 py-1 w-full text-center text-xs font-medium rounded chip chip-aprobada">
-                            Positiva
                         </span>
                     {% endif %}
                 </div>

@@ -7,6 +7,7 @@
     
     <form method="post" id="observacionForm" data-estudiantes-url="{% url 'academico:ajax_cargar_estudiantes' %}" class="space-y-6">
         {% csrf_token %}
+        {{ form.errors }}
         
         <!-- Primera fila: Dos columnas -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

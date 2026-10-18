@@ -96,7 +96,7 @@ class ActualizarObservacionForm(forms.ModelForm):
     # Campo extra que no pertenece al modelo directamente
     notificar_apoderado = forms.BooleanField(
         required=False,
-        label="Notificar al apoderado",
+        label="Avisar al estudiante",
         widget=forms.CheckboxInput(attrs={
             'class': 'h-5 w-5 rounded cursor-pointer accent-[var(--rio)]'
         })

@@ -26,6 +26,7 @@
     <!-- Formulario de actualización -->
     <form method="post" class="space-y-6">
         {% csrf_token %}
+        {{ form.errors }}
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -48,7 +49,7 @@
         <div class="flex items-center gap-3 observation-preview p-4">
             {{ form.notificar_apoderado }}
             <label for="{{ form.notificar_apoderado.id_for_label }}" class="text-main font-medium cursor-pointer select-none">
-                Enviar una notificación al apoderado sobre esta resolución
+                {{ form.notificar_apoderado.label }}
             </label>
         </div>
 

@@ -1,6 +1,7 @@
 import calendar as cal
 from datetime import date
 
+from django.db import transaction
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -133,7 +134,7 @@ def detalle_estudiante(request, estudiante_id):
     presentes = sum(1 for a in ultimas_30 if a.estado == Asistencia.Estado.PRESENTE)
     resumen_asistencia = round((presentes / total) * 100, 1) if total else None
 
-    observaciones = estudiante.observaciones.filter(confidencial=False).order_by('-fecha')[:10]
+    observaciones = estudiante.observaciones.filter(confidencial=False).exclude(tipo='positiva').order_by('-fecha')[:10]
 
     year, month = _mes_actual_o_parametro(request)
     (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
@@ -297,7 +298,7 @@ def cargar_estudiantes(request):
 @login_required
 def lista_observaciones(request):
     # Ocultamos las "RESUELTA" según las instrucciones
-    observaciones = ObservacionComportamiento.objects.exclude(estado='RESUELTA').annotate(
+    observaciones = ObservacionComportamiento.objects.exclude(estado='RESUELTA').exclude(tipo_observacion='POSITIVA').annotate(
         # Priorizamos Estados: 1. NO_VISTA, 2. EN_PROCESO
         prioridad_estado=Case(
             When(estado='NO_VISTA', then=Value(1)),
@@ -305,9 +306,9 @@ def lista_observaciones(request):
             default=Value(3),
             output_field=IntegerField(),
         ),
-        # Priorizamos Tipos: 1. NEGATIVA, 2. ESPECIALISTA
+        # Priorizamos Tipos: 1. SANCION, 2. ESPECIALISTA
         prioridad_tipo=Case(
-            When(tipo_observacion='NEGATIVA', then=Value(1)),
+            When(tipo_observacion='SANCION', then=Value(1)),
             When(tipo_observacion='ESPECIALISTA', then=Value(2)),
             default=Value(3),
             output_field=IntegerField(),
@@ -327,39 +328,41 @@ def actualizar_observacion(request, pk):
     if request.method == 'POST':
         form = ActualizarObservacionForm(request.POST, instance=observacion)
         if form.is_valid():
-            obs = form.save(commit=False)
-            obs.administrativo = request.user
-            obs.save()
-            
-            # Si el administrativo marcó la casilla "Notificar apoderado"
-            if form.cleaned_data.get('notificar_apoderado'):
-                
-                # Iteramos sobre todos los estudiantes en esta observación
-                for estudiante in obs.estudiantes.all():
-                    # Verificamos que el estudiante tenga un apoderado asignado
-                    # (Ajusta 'estudiante.apoderado' a la relación exacta en tus modelos)
-                    if hasattr(estudiante, 'apoderado') and estudiante.apoderado:
-                        
-                        # Creamos la notificación interna
-                        # Creamos la notificación interna
+            with transaction.atomic():
+                obs = form.save(commit=False)
+                obs.administrativo = request.user
+                obs.save()
+                notificados = 0
+                sin_cuenta = []
+                if form.cleaned_data.get('notificar_apoderado'):
+                    for estudiante in obs.estudiantes.select_related('usuario'):
+                        destinatario = estudiante.usuario
+                        if not destinatario or destinatario.rol != Usuario.Rol.ESTUDIANTE:
+                            sin_cuenta.append(estudiante.nombre_completo)
+                            continue
                         MensajeComunicacion.objects.create(
-                            remitente=request.user,  
-                            destinatario=estudiante.apoderado,
-                            asunto=f"Actualización de Observación: {obs.asunto}",
+                            remitente=request.user,
+                            destinatario=destinatario,
+                            asunto=f"Actualización de observación: {obs.asunto}"[:150],
                             cuerpo_mensaje=(
-                                f"Estimado apoderado,\n\n"
-                                f"Se ha actualizado una observación de comportamiento para su pupilo {estudiante.nombre_completo}.\n\n"
+                                f"Hola {estudiante.nombre_completo},\n\n"
+                                f"Se ha actualizado una observación de comportamiento.\n\n"
+                                f"Asunto: {obs.asunto}\n"
+                                f"Tipo: {obs.get_tipo_observacion_display()}\n"
                                 f"Estado: {obs.get_estado_display()}\n"
-                                f"Resolución Administrativa:\n{obs.resolucion}\n\n"
-                                f"Saludos cordiales."
+                                f"Resolución administrativa:\n{obs.resolucion or 'Sin resolución registrada.'}\n"
                             ),
-                            tipo_comunicacion='disciplinario' # Aprovechamos las opciones de tu modelo
+                            tipo_comunicacion=MensajeComunicacion.TipoComunicacion.DISCIPLINARIO,
                         )
-                
-                messages.success(request, "Observación actualizada y apoderado(s) notificado(s) correctamente.")
+                        notificados += 1
+
+            if form.cleaned_data.get('notificar_apoderado'):
+                messages.success(request, f"Observación actualizada. Estudiantes notificados: {notificados}.")
+                if sin_cuenta:
+                    messages.warning(request, "No se pudo notificar a los siguientes estudiantes porque no tienen una cuenta con rol estudiante vinculada: " + ", ".join(sin_cuenta))
             else:
                 messages.success(request, "Observación actualizada correctamente.")
-            
+
             return redirect('academico:lista_observaciones')
     else:
         form = ActualizarObservacionForm(instance=observacion)

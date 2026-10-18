@@ -71,8 +71,8 @@ class Command(BaseCommand):
             )
 
         Observacion.objects.get_or_create(
-            estudiante=est1, docente_o_inspector=docente, tipo=Observacion.Tipo.POSITIVA,
-            contenido_texto='Destacó ayudando a sus compañeros en el trabajo grupal de Ciencias.',
+            estudiante=est1, docente_o_inspector=docente, tipo=Observacion.Tipo.OTRA,
+            contenido_texto='Seguimiento del trabajo grupal de Ciencias.',
         )
 
         MensajeComunicacion.objects.get_or_create(

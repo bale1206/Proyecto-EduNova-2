@@ -93,8 +93,7 @@ class Asistencia(models.Model):
 
 class Observacion(models.Model):
     class Tipo(models.TextChoices):
-        POSITIVA = 'positiva', 'Positiva'
-        NEGATIVA = 'negativa', 'Negativa'
+        SANCION = 'sancion', 'Sanción'
         ACADEMICA = 'academica', 'Académica'
         OTRA = 'otra', 'Otra'
 
@@ -172,8 +171,7 @@ class Evento(models.Model):
 
 class ObservacionComportamiento(models.Model):
     TIPO_OPCIONES = [
-        ('NEGATIVA', 'Negativa'),
-        ('POSITIVA', 'Positiva'),
+        ('SANCION', 'Sanción'),
         ('ESPECIALISTA', 'Requiere especialista'),
     ]
 
@@ -207,12 +205,8 @@ class ObservacionComportamiento(models.Model):
     resolucion = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
-        # Lógica de autocompletado de estado según el tipo (solo al crear la observación)
-        if not self.pk: 
-            if self.tipo_observacion == 'POSITIVA':
-                self.estado = 'RESUELTA'
-            else:
-                self.estado = 'NO_VISTA'
+        if self._state.adding:
+            self.estado = 'NO_VISTA'
         super().save(*args, **kwargs)
 
     def __str__(self):

@@ -178,7 +178,7 @@ class CSVTests(TestCase):
     def test_tabla_intermedia_muchos_a_muchos(self):
         course = Curso.objects.create(grado_curso='1A')
         student = Estudiante.objects.create(rut_estudiante='5-1', nombre_completo='Ana Pérez', curso=course, apoderado=self.apoderado)
-        observation = ObservacionComportamiento.objects.create(docente=self.docente, asunto='Nota', tipo_observacion='POSITIVA', curso=course, descripcion='Texto')
+        observation = ObservacionComportamiento.objects.create(docente=self.docente, asunto='Nota', tipo_observacion='SANCION', curso=course, descripcion='Texto')
         model = ObservacionComportamiento.estudiantes.through
         self.assertIn(model._meta.db_table, tablas_disponibles())
         self.cargar(model, [['', observation.pk, student.pk]])
