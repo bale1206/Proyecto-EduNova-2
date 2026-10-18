@@ -43,6 +43,43 @@ class CursoForm(forms.ModelForm):
             field.widget.attrs.update({'class': INPUT_CLASSES, 'style': INPUT_STYLE})
 
 
+class CrearSeccionForm(CursoForm):
+    carrera = forms.ModelChoiceField(queryset=Carrera.objects.filter(activa=True), label='Carrera')
+    docentes = forms.ModelMultipleChoiceField(queryset=Usuario.objects.filter(rol='docente'), label='Docentes asignados')
+
+    class Meta(CursoForm.Meta):
+        fields = ['carrera', 'asignatura_catalogo', 'turno', 'docentes']
+
+    def __init__(self, *args, user=None, **kwargs):
+        from .models import Asignatura
+        super().__init__(*args, **kwargs)
+        carreras = Carrera.objects.filter(activa=True)
+        if user and not user.is_superuser:
+            carreras = carreras.filter(pk=user.carrera_dirigida_id)
+        self.fields['carrera'].queryset = carreras
+        carrera_id = self.data.get('carrera') if self.is_bound else self.initial.get('carrera')
+        self.fields['asignatura_catalogo'].queryset = Asignatura.objects.filter(activa=True, carreras__in=carreras.filter(pk=carrera_id)).distinct() if str(carrera_id or '').isdigit() else Asignatura.objects.none()
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': INPUT_CLASSES, 'style': INPUT_STYLE})
+
+    def clean(self):
+        from .secciones import siguiente_numero
+        datos = super().clean()
+        asignatura = datos.get('asignatura_catalogo')
+        if asignatura:
+            siguiente_numero(Curso, asignatura.nombre)
+        return datos
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        docentes = self.cleaned_data['docentes']
+        obj.docente_jefe = docentes.first()
+        if commit:
+            obj.save()
+            self.save_m2m()
+        return obj
+
+
 class CarreraForm(forms.ModelForm):
     class Meta:
         model = Carrera
@@ -144,7 +181,14 @@ class ObservacionForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        if user and not user.groups.filter(name='Administrativo').exists():
+        if user:
+            from django.db.models import Q
+            from .models import Estudiante
+            if user.rol == 'docente':
+                self.fields['curso'].queryset = Curso.objects.filter(Q(docentes=user) | Q(docente_jefe=user)).distinct()
+            curso_id = self.data.get('curso') if self.is_bound else self.instance.curso_id
+            self.fields['estudiantes'].queryset = Estudiante.objects.filter(Q(secciones__pk=curso_id) | Q(curso_id=curso_id)).distinct() if str(curso_id or '').isdigit() else Estudiante.objects.none()
+        if user and user.rol not in ('administrativo', 'administrador'):
             if 'resolucion' in self.fields:
                 self.fields.pop('resolucion')
 

@@ -67,8 +67,13 @@ class EstudianteSeccionesForm(forms.ModelForm):
 
     def clean(self):
         data = super().clean()
-        if not data.get('secciones'):
+        secciones = data.get('secciones')
+        if not secciones:
             raise ValidationError('El estudiante debe estar inscrito en al menos una asignatura y sección.')
+        carrera = data.get('carrera')
+        if carrera and secciones.exclude(asignatura_catalogo__carreras=carrera).exists():
+            raise ValidationError('Las asignaturas seleccionadas deben pertenecer a la carrera del estudiante.')
+        self.instance.curso = secciones.order_by('pk').first()
         return data
 
 
@@ -137,7 +142,32 @@ class EventoAdmin(admin.ModelAdmin):
 
 @admin.register(RegistroAsistencia)
 class RegistroAsistenciaAdmin(admin.ModelAdmin):
-    list_display = ('estudiante', 'docente', 'fecha', 'presente', 'justificado')
+    def add_view(self, request, form_url='', extra_context=None):
+        from django.shortcuts import redirect
+        if not self.has_add_permission(request):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied
+        return redirect('academico:tomar_asistencia')
+
+    @admin.display(description='RUT')
+    def rut(self, obj):
+        return obj.estudiante.rut_estudiante
+
+    @admin.display(description='Nombre completo')
+    def nombre_completo(self, obj):
+        return obj.estudiante.nombre_completo
+
+    @admin.display(description='Ausente', boolean=True)
+    def ausente(self, obj):
+        return not obj.presente
+
+    @admin.display(description='Fecha y hora')
+    def fecha_registro(self, obj):
+        from django.utils import timezone
+        return timezone.localtime(obj.fecha).strftime('%H-%M--%d/%m/%Y')
+
+    readonly_fields = ('estudiante', 'seccion', 'docente', 'presente', 'justificado', 'fecha')
+    list_display = ('rut', 'nombre_completo', 'presente', 'ausente', 'fecha_registro')
     list_filter = ('presente', 'justificado', 'fecha', 'docente')
     search_fields = ('estudiante__nombre_completo', 'docente__first_name', 'docente__last_name')
 

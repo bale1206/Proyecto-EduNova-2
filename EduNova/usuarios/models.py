@@ -62,6 +62,7 @@ class Usuario(AbstractUser):
 
     class Rol(models.TextChoices):
         DOCENTE = 'docente', 'Docente'
+        APODERADO = 'apoderado', 'Apoderado'
         ESTUDIANTE = 'estudiante', 'Estudiante'
         ADMINISTRATIVO = 'administrativo', 'Administrativo'
         ADMINISTRADOR = 'administrador', 'Administrador'
@@ -91,6 +92,8 @@ class Usuario(AbstractUser):
 
     def clean(self):
         super().clean()
+        if self.rol == self.Rol.ESTUDIANTE and not self.curso_id:
+            raise ValidationError({'curso': 'Debes asociar al estudiante a una sección.'})
         if self.carrera_dirigida_id and self.rol != self.Rol.ADMINISTRATIVO:
             raise ValidationError({'carrera_dirigida': 'Solo un director de carrera puede tener una carrera asignada.'})
         if self.rol != self.Rol.ESTUDIANTE and self.curso_id:
@@ -123,6 +126,8 @@ class Usuario(AbstractUser):
                 perfil.nombre_completo = self.nombre_completo or self.rut
                 perfil.curso_id = self.curso_id
                 perfil.save(using=using)
+                if self.curso_id:
+                    perfil.secciones.add(self.curso_id)
 
     @property
     def codigo_edunova(self):

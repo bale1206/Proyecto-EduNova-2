@@ -12,22 +12,29 @@ from usuarios.models import Usuario
 from comunicacion.models import MensajeComunicacion
 from comunicacion.services import mensajes_no_leidos
 from .forms import ObservacionForm, ActualizarObservacionForm
-from .models import Curso, Estudiante, Observacion, ObservacionComportamiento
+from .models import Curso, Estudiante, Observacion, ObservacionComportamiento, Carrera, Asignatura
 
 
 class ObservacionesSancionTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.funcionario = Usuario.objects.create_user(rut='10000000-1', rol='administrativo')
+        carrera = Carrera.objects.create(nombre='Observaciones', escuela='Pruebas')
+        cls.funcionario = Usuario.objects.create_user(rut='10000000-1', rol='administrativo', carrera_dirigida=carrera)
         cls.docente = Usuario.objects.create_user(rut='10000000-2', rol='docente')
         cls.apoderado = Usuario.objects.create_user(rut='10000000-3', rol='apoderado')
         cls.alumno = Usuario.objects.create_user(rut='10000000-4', rol='estudiante')
         cls.otro = Usuario.objects.create_user(rut='10000000-5', rol='estudiante')
         cls.curso = Curso.objects.create(asignatura='Matemática', docente_jefe=cls.docente)
-        cls.estudiante = Estudiante.objects.create(
-            rut_estudiante=cls.alumno.rut, nombre_completo='Alumno Uno',
-            curso=cls.curso, apoderado=cls.apoderado, usuario=cls.alumno,
-        )
+        materia = Asignatura.objects.create(codigo='MAT-OBS', nombre='Matemática')
+        materia.carreras.add(carrera)
+        cls.curso.asignatura_catalogo = materia
+        cls.curso.save()
+        cls.estudiante = Estudiante.objects.get(usuario=cls.alumno)
+        cls.estudiante.nombre_completo = 'Alumno Uno'
+        cls.estudiante.curso = cls.curso
+        cls.estudiante.apoderado = cls.apoderado
+        cls.estudiante.carrera = carrera
+        cls.estudiante.save()
         cls.obs = ObservacionComportamiento.objects.create(
             docente=cls.docente, curso=cls.curso, asunto='Incidente',
             descripcion='Descripción del incidente', tipo_observacion='SANCION',
@@ -87,7 +94,10 @@ class ObservacionesSancionTests(TestCase):
                 self.assertFalse(MensajeComunicacion.objects.exists())
 
     def test_notifica_a_cada_estudiante_asociado(self):
-        segundo = Estudiante.objects.create(rut_estudiante=self.otro.rut, nombre_completo='Alumno Dos', curso=self.curso, apoderado=self.apoderado, usuario=self.otro)
+        segundo = Estudiante.objects.get(usuario=self.otro)
+        segundo.curso = self.curso
+        segundo.carrera = self.estudiante.carrera
+        segundo.save()
         self.obs.estudiantes.add(segundo)
         self.client.post(self.url, {**self.datos, 'notificar_apoderado': 'on'})
         self.assertSetEqual(set(MensajeComunicacion.objects.values_list('destinatario_id', flat=True)), {self.alumno.pk, self.otro.pk})

@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% block title %}Agenda de dirección · EduNova{% endblock %}
 {% block content %}
-<h1 class="font-display text-2xl font-semibold mb-1">Agenda de dirección</h1>
+<h1 class="font-display text-2xl font-semibold mb-1">Agenda de dirección</h1><div class="flex gap-4 my-4"><a href="{% url 'academico:lista_observaciones' %}">Observaciones</a><a href="{% url 'academico:panel_csv' %}">Reportes e importación CSV</a><a href="{% url 'academico:configurar_csv' %}">Configurar CSV</a></div>
 {% if sin_carrera %}<div class="card p-6">Un administrador debe asignarte una carrera desde Django Admin.</div>
 {% else %}
 <p class="text-muted mb-6">{{ carrera.nombre }} · Organiza reuniones, actividades y eventos.</p>
 <div class="grid lg:grid-cols-3 gap-5">
  <div class="lg:col-span-2 space-y-5">
-  <div class="card p-4">{% include 'academico/_calendario.html' %}</div>
+  <div class="card p-5"><h2 class="font-semibold mb-4">Crear sección</h2>{% include "academico/_form_seccion.html" with form=curso_form %}</div><div class="card p-4">{% include 'academico/_calendario.html' %}</div>
   <div class="card p-5"><h2 class="font-semibold mb-4">Agendar actividad</h2>
    <form method="post" action="{% url 'academico:crear_evento' %}" class="grid sm:grid-cols-2 gap-4">{% csrf_token %}
     {% for campo in evento_form %}<div><label class="block text-sm font-medium mb-1" for="{{ campo.id_for_label }}">{{ campo.label }}</label>{{ campo }}{{ campo.errors }}</div>{% endfor %}

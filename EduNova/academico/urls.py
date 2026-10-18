@@ -6,6 +6,13 @@ from . import csv_views
 app_name = 'academico'
 
 urlpatterns = [
+    path('administrativo/secciones/opciones/', views.opciones_seccion, name='opciones_seccion'),
+    path('csv/configurar/', csv_views.configurar_csv, name='configurar_csv'),
+    path('csv/', csv_views.panel_csv, name='panel_csv'),
+    path('csv/<str:tabla>/exportar/', csv_views.exportar_csv, name='exportar_csv'),
+    path('csv/<str:tabla>/plantilla/', csv_views.plantilla_csv, name='plantilla_csv'),
+    path('csv/<str:tabla>/ejemplo/', csv_views.ejemplo_csv, name='ejemplo_csv'),
+    path('csv/<str:tabla>/importar/', csv_views.importar_csv, name='importar_csv'),
     path('estudiante/', views.home_estudiante, name='home_estudiante'),
     path('estudiante/tareas/nueva/', views.crear_tarea_estudiante, name='crear_tarea_estudiante'),
     path('estudiante/tareas/<int:tarea_id>/alternar/', views.alternar_tarea_estudiante, name='alternar_tarea_estudiante'),
@@ -24,7 +31,7 @@ urlpatterns = [
     path('crear-observacion/', views.crear_observacion, name='crear_observacion'),
     path('ajax/cargar-estudiantes/', views.cargar_estudiantes, name='ajax_cargar_estudiantes'),
     path('observaciones/panel/', views.lista_observaciones, name='lista_observaciones'),
-    path('observaciones/actualizar/<int:pk>/', views.editar_observacion, name='actualizar_observacion'),
+    path('observaciones/actualizar/<int:pk>/', views.actualizar_observacion, name='actualizar_observacion'),
     path('asistencia/tomar/', views.tomar_asistencia, name='tomar_asistencia'),
 
 ]

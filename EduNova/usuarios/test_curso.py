@@ -80,7 +80,7 @@ class UsuarioCursoTests(TestCase):
         self.assertContains(self.client.get(url), 'name="curso"')
         response = self.client.post(url, self.datos(curso=''))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Debes asociar al estudiante a un curso.')
+        self.assertContains(response, 'Debes asociar al estudiante a una sección.')
         self.assertFalse(Usuario.objects.filter(rut='12345678-9').exists())
         self.assertEqual(self.client.post(url, self.datos()).status_code, 302)
         alumno = Usuario.objects.get(rut='12345678-9')
@@ -96,10 +96,10 @@ class UsuarioCursoTests(TestCase):
         self.assertEqual(Estudiante.objects.get(usuario=alumno).curso_id, self.otro_curso.pk)
         response = self.client.post(editar, {**datos, 'curso': ''})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Debes asociar al estudiante a un curso.')
+        self.assertContains(response, 'Debes asociar al estudiante a una sección.')
 
     def test_formulario_de_registro_contiene_curso_una_vez(self):
         response = self.client.get(reverse('usuarios:registro'))
         self.assertContains(response, 'id="curso-estudiante"', count=1)
         self.assertContains(response, 'name="curso"', count=1)
-        self.assertContains(response, 'MAT-000D')
+        self.assertContains(response, 'MAT-000-D')

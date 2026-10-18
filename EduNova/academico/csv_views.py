@@ -47,7 +47,7 @@ def configurar_csv(request):
     tables = [
         {'nombre': name, 'etiqueta': model._meta.verbose_name_plural,
          'permiso': permissions.get(name), 'columnas': esquema(model)}
-        for name, model in sorted(available.items()) if name != 'academico_curso'
+        for name, model in sorted(available.items())
     ]
     return render(request, 'academico/configurar_csv.html', {'tablas': tables})
 
@@ -60,7 +60,7 @@ def panel_csv(request):
     tables = []
     for permission in PermisoTablaCSV.objects.order_by('tabla'):
         model = available.get(permission.tabla)
-        if model and permission.tabla != 'academico_curso' and (permission.exportar or permission.importar):
+        if model and (permission.exportar or permission.importar):
             tables.append({'nombre': permission.tabla, 'permiso': permission,
                            'etiqueta': model._meta.verbose_name_plural, 'columnas': esquema(model),
                            'ejemplos': filas_ejemplo_csv(model) if permission.tabla in ('academico_carrera', 'academico_curso', 'academico_estudiante') else []})

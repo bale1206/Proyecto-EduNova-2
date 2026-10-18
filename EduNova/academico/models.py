@@ -3,7 +3,7 @@ from django.db import models, transaction, IntegrityError
 from django.core.exceptions import ValidationError
 from django.db.models.functions import Substr, Length
 
-from .secciones import prefijo_asignatura, validar_asignatura, validar_seccion
+from .secciones import prefijo_asignatura, validar_asignatura, validar_seccion, siguiente_numero
 
 Usuario = settings.AUTH_USER_MODEL
 
@@ -102,9 +102,8 @@ class Curso(models.Model):
             kwargs['update_fields'] = set(kwargs['update_fields']) | {'seccion', 'asignatura', 'turno'}
         # La restricción única resuelve también las creaciones simultáneas.
         for intento in range(5):
-            codigos = type(self).objects.using(using).filter(seccion__startswith=prefijo + '-').values_list('seccion', flat=True)
-            numeros = [int(codigo[4:-1]) for codigo in codigos if codigo[4:-1].isdigit()]
-            self.seccion = f"{prefijo}-{max(numeros, default=-1) + 1:03d}{sufijo}"
+            numero = siguiente_numero(type(self), self.asignatura, using)
+            self.seccion = f"{prefijo}-{numero:03d}-{sufijo}"
             try:
                 with transaction.atomic(using=using):
                     return super().save(*args, **kwargs)
@@ -120,7 +119,7 @@ class Curso(models.Model):
         verbose_name_plural = 'Secciones de asignaturas'
         ordering = ['seccion']
         constraints = [
-            models.UniqueConstraint(Substr('seccion', 1, Length('seccion') - 1), name='curso_correlativo_prefijo_unico'),
+            models.UniqueConstraint(Substr('seccion', 1, Length('seccion') - 2), name='curso_correlativo_prefijo_unico'),
         ]
 
 
@@ -318,6 +317,7 @@ class ObservacionComportamiento(models.Model):
         return f"{self.asunto} - {self.get_tipo_observacion_display()}"
 
 class RegistroAsistencia(models.Model):
+    seccion = models.ForeignKey(Curso, on_delete=models.PROTECT, null=True, blank=True, related_name='registros_historicos')
     # Al relacionar con Estudiante, accedemos automáticamente a su RUT, nombre y Apoderado
     estudiante = models.ForeignKey('Estudiante', on_delete=models.CASCADE, related_name='registros_asistencia')
     docente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='registros_asistencia_docente')

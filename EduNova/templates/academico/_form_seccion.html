@@ -1,0 +1,32 @@
+<form id="form-seccion" method="post" action="{% url 'academico:crear_curso' %}" data-opciones-url="{% url 'academico:opciones_seccion' %}" class="space-y-4">
+{% csrf_token %}{{ form.non_field_errors }}
+{% for campo in form %}<div><label for="{{ campo.id_for_label }}" class="block text-sm font-medium mb-1">{{ campo.label }}</label>{{ campo }}{{ campo.errors }}</div>{% endfor %}
+<div><label class="block text-sm font-medium mb-1" for="numero-seccion">Número de sección (automático)</label><input id="numero-seccion" name="numero_previo" readonly class="surface-control rounded-lg border p-3 w-full" placeholder="000" aria-describedby="ayuda-numero"><p id="ayuda-numero" class="text-xs text-muted mt-1">Se asigna entre 000 y 999. El número se confirma al guardar.</p></div>
+<p id="codigo-seccion" class="font-semibold" aria-live="polite">Selecciona una carrera y una asignatura.</p>
+<p id="error-seccion" class="text-sm text-error" role="alert"></p>
+<button type="submit" class="btn-primary w-full py-3" id="guardar-seccion">Crear sección</button>
+</form>
+<script>
+(() => {
+ const form=document.getElementById('form-seccion');
+ const carrera=form.querySelector('[name="carrera"]'), asignatura=form.querySelector('[name="asignatura_catalogo"]'), turno=form.querySelector('[name="turno"]');
+ const numero=document.getElementById('numero-seccion'), codigo=document.getElementById('codigo-seccion'), error=document.getElementById('error-seccion'), guardar=document.getElementById('guardar-seccion');
+ let version=0, prefijo='';
+ function mostrar(){codigo.textContent=prefijo && numero.value ? `${prefijo}-${numero.value}-${turno.value==='true'?'D':'V'}` : 'Selecciona una carrera y una asignatura.';}
+ async function cargar(cambiarCarrera){
+  const actual=++version; numero.value='';prefijo='';error.textContent='';guardar.disabled=true;mostrar();
+  if(!carrera.value){if(cambiarCarrera)asignatura.replaceChildren(new Option('Seleccionar asignatura',''));return;}
+  const parametros=new URLSearchParams({carrera:carrera.value});
+  if(!cambiarCarrera && asignatura.value)parametros.set('asignatura',asignatura.value);
+  try{
+   const response=await fetch(form.dataset.opcionesUrl+'?'+parametros.toString(),{credentials:'same-origin'});
+   const data=await response.json();if(actual!==version)return;
+   if(!response.ok)throw new Error(data.error || 'No se pudieron cargar las asignaturas.');
+   if(cambiarCarrera){asignatura.replaceChildren(new Option('Seleccionar asignatura',''));data.asignaturas.forEach(a=>asignatura.add(new Option(a.nombre,a.id)));}
+   if(data.numero!==undefined){numero.value=data.numero;prefijo=data.prefijo;guardar.disabled=false;}mostrar();
+  }catch(e){if(actual===version)error.textContent=e.message || 'No se pudo obtener el número.';}
+ }
+ carrera.addEventListener('change',()=>cargar(true));asignatura.addEventListener('change',()=>cargar(false));turno.addEventListener('change',mostrar);
+ cargar(!asignatura.value);
+})();
+</script>

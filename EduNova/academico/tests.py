@@ -27,12 +27,12 @@ class TomarAsistenciaTests(TestCase):
 		response = self.client.post(
 			reverse('academico:tomar_asistencia'),
 			{
-				'estudiante_id': [str(self.estudiante.pk)],
+				'curso': self.estudiante.curso_id,
 				f'estado_{self.estudiante.pk}': 'presente',
 			},
 		)
 
-		self.assertRedirects(response, reverse('academico:home_docente'))
+		self.assertRedirects(response, reverse('academico:tomar_asistencia'))
 		self.assertTrue(RegistroAsistencia.objects.filter(
 			estudiante=self.estudiante, docente=self.docente, presente=True,
 		).exists())

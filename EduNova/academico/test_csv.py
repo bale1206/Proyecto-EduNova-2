@@ -19,7 +19,12 @@ def archivo(model, rows, header=None, delimiter=','):
     writer.writerow(header or [f.column for f in physical])
     for row in rows:
         if model is Curso and not header and len(row) == 3:
-            row = [row[0], row[1], True, '', row[2]]
+            values = dict(zip(['id', 'asignatura', 'docente_jefe_id'], row))
+            values.update(turno=True, seccion='')
+            row = [values.get(f.column, r'\N' if f.null else '') for f in fields]
+        if model is RegistroAsistencia and not header and len(row) == 6:
+            values = dict(zip(['id', 'estudiante_id', 'docente_id', 'presente', 'justificado', 'fecha'], row))
+            row = [values.get(f.column, r'\N' if f.null else '') for f in fields]
         if not header and len(row) == len(fields):
             values = dict(zip([f.column for f in fields], row))
             row = [values[f.column] for f in physical]
@@ -82,7 +87,7 @@ class CSVTests(TestCase):
         self.assertEqual(self.client.get(reverse('academico:ejemplo_csv', args=[Estudiante._meta.db_table])).status_code, 404)
         PermisoTablaCSV.objects.create(tabla=Estudiante._meta.db_table, importar=True)
         response = self.client.get(reverse('academico:ejemplo_csv', args=[Estudiante._meta.db_table]))
-        self.assertContains(response, 'EN-P0001')
+        self.assertContains(response, 'rut_estudiante')
         self.assertEqual(Estudiante.objects.count(), 0)
 
     def test_plantilla_no_expone_datos_con_permiso_solo_importar(self):
