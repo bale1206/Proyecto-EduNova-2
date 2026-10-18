@@ -80,7 +80,7 @@ class Usuario(AbstractUser):
         help_text='Solo para directores de carrera; una carrera por director.',
     )
     curso = models.ForeignKey(
-        'academico.Curso', on_delete=models.PROTECT, null=True, blank=True,
+        'academico.Curso', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='usuarios_estudiantes', verbose_name='Curso',
         help_text='Obligatorio para usuarios con rol estudiante.',
     )

@@ -86,6 +86,18 @@ class CursoAdmin(admin.ModelAdmin):
     form = SeccionAdminForm
     exclude = ('docente_jefe', 'asignatura')
 
+    def _guardar_historial_secciones(self, queryset):
+        for seccion in queryset:
+            SesionClase.objects.filter(seccion=seccion).update(seccion_original=str(seccion))
+
+    def delete_model(self, request, obj):
+        self._guardar_historial_secciones(Curso.objects.filter(pk=obj.pk))
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        self._guardar_historial_secciones(queryset)
+        super().delete_queryset(request, queryset)
+
     @admin.display(description='Docentes')
     def docentes_resumen(self, obj):
         return ', '.join(str(docente) for docente in obj.docentes.all()) or str(obj.docente_jefe or 'Sin asignar')
@@ -174,7 +186,8 @@ class RegistroAsistenciaAdmin(admin.ModelAdmin):
 
 @admin.register(SesionClase)
 class SesionClaseAdmin(admin.ModelAdmin):
-    list_display = ('seccion', 'fecha', 'docente', 'actualizada_en')
+    list_display = ('seccion', 'seccion_original', 'fecha', 'docente', 'actualizada_en')
+    readonly_fields = ('seccion_original',)
     list_filter = ('fecha', 'seccion')
 
 

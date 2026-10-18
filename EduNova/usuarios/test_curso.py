@@ -70,8 +70,9 @@ class UsuarioCursoTests(TestCase):
         perfil.save()
         usuario.refresh_from_db()
         self.assertEqual(usuario.curso_id, self.curso.pk)
-        with self.assertRaises(ProtectedError):
-            self.curso.delete()
+        self.curso.delete()
+        usuario.refresh_from_db()
+        self.assertIsNone(usuario.curso_id)
 
     def test_admin_exige_curso_al_crear_y_editar_estudiante(self):
         admin = Usuario.objects.create_superuser(rut='99999999-1')

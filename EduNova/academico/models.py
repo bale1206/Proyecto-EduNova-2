@@ -256,7 +256,7 @@ class Evento(models.Model):
         REUNION = 'reunion', 'Reunión'
         OTRO = 'otro', 'Otro'
 
-    curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name='eventos')
+    curso = models.ForeignKey(Curso, on_delete=models.SET_NULL, null=True, related_name='eventos')
     creado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='eventos_creados')
     tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.CLASE)
     titulo = models.CharField(max_length=150)
@@ -293,7 +293,7 @@ class ObservacionComportamiento(models.Model):
     )
     asunto = models.CharField(max_length=200)
     tipo_observacion = models.CharField(max_length=20, choices=TIPO_OPCIONES)
-    curso = models.ForeignKey('Curso', on_delete=models.CASCADE)
+    curso = models.ForeignKey('Curso', on_delete=models.SET_NULL, null=True)
     estudiantes = models.ManyToManyField('Estudiante') 
     descripcion = models.TextField()
     estado = models.CharField(max_length=20, choices=ESTADO_OPCIONES, default='NO_VISTA')
@@ -317,7 +317,7 @@ class ObservacionComportamiento(models.Model):
         return f"{self.asunto} - {self.get_tipo_observacion_display()}"
 
 class RegistroAsistencia(models.Model):
-    seccion = models.ForeignKey(Curso, on_delete=models.PROTECT, null=True, blank=True, related_name='registros_historicos')
+    seccion = models.ForeignKey(Curso, on_delete=models.SET_NULL, null=True, blank=True, related_name='registros_historicos')
     # Al relacionar con Estudiante, accedemos automáticamente a su RUT, nombre y Apoderado
     estudiante = models.ForeignKey('Estudiante', on_delete=models.CASCADE, related_name='registros_asistencia')
     docente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='registros_asistencia_docente')
@@ -335,7 +335,8 @@ class RegistroAsistencia(models.Model):
 
 class SesionClase(models.Model):
     """Una lista por sección y día. No se crean duplicados al corregirla."""
-    seccion = models.ForeignKey(Curso, on_delete=models.PROTECT, related_name='sesiones_clase')
+    seccion = models.ForeignKey(Curso, on_delete=models.SET_NULL, null=True, blank=True, related_name='sesiones_clase')
+    seccion_original = models.CharField(max_length=300, blank=True, editable=False)
     fecha = models.DateField()
     docente = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name='sesiones_clase')
     actualizada_en = models.DateTimeField(auto_now=True)
@@ -344,8 +345,15 @@ class SesionClase(models.Model):
         constraints = [models.UniqueConstraint(fields=['seccion', 'fecha'], name='uq_sesion_seccion_fecha')]
         ordering = ['-fecha']
 
+    def save(self, *args, **kwargs):
+        if self.seccion_id:
+            self.seccion_original = str(self.seccion)
+            if kwargs.get('update_fields') is not None:
+                kwargs['update_fields'] = set(kwargs['update_fields']) | {'seccion_original'}
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f'{self.seccion} · {self.fecha}'
+        return f'{self.seccion or self.seccion_original or "Sección eliminada"} · {self.fecha}' 
 
 
 class MarcaAsistencia(models.Model):

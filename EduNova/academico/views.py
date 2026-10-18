@@ -209,12 +209,16 @@ def home_administrativo(request, evento_form=None):
 
 @login_required
 def analitica_carrera(request):
-    """Asistencia por carrera, asignatura y sección, sin mostrar otras carreras."""
-    _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
-    carrera = request.user.carrera_dirigida
-    if carrera is None:
-        return render(request, 'academico/analitica_carrera.html', {'sin_carrera': True})
-    asignaturas = Asignatura.objects.filter(carreras=carrera, activa=True).distinct().order_by('nombre')
+    """Filtros encadenados: carrera, asignatura de su malla y sección."""
+    if not request.user.is_superuser:
+        _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
+    carreras = Carrera.objects.all().order_by('escuela', 'nombre')
+    carrera_id = request.GET.get('carrera')
+    if carrera_id is None:
+        carrera = carreras.filter(pk=request.user.carrera_dirigida_id).first() or carreras.first()
+    else:
+        carrera = carreras.filter(pk=carrera_id).first() if carrera_id.isdecimal() else None
+    asignaturas = Asignatura.objects.filter(carreras=carrera).distinct().order_by('nombre', 'codigo') if carrera else Asignatura.objects.none()
     codigo = request.GET.get('asignatura', '')
     elegida = asignaturas.filter(pk=codigo).first() if codigo.isdecimal() else None
     if not elegida:
@@ -236,7 +240,7 @@ def analitica_carrera(request):
         p = base.filter(presente=True).count()
         detalle.append({'seccion':sec, 'total':n, 'presentes':p, 'porcentaje':round(p*100/n,1) if n else None})
     return render(request, 'academico/analitica_carrera.html', {
-        'carrera':carrera, 'asignaturas':asignaturas, 'asignatura_seleccionada':elegida,
+        'carreras':carreras, 'carrera':carrera, 'asignaturas':asignaturas, 'asignatura_seleccionada':elegida,
         'secciones_disponibles':disponibles, 'seccion_seleccionada':seccion_id,
         'total_registros':total, 'presentes':presentes, 'ausentes':ausentes,
         'porcentaje':porcentaje, 'detalle':detalle,
