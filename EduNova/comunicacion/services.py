@@ -5,11 +5,11 @@ from .models import MensajeComunicacion
 
 
 def cursos_relacionados(usuario):
-    """Cursos con los que el usuario tiene relación (para filtrar comunicados por curso)."""
+    """Cursos vinculados al usuario; compatibilidad temporal con el modelo escolar."""
     if usuario.rol == usuario.Rol.DOCENTE:
         return Curso.objects.filter(docente_jefe=usuario)
-    if usuario.rol == usuario.Rol.APODERADO:
-        return Curso.objects.filter(estudiantes__apoderado=usuario).distinct()
+    if usuario.rol == usuario.Rol.ESTUDIANTE:
+        return Curso.objects.filter(estudiantes__usuario=usuario).distinct()
     return Curso.objects.none()
 
 

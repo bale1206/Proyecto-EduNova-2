@@ -59,8 +59,8 @@ def post_login_redirect(request):
     """Deriva al home correspondiente según el rol del usuario autenticado."""
     if request.user.rol == Usuario.Rol.DOCENTE:
         return redirect('academico:home_docente')
-    elif request.user.rol == Usuario.Rol.APODERADO:
-        return redirect('academico:home_apoderado')
+    elif request.user.rol == Usuario.Rol.ESTUDIANTE:
+        return redirect('academico:home_estudiante')
     elif request.user.rol == Usuario.Rol.ADMINISTRADOR:
         messages.info(request, 'Aún no existe un panel propio para Administrador; usa /admin/ por ahora.')
         return redirect('admin:index')

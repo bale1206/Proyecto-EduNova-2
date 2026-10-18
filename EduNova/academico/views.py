@@ -412,3 +412,73 @@ def tomar_asistencia(request):
     cursos = Curso.objects.all() # O Curso.objects.filter(docente=request.user) si lo prefieres
     return render(request, 'academico/tomar_asistencia.html', {'cursos': cursos})
     
+
+@login_required
+def home_estudiante(request):
+    """Portal privado del estudiante; no depende del vínculo con apoderados."""
+    from .models import TareaEstudio
+    _requerir_rol(request, Usuario.Rol.ESTUDIANTE)
+    perfil = Estudiante.objects.filter(usuario=request.user).select_related('curso').first()
+    tareas = TareaEstudio.objects.filter(estudiante=request.user)
+    eventos = Evento.objects.filter(curso=perfil.curso).order_by('fecha', 'hora_inicio') if perfil and perfil.curso_id else Evento.objects.none()
+    today = date.today()
+    year, month = _mes_actual_o_parametro(request)
+    (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
+    semanas = _construir_calendario(year, month, eventos.filter(fecha__year=year, fecha__month=month))
+    contexto = {
+        'perfil': perfil, 'tareas': tareas, 'pendientes': tareas.filter(completada=False),
+        'eventos_proximos': eventos.filter(fecha__gte=today)[:6],
+        'mes_nombre': MESES_ES[month], 'anio': year, 'mes': month,
+        'semanas': semanas, 'prev_year': prev_y, 'prev_month': prev_m,
+        'next_year': next_y, 'next_month': next_m,
+        'total_no_leidos': mensajes_no_leidos(request.user).count(),
+    }
+    # HTMX sustituye solo #calendario-mensual: nunca enviar toda la página.
+    if request.headers.get('HX-Request') == 'true':
+        return render(request, 'academico/_calendario.html', contexto)
+    return render(request, 'academico/home_estudiante.html', contexto)
+
+
+@login_required
+def crear_tarea_estudiante(request):
+    from datetime import datetime
+    from .models import TareaEstudio
+    from django.views.decorators.http import require_POST
+    _requerir_rol(request, Usuario.Rol.ESTUDIANTE)
+    if request.method != 'POST':
+        raise PermissionDenied('Acción no permitida.')
+    titulo = request.POST.get('titulo', '').strip()
+    fecha_raw = request.POST.get('fecha_limite', '').strip()
+    if not titulo or len(titulo) > 160:
+        messages.error(request, 'Ingresa un título de hasta 160 caracteres.')
+    else:
+        try:
+            fecha = date.fromisoformat(fecha_raw) if fecha_raw else None
+        except ValueError:
+            messages.error(request, 'La fecha indicada no es válida.')
+        else:
+            TareaEstudio.objects.create(estudiante=request.user, titulo=titulo, fecha_limite=fecha)
+            messages.success(request, 'Tarea añadida a tu planificación.')
+    return redirect('academico:home_estudiante')
+
+
+@login_required
+def alternar_tarea_estudiante(request, tarea_id):
+    from .models import TareaEstudio
+    _requerir_rol(request, Usuario.Rol.ESTUDIANTE)
+    if request.method != 'POST':
+        raise PermissionDenied('Acción no permitida.')
+    tarea = get_object_or_404(TareaEstudio, pk=tarea_id, estudiante=request.user)
+    tarea.completada = not tarea.completada
+    tarea.save(update_fields=['completada'])
+    return redirect('academico:home_estudiante')
+
+
+@login_required
+def eliminar_tarea_estudiante(request, tarea_id):
+    from .models import TareaEstudio
+    _requerir_rol(request, Usuario.Rol.ESTUDIANTE)
+    if request.method != 'POST':
+        raise PermissionDenied('Acción no permitida.')
+    get_object_or_404(TareaEstudio, pk=tarea_id, estudiante=request.user).delete()
+    return redirect('academico:home_estudiante')

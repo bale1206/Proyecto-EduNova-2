@@ -43,17 +43,17 @@ class ComunicadoForm(forms.ModelForm):
                 field.widget.attrs.update({'class': input_classes, 'style': 'border-color: var(--linea);'})
 
         if usuario and usuario.rol == Usuario.Rol.DOCENTE:
-            # Un docente puede escribir a apoderados de sus cursos o a todo el curso
+            # Un docente puede escribir a estudiantes de sus cursos o a todo el curso
             self.fields['destinatario'].queryset = Usuario.objects.filter(
-                rol=Usuario.Rol.APODERADO,
-                estudiantes_a_cargo__curso__docente_jefe=usuario,
+                rol=Usuario.Rol.ESTUDIANTE,
+                perfil_estudiante__curso__docente_jefe=usuario,
             ).distinct()
             self.fields['curso_destino'].queryset = Curso.objects.filter(docente_jefe=usuario)
-        elif usuario and usuario.rol == Usuario.Rol.APODERADO:
-            # Un apoderado puede escribir al/los docente(s) jefe de sus estudiantes
+        elif usuario and usuario.rol == Usuario.Rol.ESTUDIANTE:
+            # Un estudiante puede escribir al docente jefe de su curso actual (modelo transitorio).
             self.fields['destinatario'].queryset = Usuario.objects.filter(
                 rol=Usuario.Rol.DOCENTE,
-                cursos_a_cargo__estudiantes__apoderado=usuario,
+                cursos_a_cargo__estudiantes__usuario=usuario,
             ).distinct()
             self.fields['curso_destino'].widget = forms.HiddenInput()
             self.fields.pop('copia_utp_direccion', None)

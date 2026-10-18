@@ -61,12 +61,12 @@ class Usuario(AbstractUser):
 
     class Rol(models.TextChoices):
         DOCENTE = 'docente', 'Docente'
-        APODERADO = 'apoderado', 'Apoderado / Tutor legal'
+        ESTUDIANTE = 'estudiante', 'Estudiante'
         ADMINISTRATIVO = 'administrativo', 'Administrativo'
         ADMINISTRADOR = 'administrador', 'Administrador'
 
     # Roles que puede elegir cualquier persona en el registro público
-    ROLES_ACTIVOS = (Rol.DOCENTE, Rol.APODERADO)
+    ROLES_ACTIVOS = (Rol.DOCENTE, Rol.ESTUDIANTE)
 
     rut = models.CharField('RUT', max_length=12, unique=True)
     apellidos = models.CharField('Apellidos', max_length=50)
@@ -89,7 +89,7 @@ class Usuario(AbstractUser):
     def codigo_edunova(self):
         """Código estable para docentes y apoderados, sin cambiar la PK interna."""
         from .codigos import crear_codigo
-        tipo = {'docente': 'D', 'apoderado': 'P'}.get(self.rol)
+        tipo = {'docente': 'D', 'estudiante': 'A'}.get(self.rol)
         return crear_codigo(tipo, self.pk) if tipo else ''
 
     @property
@@ -99,8 +99,8 @@ class Usuario(AbstractUser):
     def es_docente(self):
         return self.rol == self.Rol.DOCENTE
 
-    def es_apoderado(self):
-        return self.rol == self.Rol.APODERADO
+    def es_estudiante(self):
+        return self.rol == self.Rol.ESTUDIANTE
 
     def es_administrativo(self):
         return self.rol == self.Rol.ADMINISTRATIVO

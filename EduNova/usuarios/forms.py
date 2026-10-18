@@ -14,7 +14,7 @@ INPUT_STYLE = 'border-color: var(--linea);'
 class RegistroForm(UserCreationForm):
     """
     Registro de cuenta. Solo se ofrecen los roles habilitados por ahora
-    (docente y apoderado); 'administrativo' (directores, encargados de
+    (docente y estudiante); 'administrativo' (directores, encargados de
     asignar cursos/evaluaciones/reuniones) y 'administrador' quedan fuera
     del choices: el primero se crea desde /admin/, el segundo solo existe
     vía manage.py createsuperuser.

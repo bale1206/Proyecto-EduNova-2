@@ -24,10 +24,10 @@
         </div>
         <div>
             <p class="font-display font-semibold text-sm mb-2">Apariencia</p>
-            <div class="grid grid-cols-3 gap-2">
-                <button @click="fijarModo('claro')" :class="modo === 'claro' ? 'btn-primary' : 'btn-secondary'" class="text-xs py-2 rounded-lg">Claro</button>
-                <button @click="fijarModo('oscuro')" :class="modo === 'oscuro' ? 'btn-primary' : 'btn-secondary'" class="text-xs py-2 rounded-lg">Oscuro</button>
-                <button @click="fijarModo('sistema')" :class="modo === 'sistema' ? 'btn-primary' : 'btn-secondary'" class="text-xs py-2 rounded-lg">Auto</button>
+            <div class="grid grid-cols-3 gap-2" role="group" aria-label="Modo de apariencia">
+                <button type="button" :aria-pressed="(modo === 'claro').toString()" @click="fijarModo('claro')" :class="modo === 'claro' ? 'btn-primary' : 'btn-secondary'" class="text-xs py-2 rounded-lg">Claro</button>
+                <button type="button" :aria-pressed="(modo === 'oscuro').toString()" @click="fijarModo('oscuro')" :class="modo === 'oscuro' ? 'btn-primary' : 'btn-secondary'" class="text-xs py-2 rounded-lg">Oscuro</button>
+                <button type="button" :aria-pressed="(modo === 'sistema').toString()" @click="fijarModo('sistema')" :class="modo === 'sistema' ? 'btn-primary' : 'btn-secondary'" class="text-xs py-2 rounded-lg">Auto</button>
             </div>
         </div>
 
@@ -77,8 +77,19 @@
 
             init() {
                 this.paleta = localStorage.getItem('edunova-paleta') || 'azul';
+                if (!this.paletas.some(opcion => opcion.id === this.paleta)) this.paleta = 'azul';
                 document.documentElement.setAttribute('data-palette', this.paleta);
                 this.modo = localStorage.getItem('edunova-modo') || 'sistema';
+                if (!['claro', 'oscuro', 'sistema'].includes(this.modo)) this.modo = 'sistema';
+                this.aplicarModo();
+                // En Auto, escuchar los cambios de apariencia del sistema en tiempo real.
+                this.preferenciaSistema = window.matchMedia('(prefers-color-scheme: dark)');
+                this.cambioSistema = () => { if (this.modo === 'sistema') this.aplicarModo(); };
+                if (this.preferenciaSistema.addEventListener) {
+                    this.preferenciaSistema.addEventListener('change', this.cambioSistema);
+                } else if (this.preferenciaSistema.addListener) {
+                    this.preferenciaSistema.addListener(this.cambioSistema);
+                }
                 this.tamano = localStorage.getItem('edunova-a11y-tamano') || 'normal';
                 this.contraste = localStorage.getItem('edunova-a11y-contraste') === '1';
                 this.subrayado = localStorage.getItem('edunova-a11y-subrayado') === '1';
@@ -92,12 +103,16 @@
                 document.documentElement.setAttribute('data-palette', valor);
             },
 
+            aplicarModo() {
+                const oscuro = this.modo === 'oscuro' || (this.modo === 'sistema' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                document.documentElement.classList.toggle('dark', oscuro);
+            },
+
             fijarModo(valor) {
+                if (!['claro', 'oscuro', 'sistema'].includes(valor)) return;
                 this.modo = valor;
                 localStorage.setItem('edunova-modo', valor);
-                const raiz = document.documentElement;
-                const prefiereOscuro = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                raiz.classList.toggle('dark', valor === 'oscuro' || (valor === 'sistema' && prefiereOscuro));
+                this.aplicarModo();
             },
 
             fijarTamano(valor) {

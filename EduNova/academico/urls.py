@@ -6,6 +6,10 @@ from . import csv_views
 app_name = 'academico'
 
 urlpatterns = [
+    path('estudiante/', views.home_estudiante, name='home_estudiante'),
+    path('estudiante/tareas/nueva/', views.crear_tarea_estudiante, name='crear_tarea_estudiante'),
+    path('estudiante/tareas/<int:tarea_id>/alternar/', views.alternar_tarea_estudiante, name='alternar_tarea_estudiante'),
+    path('estudiante/tareas/<int:tarea_id>/eliminar/', views.eliminar_tarea_estudiante, name='eliminar_tarea_estudiante'),
     path('direccion/csv/', csv_views.configurar_csv, name='configurar_csv'),
     path('administrativo/csv/', csv_views.panel_csv, name='panel_csv'),
     path('administrativo/csv/<str:tabla>/exportar/', csv_views.exportar_csv, name='exportar_csv'),

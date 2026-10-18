@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Mi planificación · EduNova{% endblock %}
+{% block content %}
+<div class="mb-6">
+ <p class="text-sm text-muted">Mi espacio académico</p>
+ <h1 class="font-display text-3xl font-semibold">Hola, {{ user.first_name }} 👋</h1>
+ <p class="text-muted mt-2">Organiza tus actividades, revisa fechas importantes y avanza a tu ritmo.</p>
+</div>
+<div class="grid gap-6 lg:grid-cols-3">
+ <div class="space-y-6 lg:col-span-2">
+  <section class="card p-5" aria-labelledby="calendario-titulo">
+   <h2 id="calendario-titulo" class="font-display text-xl font-semibold mb-4">Calendario académico</h2>
+   {% if perfil and perfil.curso %}<p class="text-sm text-muted mb-3">Eventos académicos vinculados a tu registro actual.</p>{% else %}<p class="text-sm text-muted mb-3">Todavía no tienes asignaturas o secciones vinculadas. El calendario estará disponible al habilitar las matrículas universitarias.</p>{% endif %}
+   {% include 'academico/_calendario.html' %}
+  </section>
+  <section class="card p-5" aria-labelledby="tareas-titulo">
+   <h2 id="tareas-titulo" class="font-display text-xl font-semibold mb-4">Mis tareas</h2>
+   <form method="post" action="{% url 'academico:crear_tarea_estudiante' %}" class="grid sm:grid-cols-[1fr_auto_auto] gap-2 mb-5">
+    {% csrf_token %}
+    <label class="sr-only" for="titulo-tarea">Nueva tarea</label>
+    <input id="titulo-tarea" name="titulo" maxlength="160" required class="rounded-lg border px-3 py-2 surface-control" placeholder="Ej. Preparar evaluación de inglés">
+    <label class="sr-only" for="fecha-tarea">Fecha límite</label>
+    <input id="fecha-tarea" type="date" name="fecha_limite" class="rounded-lg border px-3 py-2 surface-control">
+    <button class="btn-primary px-4 py-2" type="submit">Agregar</button>
+   </form>
+   {% if tareas %}<ul class="space-y-2">
+   {% for tarea in tareas %}<li class="rounded-lg border p-3 flex flex-wrap items-center gap-3" style="border-color:var(--linea)">
+    <form method="post" action="{% url 'academico:alternar_tarea_estudiante' tarea.id %}">{% csrf_token %}<button type="submit" class="btn-secondary px-3 py-1 text-sm" aria-label="Cambiar estado de {{ tarea.titulo }}">{% if tarea.completada %}↩ Pendiente{% else %}✓ Completar{% endif %}</button></form>
+    <span class="flex-1 {% if tarea.completada %}line-through text-muted{% endif %}">{{ tarea.titulo }}</span>
+    {% if tarea.fecha_limite %}<span class="text-xs text-muted">{{ tarea.fecha_limite|date:'d/m/Y' }}</span>{% endif %}
+    <form method="post" action="{% url 'academico:eliminar_tarea_estudiante' tarea.id %}">{% csrf_token %}<button type="submit" class="text-sm text-muted hover:underline" aria-label="Eliminar {{ tarea.titulo }}">Eliminar</button></form>
+   </li>{% endfor %}</ul>
+   {% else %}<p class="text-sm text-muted">Aún no tienes tareas. Agrega una para comenzar a planificar.</p>{% endif %}
+  </section>
+ </div>
+ <aside class="space-y-6">
+  <div class="card p-5"><h2 class="font-display font-semibold mb-3">Mi información académica</h2>
+   <p class="text-sm"><strong>Nombre:</strong> {{ user.nombre_completo }}</p>
+   <p class="text-sm mt-2"><strong>Código EduNova:</strong> {{ user.codigo_edunova }}</p>
+   {% if perfil %}<p class="text-sm mt-2"><strong>Registro:</strong> {{ perfil.codigo_edunova }}</p>{% endif %}
+   <p class="text-xs text-muted mt-4">Las notas, créditos, carrera y asignaturas se incorporarán al modelo universitario en una próxima etapa.</p>
+  </div>
+  <div class="card p-5"><h2 class="font-display font-semibold mb-3">Próximas actividades</h2>
+   {% if eventos_proximos %}<ul class="space-y-2">{% for ev in eventos_proximos %}<li class="text-sm">{{ ev.fecha|date:'d/m' }} · {{ ev.titulo }}</li>{% endfor %}</ul>
+   {% else %}<p class="text-sm text-muted">Sin eventos académicos publicados.</p>{% endif %}
+  </div>
+ </aside>
+</div>
+{% endblock %}

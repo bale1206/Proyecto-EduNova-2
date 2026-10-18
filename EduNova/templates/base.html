@@ -19,7 +19,7 @@
             raiz.setAttribute('data-palette', paleta);
             var modo = guardado('edunova-modo', 'sistema');
             var prefiereOscuro = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (modo === 'oscuro' || (modo === 'sistema' && prefiereOscuro)) raiz.classList.add('dark');
+            raiz.classList.toggle('dark', modo === 'oscuro' || (modo === 'sistema' && prefiereOscuro));
 
             var tamano = guardado('edunova-a11y-tamano', 'normal');
             if (tamano === 'grande') raiz.classList.add('a11y-texto-grande');
@@ -56,7 +56,7 @@
                     <span class="block text-xs text-muted">{{ user.get_rol_display }}</span>
                 </span>
 
-                {% if user.rol == 'docente' or user.rol == 'apoderado' %}
+                {% if user.rol == 'docente' %}
                 <a href="{% url 'comunicacion:enviar_comunicado' %}" class="btn-primary text-sm font-medium px-3 py-2 hidden sm:inline-block">
                     Nuevo comunicado
                 </a>
@@ -123,6 +123,90 @@
 
         {% block content %}{% endblock %}
     </main>
+
+    <!-- Indicador de carga: accesible, sin bloquear el contenido si no hay una petición activa. -->
+    <div id="edunova-loading-overlay" class="edunova-loading-overlay" hidden
+         role="status" aria-live="polite" aria-label="Cargando, espera por favor">
+        <div class="edunova-loading-panel">
+            <svg class="edunova-hourglass" viewBox="0 0 24 24" width="40" height="40"
+                 fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 3h14M5 21h14M7 3v4a5 5 0 0 0 2 4l3 1 3-1a5 5 0 0 0 2-4V3M7 21v-4a5 5 0 0 1 2-4l3-1 3 1a5 5 0 0 1 2 4v4"/>
+            </svg>
+            <span>Cargando…</span>
+        </div>
+    </div>
+    <script>
+    (function () {
+        var overlay = document.getElementById('edunova-loading-overlay');
+        var timer = null;
+        var pending = 0;
+        // Solo peticiones provocadas por acciones del usuario deben bloquear la vista.
+        // Las consultas periódicas (p.ej., notificaciones) nunca muestran el indicador.
+        var activeRequests = new WeakSet();
+        function showSoon() {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                if (pending > 0) overlay.hidden = false;
+            }, 300);
+        }
+        function begin() { pending += 1; showSoon(); }
+        function end() {
+            pending = Math.max(0, pending - 1);
+            if (!pending) { clearTimeout(timer); overlay.hidden = true; }
+        }
+        function shouldShowHtmx(event) {
+            var detail = event.detail || {};
+            var config = detail.requestConfig || {};
+            var trigger = detail.triggeringEvent || config.triggeringEvent;
+            // Peticiones automáticas por load/every/polling quedan en segundo plano.
+            if (!trigger || !trigger.isTrusted) return false;
+            return ['click', 'submit', 'change'].indexOf(trigger.type) !== -1;
+        }
+        document.body.addEventListener('htmx:beforeRequest', function (event) {
+            var xhr = event.detail && event.detail.xhr;
+            if (xhr && shouldShowHtmx(event)) {
+                activeRequests.add(xhr);
+                begin();
+            }
+        });
+        function finishHtmx(event) {
+            var xhr = event.detail && event.detail.xhr;
+            if (xhr && activeRequests.has(xhr)) {
+                activeRequests.delete(xhr);
+                end();
+            }
+        }
+        document.body.addEventListener('htmx:afterRequest', finishHtmx);
+        document.body.addEventListener('htmx:sendError', finishHtmx);
+        document.body.addEventListener('htmx:timeout', finishHtmx);
+        document.body.addEventListener('htmx:responseError', finishHtmx);
+        // Formularios tradicionales y navegación entre páginas iniciada por el usuario.
+        document.addEventListener('submit', function (event) {
+            if (event.defaultPrevented || !event.isTrusted) return;
+            var form = event.target;
+            if (!form.matches('form') || form.hasAttribute('hx-post') || form.hasAttribute('hx-get') ||
+                form.hasAttribute('hx-put') || form.hasAttribute('hx-delete') || form.hasAttribute('hx-patch')) return;
+            if (form.checkValidity()) begin();
+        });
+        document.addEventListener('click', function (event) {
+            if (!event.isTrusted || event.defaultPrevented || event.button !== 0 ||
+                event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+            var link = event.target.closest('a[href]');
+            if (!link || link.hasAttribute('hx-get') || link.hasAttribute('download') || link.target === '_blank') return;
+            try {
+                var url = new URL(link.href, location.href);
+                if ((url.protocol === 'http:' || url.protocol === 'https:') &&
+                    url.origin === location.origin &&
+                    (url.pathname !== location.pathname || url.search !== location.search)) begin();
+            } catch (err) { /* URL no navegable */ }
+        });
+        window.addEventListener('pageshow', function () {
+            pending = 0;
+            clearTimeout(timer);
+            overlay.hidden = true;
+        });
+    })();
+    </script>
 
     {% include "_accesibilidad.html" %}
 </body>

@@ -32,6 +32,11 @@ class Curso(models.Model):
 
 
 class Estudiante(models.Model):
+    usuario = models.OneToOneField(
+        Usuario, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='perfil_estudiante', limit_choices_to={'rol': 'estudiante'},
+        verbose_name='Cuenta de estudiante',
+    )
     rut_estudiante = models.CharField('RUT del estudiante', max_length=12, unique=True)
     nombre_completo = models.CharField(max_length=150)
     curso = models.ForeignKey(Curso, on_delete=models.SET_NULL, null=True, related_name='estudiantes')
@@ -227,3 +232,21 @@ class RegistroAsistencia(models.Model):
         return f"{self.estudiante.nombre_completo} - {estado} ({self.fecha.strftime('%H:%M - %d/%m/%Y')})"
 
     
+
+
+class TareaEstudio(models.Model):
+    """Tarea privada, gestionada exclusivamente por su estudiante propietario."""
+    estudiante = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='tareas_estudio', limit_choices_to={'rol': 'estudiante'})
+    titulo = models.CharField(max_length=160)
+    descripcion = models.TextField(blank=True)
+    fecha_limite = models.DateField(null=True, blank=True)
+    completada = models.BooleanField(default=False)
+    creada_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['completada', 'fecha_limite', '-creada_en']
+        verbose_name = 'Tarea de estudio'
+        verbose_name_plural = 'Tareas de estudio'
+
+    def __str__(self):
+        return self.titulo
