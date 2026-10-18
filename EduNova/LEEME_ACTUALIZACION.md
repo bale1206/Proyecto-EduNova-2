@@ -27,7 +27,7 @@ El registro público y la creación/edición de usuarios estudiantes vuelven a e
 
 El formulario aparece en la Agenda de dirección y en la página Crear sección. Permite seleccionar:
 
-- Carrera: las autorizadas para el director; se conserva el aislamiento por carrera.
+- Carrera: se muestran todas las carreras de la base de datos en la creación de secciones. Los filtros de agenda, observaciones y análisis mantienen su alcance por carrera.
 - Asignatura: se carga según la carrera seleccionada.
 - Turno: Diurno = true; Vespertino = false.
 - Docentes asignados: uno o varios.
@@ -75,9 +75,23 @@ Se conserva el rol histórico Apoderado para mantener válidos los datos y las p
 
 ## Verificación
 
-55 pruebas aprobadas en SQLite, incluidos los flujos de Django Admin, inscripción múltiple, registro, permisos, creación de secciones, límite 999, RUT, guardado/corrección de asistencia, importación histórica y entrega privada de WebSocket.
+56 pruebas aprobadas en SQLite, incluidos los flujos de Django Admin, inscripción múltiple, registro, permisos, creación de secciones, límite 999, RUT, guardado/corrección de asistencia, importación histórica y entrega privada de WebSocket.
 Django check sin problemas y makemigrations --check sin cambios pendientes.
 
 Se ejecutaron las migraciones sobre una copia de la base SQLite incluida en el ZIP recibido: se conservaron sus 3 cursos, 3 estudiantes y 8 registros históricos de RegistroAsistencia, se generaron 13 marcas para análisis incluyendo el otro modelo histórico y no se encontraron errores de claves foráneas.
 
 No se modificó la base original ni se probó contra un servidor PostgreSQL o Redis externo.
+
+## Corrección del selector y el número automático
+
+El selector de creación de secciones ofrece todas las carreras registradas, incluidas las que no coinciden con la carrera dirigida del usuario. Las asignaturas se filtran según la carrera seleccionada.
+
+La primera asignatura de la carrera se selecciona automáticamente y el número real se muestra al abrir el formulario. Al cambiar carrera o asignatura se actualiza; al cambiar turno se actualiza D/V. Tras crear la sección, se calcula el siguiente correlativo. El servidor vuelve a confirmar el número al guardar para evitar duplicados.
+
+El script se entrega en static/js/secciones-form.js. Si sirves los archivos estáticos con collectstatic, actualízalos también:
+
+    python manage.py collectstatic --noinput
+
+Esta corrección no agrega migraciones. Mantén las migraciones de la entrega anterior aplicadas. Reinicia el servidor y recarga la página con Ctrl+F5.
+
+Se verificaron 56 pruebas de Django. La comprobación visual del navegador no pudo realizarse porque su control de permisos rechazó el acceso al servidor local de pruebas.

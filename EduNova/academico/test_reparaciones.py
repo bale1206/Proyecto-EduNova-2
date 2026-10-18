@@ -40,7 +40,7 @@ class ReparacionesFlujosTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['numero'], '001')
         self.assertEqual([a['id'] for a in response.json()['asignaturas']], [self.materia.pk])
-        self.assertEqual(self.client.get(url, {'carrera':self.otra.pk}).status_code, 404)
+        self.assertEqual(self.client.get(url, {'carrera':self.otra.pk}).status_code, 200)
         self.assertEqual(self.client.get(url, {'carrera':self.carrera.pk,'asignatura':self.ajena.pk}).status_code, 404)
         self.assertEqual(self.client.get(url, {'carrera':'incorrecto'}).status_code, 404)
 
@@ -201,3 +201,18 @@ class ReparacionesFlujosTests(TestCase):
         self.assertTrue(await segundo.receive_nothing(timeout=0.03))
         await primero.disconnect()
         await segundo.disconnect()
+
+    def test_creacion_permite_todas_las_carreras_y_numero_inicial_real(self):
+        self.client.force_login(self.director)
+        response = self.client.get(reverse('academico:home_administrativo'))
+        form = response.context['curso_form']
+        self.assertSetEqual(set(form.fields['carrera'].queryset.values_list('pk', flat=True)), set(Carrera.objects.values_list('pk', flat=True)))
+        self.assertEqual(form.numero_seccion, '001')
+        self.assertEqual(form.codigo_seccion, 'MAT-001-D')
+        self.assertContains(response, 'value="001" readonly')
+        datos = {'carrera':self.otra.pk,'asignatura_catalogo':self.ajena.pk,'turno':'false','docentes':[self.profesor.pk]}
+        self.assertEqual(self.client.post(reverse('academico:crear_curso'),datos).status_code,302)
+        creada = Curso.objects.get(asignatura_catalogo=self.ajena)
+        self.assertEqual(creada.seccion, 'HIS-000-V')
+        opcion = self.client.get(reverse('academico:opciones_seccion'),{'carrera':self.otra.pk,'asignatura':self.ajena.pk})
+        self.assertEqual(opcion.json()['numero'],'001')

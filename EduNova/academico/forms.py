@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 
 from usuarios.models import Usuario
 
@@ -44,7 +45,7 @@ class CursoForm(forms.ModelForm):
 
 
 class CrearSeccionForm(CursoForm):
-    carrera = forms.ModelChoiceField(queryset=Carrera.objects.filter(activa=True), label='Carrera')
+    carrera = forms.ModelChoiceField(queryset=Carrera.objects.all(), label='Carrera')
     docentes = forms.ModelMultipleChoiceField(queryset=Usuario.objects.filter(rol='docente'), label='Docentes asignados')
 
     class Meta(CursoForm.Meta):
@@ -53,12 +54,29 @@ class CrearSeccionForm(CursoForm):
     def __init__(self, *args, user=None, **kwargs):
         from .models import Asignatura
         super().__init__(*args, **kwargs)
-        carreras = Carrera.objects.filter(activa=True)
-        if user and not user.is_superuser:
-            carreras = carreras.filter(pk=user.carrera_dirigida_id)
+        carreras = Carrera.objects.all().order_by('escuela', 'nombre')
         self.fields['carrera'].queryset = carreras
+        if not self.is_bound and not self.initial.get('carrera'):
+            self.initial['carrera'] = carreras.values_list('pk', flat=True).first()
         carrera_id = self.data.get('carrera') if self.is_bound else self.initial.get('carrera')
-        self.fields['asignatura_catalogo'].queryset = Asignatura.objects.filter(activa=True, carreras__in=carreras.filter(pk=carrera_id)).distinct() if str(carrera_id or '').isdigit() else Asignatura.objects.none()
+        asignaturas = Asignatura.objects.filter(activa=True, carreras__in=carreras.filter(pk=carrera_id)).distinct() if str(carrera_id or '').isdigit() else Asignatura.objects.none()
+        self.fields['asignatura_catalogo'].queryset = asignaturas
+        if not self.is_bound and not self.initial.get('asignatura_catalogo'):
+            self.initial['asignatura_catalogo'] = asignaturas.values_list('pk', flat=True).first()
+        asignatura_id = self.data.get('asignatura_catalogo') if self.is_bound else self.initial.get('asignatura_catalogo')
+        self.numero_seccion = ''
+        self.codigo_seccion = ''
+        self.error_numero = ''
+        elegida = asignaturas.filter(pk=asignatura_id).first() if str(asignatura_id or '').isdigit() else None
+        if elegida:
+            from .secciones import siguiente_numero, prefijo_asignatura
+            try:
+                self.numero_seccion = f'{siguiente_numero(Curso, elegida.nombre):03d}'
+                turno = self.data.get('turno') if self.is_bound else self.initial.get('turno', 'true')
+                sufijo = 'D' if turno in (True, 'true') else 'V'
+                self.codigo_seccion = f'{prefijo_asignatura(elegida.nombre)}-{self.numero_seccion}-{sufijo}'
+            except ValidationError as exc:
+                self.error_numero = '; '.join(exc.messages)
         for field in self.fields.values():
             field.widget.attrs.update({'class': INPUT_CLASSES, 'style': INPUT_STYLE})
 

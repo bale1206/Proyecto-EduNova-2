@@ -282,9 +282,7 @@ def crear_curso(request):
 @login_required
 def opciones_seccion(request):
     _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
-    carreras = Carrera.objects.filter(activa=True)
-    if not request.user.is_superuser:
-        carreras = carreras.filter(pk=request.user.carrera_dirigida_id)
+    carreras = Carrera.objects.all()
     carrera_id = request.GET.get('carrera', '')
     from django.http import Http404
     if not carrera_id.isdecimal():
