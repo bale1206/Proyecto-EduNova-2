@@ -10,7 +10,7 @@
  <div class="space-y-6 lg:col-span-2">
   <section class="card p-5" aria-labelledby="calendario-titulo">
    <h2 id="calendario-titulo" class="font-display text-xl font-semibold mb-4">Calendario académico</h2>
-   {% if perfil and perfil.curso %}<p class="text-sm text-muted mb-3">Eventos académicos vinculados a tu registro actual.</p>{% else %}<p class="text-sm text-muted mb-3">Todavía no tienes asignaturas o secciones vinculadas. El calendario estará disponible al habilitar las matrículas universitarias.</p>{% endif %}
+   {% if perfil and perfil.curso %}<p class="text-sm text-muted mb-3">Curso: {{ perfil.curso }}.</p>{% else %}<p class="text-sm text-muted mb-3">Solicita que te asignen un curso para consultar sus eventos académicos.</p>{% endif %}
    {% include 'academico/_calendario.html' %}
   </section>
   <section class="card p-5" aria-labelledby="tareas-titulo">

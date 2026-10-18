@@ -25,11 +25,11 @@ Para una instalación nueva, crear el entorno virtual e instalar primero las dep
    venv\Scripts\activate
    python -m pip install -r requirements.txt
 
-La configuración original usa PostgreSQL de manera predeterminada. Para usar la copia SQLite incluida, en PowerShell ejecutar antes de migrate y runserver:
+La configuración original usa PostgreSQL de manera predeterminada. Para usar tu base SQLite, en PowerShell ejecutar antes de migrate y runserver:
 
    $env:DB_ENGINE = 'sqlite'
 
-El archivo db.sqlite3 incluido se conserva igual al original; su migración se aplica con el comando indicado. El ZIP no incluye el entorno virtual, que se debe crear o conservar en cada equipo.
+Conserva tu base de datos actual y aplica su migración con el comando indicado. Esta entrega no incluye db.sqlite3 ni el entorno virtual; conserva los de tu instalación. Consulta CAMBIOS_CURSOS_USUARIOS.md para los cambios y verificaciones más recientes.
 
 ## Verificación realizada
 

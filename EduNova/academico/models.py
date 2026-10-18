@@ -1,5 +1,9 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction, IntegrityError
+from django.core.exceptions import ValidationError
+from django.db.models.functions import Substr, Length
+
+from .secciones import prefijo_asignatura, validar_asignatura, validar_seccion
 
 Usuario = settings.AUTH_USER_MODEL
 
@@ -15,20 +19,58 @@ class PermisoTablaCSV(models.Model):
 
 
 class Curso(models.Model):
-    grado_curso = models.CharField('Curso', max_length=50)
+    asignatura = models.CharField('Asignatura', max_length=150, validators=[validar_asignatura])
+    turno = models.BooleanField('Turno', default=True, choices=[(True, 'Diurno'), (False, 'Vespertino')])
+    seccion = models.CharField('Sección', max_length=50, unique=True, editable=False, validators=[validar_seccion])
     docente_jefe = models.ForeignKey(
         Usuario, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='cursos_a_cargo',
         limit_choices_to={'rol': 'docente'},
     )
 
+    def clean(self):
+        super().clean()
+        validar_asignatura(self.asignatura)
+        if self.seccion and self._state.adding:
+            validar_seccion(self.seccion)
+            if not self.seccion.startswith(prefijo_asignatura(self.asignatura) + '-') or self.seccion[-1] != ('D' if self.turno else 'V'):
+                raise ValidationError('La sección no coincide con la asignatura y el turno.')
+
+    def save(self, *args, **kwargs):
+        using = kwargs.get('using') or self._state.db or 'default'
+        validar_asignatura(self.asignatura)
+        prefijo = prefijo_asignatura(self.asignatura)
+        sufijo = 'D' if self.turno else 'V'
+        anterior = type(self).objects.using(using).filter(pk=self.pk).first() if self.pk else None
+        regenerar = not anterior or prefijo_asignatura(anterior.asignatura) != prefijo or anterior.turno != self.turno
+        if not regenerar:
+            # La sección no puede ser cambiada manualmente.
+            self.seccion = anterior.seccion
+            return super().save(*args, **kwargs)
+        if kwargs.get('update_fields') is not None:
+            kwargs['update_fields'] = set(kwargs['update_fields']) | {'seccion', 'asignatura', 'turno'}
+        # La restricción única resuelve también las creaciones simultáneas.
+        for intento in range(5):
+            codigos = type(self).objects.using(using).filter(seccion__startswith=prefijo + '-').values_list('seccion', flat=True)
+            numeros = [int(codigo[4:-1]) for codigo in codigos if codigo[4:-1].isdigit()]
+            self.seccion = f"{prefijo}-{max(numeros, default=-1) + 1:03d}{sufijo}"
+            try:
+                with transaction.atomic(using=using):
+                    return super().save(*args, **kwargs)
+            except IntegrityError:
+                if intento == 4 or not type(self).objects.using(using).filter(seccion__in=[self.seccion[:-1] + 'D', self.seccion[:-1] + 'V']).exists():
+                    raise
+
     def __str__(self):
-        return self.grado_curso
+        return f"{self.seccion} · {self.asignatura} ({self.get_turno_display()})"
 
     class Meta:
         verbose_name = 'Curso'
         verbose_name_plural = 'Cursos'
-        ordering = ['grado_curso']
+        ordering = ['seccion']
+        constraints = [
+            models.UniqueConstraint(Substr('seccion', 1, Length('seccion') - 1), name='curso_correlativo_prefijo_unico'),
+        ]
 
 
 class Estudiante(models.Model):
@@ -41,11 +83,19 @@ class Estudiante(models.Model):
     nombre_completo = models.CharField(max_length=150)
     curso = models.ForeignKey(Curso, on_delete=models.SET_NULL, null=True, related_name='estudiantes')
     apoderado = models.ForeignKey(
-        Usuario, on_delete=models.CASCADE, related_name='estudiantes_a_cargo',
+        Usuario, on_delete=models.SET_NULL, null=True, blank=True, related_name='estudiantes_a_cargo',
         limit_choices_to={'rol': 'apoderado'},
     )
     # Apellido paterno del alumno, usado para agrupar hermanos como "Familia X"
     apellido_familiar = models.CharField(max_length=50, blank=True)
+
+    def clean(self):
+        super().clean()
+        if self.usuario_id:
+            if self.usuario.rol != 'estudiante':
+                raise ValidationError({'usuario': 'La cuenta vinculada debe tener rol estudiante.'})
+            if not self.curso_id:
+                raise ValidationError({'curso': 'Debes asociar al estudiante a un curso.'})
 
     @property
     def codigo_edunova(self):
@@ -58,7 +108,11 @@ class Estudiante(models.Model):
             partes = self.nombre_completo.strip().split()
             if len(partes) >= 2:
                 self.apellido_familiar = partes[-2] if len(partes) >= 3 else partes[-1]
-        super().save(*args, **kwargs)
+        with transaction.atomic(using=kwargs.get('using') or self._state.db or 'default'):
+            super().save(*args, **kwargs)
+            if self.usuario_id:
+                from usuarios.models import Usuario as CuentaUsuario
+                CuentaUsuario.objects.using(self._state.db).filter(pk=self.usuario_id, rol='estudiante').update(curso_id=self.curso_id)
 
     def __str__(self):
         return self.nombre_completo

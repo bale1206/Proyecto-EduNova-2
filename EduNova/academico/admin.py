@@ -1,11 +1,17 @@
 from django.contrib import admin
 
+from .forms import CursoForm
+
 from .models import Asistencia, Curso, Estudiante, Evento, JustificacionRetiro, Observacion, ObservacionComportamiento, RegistroAsistencia, Usuario
 
 
 @admin.register(Curso)
 class CursoAdmin(admin.ModelAdmin):
-    list_display = ('grado_curso', 'docente_jefe')
+    list_display = ('seccion', 'asignatura', 'turno', 'docente_jefe')
+    readonly_fields = ('seccion',)
+    search_fields = ('seccion', 'asignatura')
+    list_filter = ('turno',)
+    form = CursoForm
 
 
 @admin.register(Estudiante)

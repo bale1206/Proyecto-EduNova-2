@@ -23,7 +23,7 @@
             <select id="id_curso" name="curso" class="w-full md:w-1/2 surface-control rounded-md p-3 focus:outline-none focus:border-[var(--rio)]" required>
                 <option value="">- Seleccione una opción -</option>
                 {% for curso in cursos %}
-                    <option value="{{ curso.id }}">{{ curso.grado_curso }}</option>
+                    <option value="{{ curso.id }}">{{ curso }}</option>
                 {% endfor %}
             </select>
         </div>

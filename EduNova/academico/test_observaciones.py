@@ -23,7 +23,7 @@ class ObservacionesSancionTests(TestCase):
         cls.apoderado = Usuario.objects.create_user(rut='10000000-3', rol='apoderado')
         cls.alumno = Usuario.objects.create_user(rut='10000000-4', rol='estudiante')
         cls.otro = Usuario.objects.create_user(rut='10000000-5', rol='estudiante')
-        cls.curso = Curso.objects.create(grado_curso='1A', docente_jefe=cls.docente)
+        cls.curso = Curso.objects.create(asignatura='Matemática', docente_jefe=cls.docente)
         cls.estudiante = Estudiante.objects.create(
             rut_estudiante=cls.alumno.rut, nombre_completo='Alumno Uno',
             curso=cls.curso, apoderado=cls.apoderado, usuario=cls.alumno,

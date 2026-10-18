@@ -39,7 +39,7 @@ class Command(BaseCommand):
             director.set_password('edunova123')
             director.save()
 
-        curso, _ = Curso.objects.get_or_create(grado_curso='5° Básico A', docente_jefe=docente)
+        curso, _ = Curso.objects.get_or_create(asignatura='Matemática', turno=True, docente_jefe=docente)
 
         est1, _ = Estudiante.objects.get_or_create(
             rut_estudiante='30111222-3', defaults=dict(

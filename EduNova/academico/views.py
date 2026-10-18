@@ -203,7 +203,7 @@ def crear_curso(request):
         form = CursoForm(request.POST)
         if form.is_valid():
             curso = form.save()
-            messages.success(request, f'Curso "{curso.grado_curso}" creado.')
+            messages.success(request, f'Curso "{curso.asignatura}" creado.')
             return redirect('academico:home_administrativo')
         messages.error(request, 'Revisa los datos del curso: ' + '; '.join(form.errors))
     return redirect('academico:home_administrativo')

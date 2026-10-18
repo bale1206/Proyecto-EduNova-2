@@ -26,7 +26,7 @@
             <ul class="space-y-2 mb-4">
                 {% for curso in cursos %}
                 <li class="flex items-center justify-between text-sm rounded-lg px-3 py-2" style="background: var(--lino-2);">
-                    <span>{{ curso.grado_curso }}</span>
+                    <span>{{ curso }}</span>
                     <span class="text-muted text-xs">{{ curso.docente_jefe.nombre_completo|default:"Sin docente jefe" }}</span>
                 </li>
                 {% endfor %}
@@ -40,9 +40,14 @@
                 <form method="post" action="{% url 'academico:crear_curso' %}" class="space-y-3 mt-3">
                     {% csrf_token %}
                     <div>
-                        <label class="block text-xs font-medium mb-1">{{ curso_form.grado_curso.label }}</label>
-                        {{ curso_form.grado_curso }}
+                        <label class="block text-xs font-medium mb-1">{{ curso_form.asignatura.label }}</label>
+                        {{ curso_form.asignatura }}
                     </div>
+                    <div>
+                        <label for="{{ curso_form.turno.id_for_label }}" class="block text-xs font-medium mb-1">Turno</label>
+                        {{ curso_form.turno }}
+                    </div>
+                    <p class="text-xs text-muted">La sección se genera automáticamente, por ejemplo MAT-000D.</p>
                     <div>
                         <label class="block text-xs font-medium mb-1">{{ curso_form.docente_jefe.label }}</label>
                         {{ curso_form.docente_jefe }}
@@ -62,7 +67,7 @@
                         <span class="chip chip-{{ ev.tipo }}">{{ ev.get_tipo_display }}</span>
                         <span class="text-faint text-xs">{{ ev.fecha|date:"d M" }}</span>
                     </div>
-                    <p class="mt-1">{{ ev.titulo }} <span class="text-faint">· {{ ev.curso.grado_curso }}</span></p>
+                    <p class="mt-1">{{ ev.titulo }} <span class="text-faint">· {{ ev.curso }}</span></p>
                 </li>
                 {% endfor %}
             </ul>

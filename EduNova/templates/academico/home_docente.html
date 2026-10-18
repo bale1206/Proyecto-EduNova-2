@@ -15,7 +15,7 @@
                     {% if proxima_clase.hora_inicio %} · {{ proxima_clase.hora_inicio|time:"H:i" }}{% endif %}
                 </p>
                 <p class="font-medium mt-1">{{ proxima_clase.titulo }}</p>
-                <p class="text-sm text-muted">{{ proxima_clase.curso.grado_curso }}</p>
+                <p class="text-sm text-muted">{{ proxima_clase.curso }}</p>
             </div>
             {% else %}
             <p class="text-sm text-muted">No tienes clases próximas agendadas.</p>
@@ -28,7 +28,7 @@
             <ul class="space-y-2">
                 {% for curso in cursos %}
                 <li class="flex items-center justify-between text-sm">
-                    <span>{{ curso.grado_curso }}</span>
+                    <span>{{ curso }}</span>
                     <span class="text-faint">{{ curso.estudiantes.count }} estudiantes</span>
                 </li>
                 {% endfor %}

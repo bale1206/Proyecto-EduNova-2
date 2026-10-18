@@ -8,7 +8,7 @@ from django.db import IntegrityError, connection, transaction
 from django.db.models import AutoField, BooleanField
 from django.http import HttpResponse
 
-from .models import PermisoTablaCSV
+from .models import PermisoTablaCSV, Curso, Estudiante
 from usuarios.codigos import leer_codigo
 
 MAX_BYTES = 5 * 1024 * 1024
@@ -188,7 +188,13 @@ def cargar_csv(model, archivo, permiso_pk):
                 record.full_clean(exclude=exclude)
                 # Como al cargar fixtures: conserva fechas e IDs del CSV y no
                 # ejecuta autocompletados de save() que cambiarían los datos.
-                record.save_base(raw=True, force_insert=True)
+                if model is Curso and not record.seccion:
+                    record.save(force_insert=True)
+                else:
+                    record.save_base(raw=True, force_insert=True)
+                if model is Estudiante and record.usuario_id:
+                    from usuarios.models import Usuario
+                    Usuario.objects.filter(pk=record.usuario_id, rol='estudiante').update(curso_id=record.curso_id)
             except ValidationError as exc:
                 raise ErrorCSV(f'Fila {number}: ' + '; '.join(exc.messages)) from exc
             except IntegrityError as exc:
@@ -201,8 +207,8 @@ def cargar_csv(model, archivo, permiso_pk):
 # insinuar que corresponden a registros existentes en Supabase.
 EJEMPLOS_CSV = {
     'academico_curso': [
-        {'grado_curso': '7° A', 'docente_jefe_id': NULL},
-        {'grado_curso': '8° B', 'docente_jefe_id': NULL},
+        {'asignatura': 'Matemática', 'seccion': '', 'turno': 'true', 'docente_jefe_id': NULL},
+        {'asignatura': 'Programación', 'seccion': '', 'turno': 'false', 'docente_jefe_id': NULL},
     ],
     'academico_estudiante': [
         {'rut_estudiante': '11.111.111-1', 'nombre_completo': 'Camila Torres Soto',

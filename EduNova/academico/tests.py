@@ -16,7 +16,7 @@ class TomarAsistenciaTests(TestCase):
 			rut='22.222.222-2', email='apoderado@example.com', password='test-pass',
 			apellidos='Apoderado', rol='apoderado',
 		)
-		curso = Curso.objects.create(grado_curso='1A', docente_jefe=self.docente)
+		curso = Curso.objects.create(asignatura='Matemática', docente_jefe=self.docente)
 		self.estudiante = Estudiante.objects.create(
 			rut_estudiante='33.333.333-3', nombre_completo='Estudiante de Prueba',
 			curso=curso, apoderado=apoderado,

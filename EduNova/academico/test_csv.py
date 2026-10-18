@@ -18,6 +18,8 @@ def archivo(model, rows, header=None, delimiter=','):
     physical = campos_tabla(model)
     writer.writerow(header or [f.column for f in physical])
     for row in rows:
+        if model is Curso and not header and len(row) == 3:
+            row = [row[0], row[1], True, '', row[2]]
         if not header and len(row) == len(fields):
             values = dict(zip([f.column for f in fields], row))
             row = [values[f.column] for f in physical]
@@ -52,20 +54,20 @@ class CSVTests(TestCase):
         self.assertContains(self.client.get(reverse('academico:configurar_csv')), 'checked')
 
     def test_exportacion_preserva_columnas_y_texto(self):
-        course = Curso.objects.create(grado_curso='Niñez, "A"\nSegunda línea \\N', docente_jefe=self.docente)
+        course = Curso.objects.create(asignatura='Niñez, "A"\nSegunda línea \\N', docente_jefe=self.docente)
         self.client.force_login(self.administrativo)
         response = self.client.get(reverse('academico:exportar_csv', args=[self.permiso.tabla]))
         self.assertEqual(response.status_code, 200)
         rows = list(csv.reader(io.StringIO(response.content.decode('utf-8-sig'))))
-        self.assertEqual(rows[0], ['id', 'grado_curso', 'docente_jefe_id'])
-        self.assertEqual(rows[1], [str(course.pk), course.grado_curso.replace('\\', '\\\\'), str(self.docente.pk)])
+        self.assertEqual(rows[0], [f.column for f in campos_tabla(Curso)])
+        self.assertEqual(dict(zip(rows[0], rows[1]))['asignatura'], course.asignatura.replace('\\', '\\\\'))
         payload = response.content
         course.delete()
         self.assertEqual(cargar_csv(Curso, SimpleUploadedFile('datos.csv', payload), self.permiso.pk), 1)
-        self.assertEqual(Curso.objects.get().grado_curso, 'Niñez, "A"\nSegunda línea \\N')
+        self.assertEqual(Curso.objects.get().asignatura, 'Niñez, "A"\nSegunda línea \\N')
 
     def test_ejemplo_de_cursos_es_independiente_de_datos_reales(self):
-        Curso.objects.create(grado_curso='Curso privado')
+        Curso.objects.create(asignatura='Curso privado')
         self.client.force_login(self.administrativo)
         response = self.client.get(reverse('academico:ejemplo_csv', args=[Curso._meta.db_table]))
         self.assertEqual(response.status_code, 200)
@@ -84,13 +86,13 @@ class CSVTests(TestCase):
         self.assertEqual(Estudiante.objects.count(), 0)
 
     def test_plantilla_no_expone_datos_con_permiso_solo_importar(self):
-        Curso.objects.create(grado_curso='Privado')
+        Curso.objects.create(asignatura='Privado')
         self.permiso.exportar = False
         self.permiso.save()
         self.client.force_login(self.administrativo)
         self.assertEqual(self.client.get(reverse('academico:exportar_csv', args=[self.permiso.tabla])).status_code, 403)
         response = self.client.get(reverse('academico:plantilla_csv', args=[self.permiso.tabla]))
-        self.assertEqual(list(csv.reader(io.StringIO(response.content.decode('utf-8-sig')))), [['id', 'grado_curso', 'docente_jefe_id']])
+        self.assertEqual(list(csv.reader(io.StringIO(response.content.decode('utf-8-sig')))), [[f.column for f in campos_tabla(Curso)]])
 
     def test_roles_y_tablas_protegidas(self):
         self.assertNotIn('usuarios_usuario', tablas_disponibles())
@@ -119,7 +121,7 @@ class CSVTests(TestCase):
             'archivo': archivo(Curso, [['', 'Otro', r'\N']])}).status_code, 403)
 
     def test_estructura_exacta_y_filas_malformadas(self):
-        for header in (['grado_curso', 'id', 'docente_jefe_id'], ['id', 'grado_curso'], ['id', 'grado_curso', 'grado_curso']):
+        for header in (['asignatura', 'id', 'docente_jefe_id'], ['id', 'asignatura'], ['id', 'asignatura', 'asignatura']):
             with self.assertRaisesRegex(ErrorCSV, 'columnas'):
                 self.cargar(Curso, [['', 'Curso', r'\N']], header=header)
         with self.assertRaisesRegex(ErrorCSV, 'Fila 2'):
@@ -127,32 +129,32 @@ class CSVTests(TestCase):
         self.assertEqual(Curso.objects.count(), 0)
 
     def test_validacion_y_reversion_total(self):
-        for bad in (['', 'Curso', '99999'], ['', 'Curso', str(self.apoderado.pk)], ['', 'x' * 51, r'\N']):
+        for bad in (['', 'Curso', '99999'], ['', 'Curso', str(self.apoderado.pk)], ['', 'x' * 151, r'\N']):
             with self.assertRaisesRegex(ErrorCSV, 'Fila 3'):
                 self.cargar(Curso, [['', 'Válido', r'\N'], bad])
             self.assertEqual(Curso.objects.count(), 0)
 
     def test_ids_duplicados_no_reemplazan_datos(self):
-        course = Curso.objects.create(grado_curso='Original')
+        course = Curso.objects.create(asignatura='Original')
         with self.assertRaisesRegex(ErrorCSV, 'ya existe'):
             self.cargar(Curso, [['', 'Nuevo', r'\N'], [course.pk, 'Reemplazo', r'\N']])
-        self.assertEqual(list(Curso.objects.values_list('grado_curso', flat=True)), ['Original'])
+        self.assertEqual(list(Curso.objects.values_list('asignatura', flat=True)), ['Original'])
         with self.assertRaisesRegex(ErrorCSV, 'Fila 3'):
-            self.cargar(Curso, [['500', 'Uno', r'\N'], ['500', 'Dos', r'\N']])
+            self.cargar(Curso, [['500', 'Lenguaje', r'\N'], ['500', 'Historia', r'\N']])
         self.assertFalse(Curso.objects.filter(pk=500).exists())
 
     def test_punto_y_coma_y_revocacion(self):
-        self.assertEqual(self.cargar(Curso, [['', '1A', r'\N']], delimiter=';'), 1)
+        self.assertEqual(self.cargar(Curso, [['', 'Matemática', r'\N']], delimiter=';'), 1)
         self.permiso.importar = False
         self.permiso.save()
         with self.assertRaisesRegex(ErrorCSV, 'retiró'):
-            cargar_csv(Curso, archivo(Curso, [['', '2A', r'\N']]), self.permiso.pk)
+            cargar_csv(Curso, archivo(Curso, [['', 'Programación', r'\N']]), self.permiso.pk)
         self.assertEqual(Curso.objects.count(), 1)
 
     def test_utf8_tamano_y_csv_invalido(self):
         from unittest.mock import patch
         for upload in (SimpleUploadedFile('datos.csv', b'\xff'), SimpleUploadedFile('datos.txt', b'a'),
-                       SimpleUploadedFile('datos.csv', b'id,grado_curso,docente_jefe_id\n"incompleto')):
+                       SimpleUploadedFile('datos.csv', b'id,asignatura,docente_jefe_id\n"incompleto')):
             with self.assertRaises(ErrorCSV):
                 cargar_csv(Curso, upload, self.permiso.pk)
         with patch('academico.csv_services.MAX_BYTES', 2):
@@ -163,7 +165,7 @@ class CSVTests(TestCase):
                 self.cargar(Curso, [['', 'Curso', r'\N'], ['', 'Otro', r'\N']])
 
     def test_booleanos_y_fechas_automaticas_se_conservan(self):
-        course = Curso.objects.create(grado_curso='1A')
+        course = Curso.objects.create(asignatura='Matemática')
         student = Estudiante.objects.create(rut_estudiante='5-1', nombre_completo='Ana Pérez', curso=course, apoderado=self.apoderado)
         self.cargar(RegistroAsistencia, [['', student.pk, self.docente.pk, 'true', r'\N', '2020-01-02T10:30:00+00:00']])
         record = RegistroAsistencia.objects.get()
@@ -176,7 +178,7 @@ class CSVTests(TestCase):
         self.assertEqual(Observacion.objects.get().fecha.isoformat(), '2020-01-02')
 
     def test_tabla_intermedia_muchos_a_muchos(self):
-        course = Curso.objects.create(grado_curso='1A')
+        course = Curso.objects.create(asignatura='Matemática')
         student = Estudiante.objects.create(rut_estudiante='5-1', nombre_completo='Ana Pérez', curso=course, apoderado=self.apoderado)
         observation = ObservacionComportamiento.objects.create(docente=self.docente, asunto='Nota', tipo_observacion='SANCION', curso=course, descripcion='Texto')
         model = ObservacionComportamiento.estudiantes.through

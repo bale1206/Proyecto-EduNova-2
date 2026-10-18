@@ -5,11 +5,12 @@
 <div class="max-w-lg mx-auto card p-8">
     <h2 class="font-display text-2xl font-semibold mb-1">Crea tu cuenta</h2>
     <p class="text-sm text-muted mb-6">
-        Por ahora EduNova está habilitado para docentes y apoderados/tutores legales.
+        Por ahora EduNova está habilitado para docentes y estudiantes.
     </p>
 
     <form method="post" enctype="multipart/form-data" class="space-y-5">
         {% csrf_token %}
+        {{ form.non_field_errors }}
 
         <div>
             <p class="block text-sm font-medium mb-2">Soy...</p>
@@ -24,6 +25,12 @@
             {% if form.rol.errors %}<p class="text-sm text-error mt-1">{{ form.rol.errors.0 }}</p>{% endif %}
         </div>
 
+        <div id="curso-estudiante">
+            <label for="{{ form.curso.id_for_label }}" class="block text-sm font-medium mb-1">Curso del estudiante</label>
+            {{ form.curso }}
+            <p class="text-xs text-muted mt-1">Selecciona tu asignatura, sección y turno.</p>
+            {% if form.curso.errors %}<p class="text-sm text-error mt-1">{{ form.curso.errors.0 }}</p>{% endif %}
+        </div>
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium mb-1">RUT</label>
@@ -73,4 +80,18 @@
         <a href="{% url 'usuarios:login' %}" class="font-medium" style="color: var(--rio);">Inicia sesión</a>
     </p>
 </div>
+<script>
+(() => {
+    const bloque = document.getElementById('curso-estudiante');
+    const curso = document.getElementById('id_curso');
+    function actualizarCurso() {
+        const estudiante = document.querySelector('input[name="rol"]:checked')?.value === 'estudiante';
+        bloque.hidden = !estudiante;
+        curso.disabled = !estudiante;
+        curso.required = estudiante;
+    }
+    document.querySelectorAll('input[name="rol"]').forEach(radio => radio.addEventListener('change', actualizarCurso));
+    actualizarCurso();
+})();
+</script>
 {% endblock %}

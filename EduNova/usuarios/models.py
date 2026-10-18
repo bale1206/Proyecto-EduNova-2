@@ -1,7 +1,8 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db import models, transaction
+from django.core.exceptions import ValidationError
 
 
 class UsuarioManager(BaseUserManager):
@@ -72,18 +73,51 @@ class Usuario(AbstractUser):
     apellidos = models.CharField('Apellidos', max_length=50)
     rol = models.CharField(max_length=30, choices=Rol.choices)
     telefono = models.CharField('Teléfono', max_length=15, blank=True)
+    curso = models.ForeignKey(
+        'academico.Curso', on_delete=models.PROTECT, null=True, blank=True,
+        related_name='usuarios_estudiantes', verbose_name='Curso',
+        help_text='Obligatorio para usuarios con rol estudiante.',
+    )
 
     objects = UsuarioManager()
 
     USERNAME_FIELD = 'rut'
     REQUIRED_FIELDS = ['email', 'first_name', 'apellidos']
 
+    def clean(self):
+        super().clean()
+        if self.rol == self.Rol.ESTUDIANTE and not self.curso_id:
+            raise ValidationError({'curso': 'Debes asociar al estudiante a un curso.'})
+        if self.rol != self.Rol.ESTUDIANTE and self.curso_id:
+            raise ValidationError({'curso': 'El curso corresponde solamente a usuarios estudiantes.'})
+        if self.rol == self.Rol.ESTUDIANTE:
+            from academico.models import Estudiante
+            conflicto = Estudiante.objects.filter(rut_estudiante=self.rut).exclude(usuario_id=self.pk).exclude(usuario__isnull=True)
+            if conflicto.exists():
+                raise ValidationError({'rut': 'Este RUT ya está vinculado a otra cuenta de estudiante.'})
+
     def save(self, *args, **kwargs):
         # El campo 'username' heredado de AbstractUser sigue existiendo
         # (es unique=True a nivel de BD); lo mantenemos sincronizado con
         # el rut para que nunca quede vacío ni choque entre usuarios.
         self.username = self.rut
-        super().save(*args, **kwargs)
+        using = kwargs.get('using') or self._state.db or 'default'
+        with transaction.atomic(using=using):
+            super().save(*args, **kwargs)
+            relevantes = {'rol', 'curso', 'curso_id', 'rut', 'first_name', 'apellidos'}
+            if self.rol == self.Rol.ESTUDIANTE and self.curso_id and (kwargs.get('update_fields') is None or relevantes.intersection(kwargs['update_fields'])):
+                from academico.models import Estudiante
+                perfiles = Estudiante.objects.using(using)
+                perfil = perfiles.filter(usuario_id=self.pk).first()
+                if perfil is None:
+                    perfil = perfiles.filter(rut_estudiante=self.rut, usuario__isnull=True).first()
+                if perfil is None:
+                    perfil = Estudiante(usuario=self, rut_estudiante=self.rut)
+                perfil.usuario = self
+                perfil.rut_estudiante = self.rut
+                perfil.nombre_completo = self.nombre_completo or self.rut
+                perfil.curso_id = self.curso_id
+                perfil.save(using=using)
 
     @property
     def codigo_edunova(self):

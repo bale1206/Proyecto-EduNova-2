@@ -12,13 +12,19 @@ INPUT_STYLE = 'border-color: var(--linea);'
 
 
 class CursoForm(forms.ModelForm):
+    turno = forms.TypedChoiceField(
+        choices=[('true', 'Diurno'), ('false', 'Vespertino')],
+        coerce=lambda valor: valor == 'true', initial='true', label='Turno',
+    )
     class Meta:
         model = Curso
-        fields = ['grado_curso', 'docente_jefe']
-        labels = {'grado_curso': 'Curso', 'docente_jefe': 'Docente jefe'}
+        fields = ['asignatura', 'turno', 'docente_jefe']
+        labels = {'docente_jefe': 'Docente jefe'}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.initial['turno'] = 'true' if self.instance.turno else 'false'
         self.fields['docente_jefe'].queryset = Usuario.objects.filter(rol=Usuario.Rol.DOCENTE)
         self.fields['docente_jefe'].required = False
         for field in self.fields.values():

@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.core.exceptions import ValidationError
 
 from .models import Usuario
@@ -27,7 +27,7 @@ class RegistroForm(UserCreationForm):
 
     class Meta:
         model = Usuario
-        fields = ['rut', 'first_name', 'apellidos', 'email', 'telefono', 'rol']
+        fields = ['rut', 'first_name', 'apellidos', 'email', 'telefono', 'rol', 'curso']
         labels = {
             'first_name': 'Nombre',
             'apellidos': 'Apellidos',
@@ -41,6 +41,12 @@ class RegistroForm(UserCreationForm):
             if name == 'rol':
                 continue
             field.widget.attrs.update({'class': INPUT_CLASSES, 'style': INPUT_STYLE})
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('rol') != Usuario.Rol.ESTUDIANTE:
+            cleaned['curso'] = None
+        return cleaned
 
     def clean_rut(self):
         rut = self.cleaned_data['rut'].strip().upper().replace('.', '')
@@ -57,3 +63,27 @@ class LoginForm(forms.Form):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.update({'class': INPUT_CLASSES, 'style': INPUT_STYLE})
+
+
+class UsuarioAdminCreationForm(UserCreationForm):
+    class Meta:
+        model = Usuario
+        fields = ('rut', 'first_name', 'apellidos', 'email', 'telefono', 'rol', 'curso')
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('rol') != Usuario.Rol.ESTUDIANTE:
+            cleaned['curso'] = None
+        return cleaned
+
+
+class UsuarioAdminChangeForm(UserChangeForm):
+    class Meta:
+        model = Usuario
+        fields = '__all__'
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('rol') != Usuario.Rol.ESTUDIANTE:
+            cleaned['curso'] = None
+        return cleaned
