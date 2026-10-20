@@ -1,0 +1,13 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<OSDM_Design class="oracle.dbtools.crest.model.design.Design" name="modelo de datos edunova" id="35DE6342-7AFC-83C0-BE31-C3462B6606AF" version="3.5">
+<createdBy>bbale</createdBy>
+<createdTime>2026-10-19 20:52:53 UTC</createdTime>
+<ownerDesignName>modelo de datos edunova</ownerDesignName>
+<capitalNames>false</capitalNames>
+<designId>35DE6342-7AFC-83C0-BE31-C3462B6606AF</designId>
+<usedDesignStorageDescriptors>
+<designDescr class="oracle.dbtools.crest.model.design.Design$DesignStorageDesc" id="0289BF95-528E-AE1E-22F0-392B6BAC8827">
+<designStoragePath>D:\director_carrera_modelo_fisico</designStoragePath>
+</designDescr>
+</usedDesignStorageDescriptors>
+</OSDM_Design>
