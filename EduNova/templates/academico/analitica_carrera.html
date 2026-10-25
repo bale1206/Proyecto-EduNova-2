@@ -1,26 +1,29 @@
 {% extends 'base.html' %}
+{% load l10n %}
 {% block title %}Analítica de asistencia · EduNova{% endblock %}
 {% block content %}
 <a href="{% url 'academico:home_administrativo' %}" class="text-sm text-muted">← Volver a agenda</a>
 <h1 class="font-display text-2xl font-semibold mt-3">Analítica de asistencia</h1>
 
-<p class="text-muted mb-5">{{ carrera.nombre|default:"Selecciona una carrera" }} · Porcentaje de asistencia registrada.</p>
+<p class="text-muted mb-5">{% if historico %}Secciones sin catálogo · Historial de todas las carreras.{% else %}{{ carrera.nombre|default:"Selecciona una carrera" }} · Porcentaje de asistencia registrada.{% endif %}</p>
 <form method="get" class="card p-4 grid sm:grid-cols-3 gap-4 mb-5">
- <div><label for="carrera-analitica" class="font-semibold block mb-2 text-sm">Carrera</label><select id="carrera-analitica" name="carrera" class="surface-control w-full p-2 rounded-lg border" onchange="this.form.elements.asignatura.value='';this.form.elements.seccion.value='';this.form.submit()"><option value="">Seleccionar carrera</option>{% for c in carreras %}<option value="{{ c.pk }}" {% if carrera.pk == c.pk %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}</select></div>
+ <div><label for="carrera-analitica" class="font-semibold block mb-2 text-sm">Carrera</label><select id="carrera-analitica" name="carrera" class="surface-control w-full p-2 rounded-lg border" onchange="this.form.elements.asignatura.value='';this.form.elements.seccion.value='';this.form.submit()"><option value="">Seleccionar carrera</option>{% for c in carreras %}<option value="{{ c.pk }}" {% if carrera.pk == c.pk %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}<option value="historico" {% if historico %}selected{% endif %}>Secciones sin catálogo (histórico)</option></select></div>
  <div><label for="asignatura" class="font-semibold block mb-2 text-sm">Asignatura</label><select id="asignatura" name="asignatura" class="surface-control w-full p-2 rounded-lg border" onchange="this.form.elements.seccion.value='';this.form.submit()"><option value="">Seleccionar asignatura</option>{% for a in asignaturas %}<option value="{{ a.pk }}" {% if asignatura_seleccionada.pk == a.pk %}selected{% endif %}>{{ a.nombre }}</option>{% endfor %}</select></div>
  <div><label for="seccion" class="font-semibold block mb-2 text-sm">Sección</label><select id="seccion" name="seccion" class="surface-control w-full p-2 rounded-lg border" onchange="this.form.submit()"><option value="">Todas las secciones</option>{% for sec in secciones_disponibles %}<option value="{{ sec.pk }}" {% if seccion_seleccionada == sec.pk|stringformat:'s' %}selected{% endif %}>{{ sec.seccion }}</option>{% endfor %}</select></div>
 <button type="submit" class="btn-secondary sm:col-span-3 py-2">Aplicar filtros</button>
 </form>
+{% if historico %}<p class="text-sm text-muted mb-5">Estas secciones todavía no están vinculadas a una asignatura del catálogo. Se incluye su asistencia de todas las carreras. Para consultarlas dentro de una carrera, vincula la sección a su asignatura y asigna la carrera de sus estudiantes en la administración.</p>{% endif %}
 {% if asignatura_seleccionada %}
 <div class="grid sm:grid-cols-3 gap-3 mb-5"><div class="card p-5"><p class="text-muted text-sm">Asistencia</p><p class="text-3xl font-semibold">{% if porcentaje is not None %}{{ porcentaje }}%{% else %}—{% endif %}</p></div>
 <div class="card p-5"><p class="text-muted text-sm">Presencias</p><p class="text-3xl font-semibold">{{ presentes }}</p></div>
 <div class="card p-5"><p class="text-muted text-sm">Ausencias</p><p class="text-3xl font-semibold">{{ ausentes }}</p></div></div>
 <section class="card p-5" aria-label="Gráfico de asistencia"><h2 class="font-semibold mb-3">Asistencia registrada</h2>
-{% if total_registros %}<div role="img" aria-label="{{ porcentaje }} por ciento de presencias; {{ presentes }} presencias y {{ ausentes }} ausencias" class="flex w-full h-9 rounded-lg overflow-hidden" style="background:var(--lino-2)"><div style="width:{{ porcentaje|stringformat:'f' }}%;background:#397b8e" title="Asistencia"></div></div>
+{% if total_registros %}<div role="img" aria-label="{{ porcentaje }} por ciento de presencias; {{ presentes }} presencias y {{ ausentes }} ausencias" class="flex w-full h-9 rounded-lg overflow-hidden" style="background:var(--lino-2)"><div style="width:{{ porcentaje|unlocalize }}%;background:#397b8e" title="Asistencia"></div></div>
 <div class="flex gap-5 text-sm mt-3"><span>● Asistencias: {{ presentes }}</span><span>○ Inasistencias: {{ ausentes }}</span></div>
 {% else %}<p class="text-muted text-sm">Todavía no se registró asistencia para esta selección.</p>{% endif %}
 </section>
 <section class="card p-5 mt-5"><h2 class="font-semibold mb-3">Detalle por sección</h2>
 <div class="space-y-3">{% for d in detalle %}<div class="flex justify-between gap-2 border-b pb-2" style="border-color:var(--linea)"><span>{{ d.seccion.seccion }}</span><strong>{% if d.porcentaje is not None %}{{ d.porcentaje }}%{% else %}Sin registros{% endif %}</strong></div>{% empty %}<p class="text-muted">No hay secciones disponibles.</p>{% endfor %}</div></section>
-<p class="text-xs text-muted mt-3">Calculado sobre marcas de asistencia registradas, no sobre estudiantes únicos. Los resultados corresponden a la carrera, asignatura y sección seleccionadas.</p>
+<p class="text-xs text-muted mt-3">Asistencia = presencias ÷ (presencias + ausencias) × 100. Se cuenta una marca por estudiante, sección y día, incluyendo el historial identificable sin duplicados. Los atrasos del historial escolar cuentan como presencia. El total se calcula sobre registros, no como promedio de porcentajes por sección.</p>
+{% if sin_carrera %}<p class="text-xs text-muted mt-2">Se incluyen {{ sin_carrera }} registros de estudiantes sin carrera asignada en las secciones seleccionadas. Asigna su carrera en la administración para precisar este filtro.</p>{% endif %}
 {% else %}<p class="card p-5 text-muted">Selecciona una carrera con asignaturas registradas para consultar su asistencia.</p>{% endif %}{% endblock %}

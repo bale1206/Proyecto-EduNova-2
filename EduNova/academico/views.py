@@ -1,4 +1,5 @@
 import calendar as cal
+from types import SimpleNamespace
 from datetime import date
 
 from django.db import transaction
@@ -18,6 +19,7 @@ from .models import Asignatura, Asistencia, Carrera, Curso, Estudiante, Evento, 
 from django.http import JsonResponse
 from comunicacion.models import MensajeComunicacion
 from .notificaciones_asistencia import avisar_estudiante
+from .analitica import resumir_asistencia
 
 MESES_ES = [
     '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -214,6 +216,7 @@ def analitica_carrera(request):
         _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
     carreras = Carrera.objects.all().order_by('escuela', 'nombre')
     carrera_id = request.GET.get('carrera')
+    historico = carrera_id == 'historico'
     if carrera_id is None:
         carrera = carreras.filter(pk=request.user.carrera_dirigida_id).first() or carreras.first()
     else:
@@ -224,26 +227,25 @@ def analitica_carrera(request):
     if not elegida:
         elegida = asignaturas.first()
     disponibles = Curso.objects.filter(asignatura_catalogo=elegida).order_by('seccion') if elegida else Curso.objects.none()
+    if historico:
+        # Estas secciones no pueden asociarse a una carrera sin inventar datos.
+        # Se consultan en una selección explícita, independiente de las mallas.
+        nombres = Curso.objects.filter(asignatura_catalogo__isnull=True).values_list('asignatura', flat=True).distinct().order_by('asignatura')
+        asignaturas = [SimpleNamespace(pk=nombre, nombre=nombre) for nombre in nombres]
+        elegida = next((asignatura for asignatura in asignaturas if asignatura.pk == codigo), None)
+        if elegida is None and asignaturas:
+            elegida = asignaturas[0]
+        disponibles = Curso.objects.filter(asignatura_catalogo__isnull=True, asignatura=elegida.pk).order_by('seccion') if elegida else Curso.objects.none()
     seccion_id = request.GET.get('seccion', '')
     if not seccion_id.isdecimal() or not disponibles.filter(pk=seccion_id).exists():
         seccion_id = ''
     visibles = disponibles.filter(pk=seccion_id) if seccion_id else disponibles
-    marcas = MarcaAsistencia.objects.filter(sesion__seccion__in=visibles, estudiante__carrera=carrera)
-    total = marcas.count()
-    presentes = marcas.filter(presente=True).count()
-    ausentes = total - presentes
-    porcentaje = round(presentes * 100 / total, 1) if total else None
-    detalle = []
-    for sec in visibles:
-        base = marcas.filter(sesion__seccion=sec)
-        n = base.count()
-        p = base.filter(presente=True).count()
-        detalle.append({'seccion':sec, 'total':n, 'presentes':p, 'porcentaje':round(p*100/n,1) if n else None})
+    resumen = resumir_asistencia(visibles, carrera)
     return render(request, 'academico/analitica_carrera.html', {
         'carreras':carreras, 'carrera':carrera, 'asignaturas':asignaturas, 'asignatura_seleccionada':elegida,
+        'historico': historico,
         'secciones_disponibles':disponibles, 'seccion_seleccionada':seccion_id,
-        'total_registros':total, 'presentes':presentes, 'ausentes':ausentes,
-        'porcentaje':porcentaje, 'detalle':detalle,
+        **resumen,
     })
 
 
