@@ -317,3 +317,27 @@ html.a11y-alto-contraste[data-palette] {
   --linea:var(--tinta-muted);
 }
 html.a11y-alto-contraste[data-palette] .card { border-width:2px; }
+
+/* Planificador universitario: contraste basado en variables de cada tema. */
+.edunova-calendar-expanded {display:block!important}
+.edunova-calendar-expanded > div:first-child {width:100%!important;max-width:none!important}
+.edunova-calendar-expanded #seccion-calendario {min-height:72vh}
+.edunova-calendar-expanded #calendario-mensual .grid.grid-cols-7 > div {min-height:8rem;padding:.65rem}
+.edunova-calendar-expanded > aside {display:none}
+.edunova-task-dot {background:var(--task-color);border:1px solid var(--tinta);width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.edunova-calendar-task {border-inline-start:4px solid var(--task-color);background:var(--superficie);color:var(--tinta);padding:.2rem .35rem;margin:.15rem 0;border-radius:.25rem;overflow-wrap:anywhere;font-size:.72rem}
+.edunova-calendar-urgent {color:#B91C1C;font-weight:900}
+html.dark .edunova-calendar-urgent {color:#FFB8B8}
+.edunova-prioridad-alta {display:inline-flex;align-items:center;gap:.25rem;background:#FFF1F0;color:#93231B;border:1px solid #C13E33;padding:.2rem .5rem;border-radius:.5rem;font-size:.75rem;font-weight:700}
+html.dark .edunova-prioridad-alta {background:#4C2424;color:#FFE4E4;border-color:#F39A9A}
+.edunova-prioridad-neutra {background:var(--lino-2);color:var(--tinta);padding:.2rem .5rem;border:1px solid var(--linea);border-radius:.5rem;font-size:.75rem}
+.edunova-reminder-count {display:inline-block;background:var(--rio);color:var(--texto-acento,#101820);padding:.1rem .5rem;border-radius:1rem;font-size:.75rem;margin-left:.4rem}
+.color-tarea-opcion {display:inline-flex;cursor:pointer;align-items:center;justify-content:center;position:relative}
+.color-tarea-opcion input {position:absolute;opacity:0;width:1px;height:1px}
+.color-tarea-opcion span:first-of-type {background:var(--muestra);width:2rem;height:2rem;border:2px solid var(--tinta);border-radius:50%;display:block}
+.color-tarea-opcion input:checked+span:first-of-type {outline:3px solid var(--rio);outline-offset:3px}
+.color-tarea-opcion input:focus-visible+span:first-of-type {outline:3px solid var(--tinta);outline-offset:3px}
+.edunova-tarea-dialog {position:fixed;inset:0;margin:auto;width:min(92vw,33rem);max-height:85vh;overflow:auto;background:var(--superficie);color:var(--tinta);border:2px solid var(--linea);border-radius:1rem;box-shadow:0 1rem 3rem #0005}
+.edunova-tarea-dialog::backdrop {background:rgba(12,23,34,.6);backdrop-filter:blur(3px)}
+.edunova-tarea-dialog [hidden] {display:none!important}
+@media(max-width:640px){.edunova-calendar-expanded #calendario-mensual .grid.grid-cols-7>div{min-height:5rem;padding:.25rem}.edunova-calendar-task{font-size:.65rem}}

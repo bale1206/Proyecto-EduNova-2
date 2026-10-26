@@ -79,10 +79,14 @@ class Usuario(AbstractUser):
         related_name='directores', verbose_name='Carrera dirigida',
         help_text='Solo para directores de carrera; una carrera por director.',
     )
+    asignaturas_asociadas = models.ManyToManyField(
+        'academico.Asignatura', blank=True, related_name='docentes_asociados',
+        limit_choices_to={'activa': True}, verbose_name='Asignaturas asociadas (docente)',
+    )
     curso = models.ForeignKey(
         'academico.Curso', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='usuarios_estudiantes', verbose_name='Curso',
-        help_text='Obligatorio para usuarios con rol estudiante.',
+        help_text='Campo histórico, no se usa en el registro de cuentas.',
     )
 
     objects = UsuarioManager()
@@ -92,12 +96,8 @@ class Usuario(AbstractUser):
 
     def clean(self):
         super().clean()
-        if self.rol == self.Rol.ESTUDIANTE and not self.curso_id:
-            raise ValidationError({'curso': 'Debes asociar al estudiante a una sección.'})
         if self.carrera_dirigida_id and self.rol != self.Rol.ADMINISTRATIVO:
             raise ValidationError({'carrera_dirigida': 'Solo un director de carrera puede tener una carrera asignada.'})
-        if self.rol != self.Rol.ESTUDIANTE and self.curso_id:
-            raise ValidationError({'curso': 'El curso corresponde solamente a usuarios estudiantes.'})
         if self.rol == self.Rol.ESTUDIANTE:
             from academico.models import Estudiante
             conflicto = Estudiante.objects.filter(rut_estudiante=self.rut).exclude(usuario_id=self.pk).exclude(usuario__isnull=True)
@@ -112,7 +112,7 @@ class Usuario(AbstractUser):
         using = kwargs.get('using') or self._state.db or 'default'
         with transaction.atomic(using=using):
             super().save(*args, **kwargs)
-            relevantes = {'rol', 'curso', 'curso_id', 'rut', 'first_name', 'apellidos'}
+            relevantes = {'rol', 'rut', 'first_name', 'apellidos'}
             if self.rol == self.Rol.ESTUDIANTE and (kwargs.get('update_fields') is None or relevantes.intersection(kwargs['update_fields'])):
                 from academico.models import Estudiante
                 perfiles = Estudiante.objects.using(using)
@@ -124,10 +124,9 @@ class Usuario(AbstractUser):
                 perfil.usuario = self
                 perfil.rut_estudiante = self.rut
                 perfil.nombre_completo = self.nombre_completo or self.rut
-                perfil.curso_id = self.curso_id
+                # La matrícula académica se administra separadamente de la cuenta.
+                # No modificar la matrícula ni el curso histórico desde el registro.
                 perfil.save(using=using)
-                if self.curso_id:
-                    perfil.secciones.add(self.curso_id)
 
     @property
     def codigo_edunova(self):

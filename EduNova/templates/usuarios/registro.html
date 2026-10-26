@@ -25,12 +25,7 @@
             {% if form.rol.errors %}<p class="text-sm text-error mt-1">{{ form.rol.errors.0 }}</p>{% endif %}
         </div>
 
-        <div id="curso-estudiante">
-            <label for="{{ form.curso.id_for_label }}" class="block text-sm font-medium mb-1">Curso del estudiante</label>
-            {{ form.curso }}
-            <p class="text-xs text-muted mt-1">Selecciona tu asignatura, sección y turno.</p>
-            {% if form.curso.errors %}<p class="text-sm text-error mt-1">{{ form.curso.errors.0 }}</p>{% endif %}
-        </div>
+        <p class="text-sm text-muted">La cuenta se crea una sola vez. Tu carrera y tus asignaturas se vinculan posteriormente por gestión académica; no necesitas escogerlas aquí.</p>
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium mb-1">RUT</label>
@@ -80,18 +75,4 @@
         <a href="{% url 'usuarios:login' %}" class="font-medium" style="color: var(--rio);">Inicia sesión</a>
     </p>
 </div>
-<script>
-(() => {
-    const bloque = document.getElementById('curso-estudiante');
-    const curso = document.getElementById('id_curso');
-    function actualizarCurso() {
-        const estudiante = document.querySelector('input[name="rol"]:checked')?.value === 'estudiante';
-        bloque.hidden = !estudiante;
-        curso.disabled = !estudiante;
-        curso.required = estudiante;
-    }
-    document.querySelectorAll('input[name="rol"]').forEach(radio => radio.addEventListener('change', actualizarCurso));
-    actualizarCurso();
-})();
-</script>
 {% endblock %}

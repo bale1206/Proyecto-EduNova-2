@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Agenda de dirección · EduNova{% endblock %}
 {% block content %}
-<h1 class="font-display text-2xl font-semibold mb-1">Agenda de dirección</h1><div class="flex gap-4 my-4"><a href="{% url 'academico:lista_observaciones' %}">Observaciones</a><a href="{% url 'academico:panel_csv' %}">Reportes e importación CSV</a><a href="{% url 'academico:configurar_csv' %}">Configurar CSV</a></div>
+<h1 class="font-display text-2xl font-semibold mb-1">Agenda de dirección</h1><div class="flex gap-4 my-4"><a href="{% url 'academico:lista_observaciones' %}">Observaciones</a><a href="{% url 'academico:panel_csv' %}">Planillas académicas</a></div>
 {% if sin_carrera %}<div class="card p-6">Un administrador debe asignarte una carrera desde Django Admin.</div>
 {% else %}
 <p class="text-muted mb-6">Organiza reuniones, actividades y eventos de todas las secciones.</p>

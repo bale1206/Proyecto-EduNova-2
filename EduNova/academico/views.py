@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from comunicacion.services import mensajes_no_leidos
 from usuarios.models import Usuario
@@ -505,7 +506,7 @@ def home_estudiante(request):
     from .models import TareaEstudio
     _requerir_rol(request, Usuario.Rol.ESTUDIANTE)
     perfil = Estudiante.objects.filter(usuario=request.user).select_related('carrera', 'curso').first()
-    tareas = TareaEstudio.objects.filter(estudiante=request.user)
+    tareas = TareaEstudio.objects.filter(estudiante=request.user).select_related('seccion')
     secciones = Curso.objects.filter(matriculados=perfil).order_by('asignatura', 'seccion') if perfil else Curso.objects.none()
     # Compatibilidad con registros antiguos, sin duplicar secciones.
     if perfil and not secciones.exists() and perfil.curso_id:
@@ -521,6 +522,19 @@ def home_estudiante(request):
     year, month = _mes_actual_o_parametro(request)
     (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
     semanas = _construir_calendario(year, month, eventos.filter(fecha__year=year, fecha__month=month))
+    tareas_mes = {}
+    from .programacion_tareas import fechas_tarea
+    import calendar
+    ultimo_dia = calendar.monthrange(year, month)[1]
+    desde, hasta = date(year, month, 1), date(year, month, ultimo_dia)
+    for tarea in tareas:
+        if seccion_seleccionada and str(tarea.seccion_id) != seccion_seleccionada:
+            continue
+        for ocurrencia in fechas_tarea(tarea, desde, hasta):
+            tareas_mes.setdefault(ocurrencia.day, []).append(tarea)
+    for semana in semanas:
+        for dia in semana:
+            dia['tareas'] = tareas_mes.get(dia['numero'], []) if dia['numero'] else []
     contexto = {
         'perfil': perfil, 'secciones': secciones, 'seccion_seleccionada': seccion_seleccionada, 'tareas': tareas, 'pendientes': tareas.filter(completada=False),
         'eventos_proximos': eventos.filter(fecha__gte=today)[:6],
@@ -529,6 +543,9 @@ def home_estudiante(request):
         'next_year': next_y, 'next_month': next_m,
         'total_no_leidos': mensajes_no_leidos(request.user).count(),
         'avisos_asistencia': AvisoAsistencia.objects.filter(destinatario=request.user)[:5],
+        'recordatorios_no_leidos': request.user.recordatorios_tareas.filter(leido=False).count(),
+        'recordatorios_recientes': request.user.recordatorios_tareas.filter(leido=False)[:6],
+        'tarea_para_configurar': tareas.filter(pk=request.GET.get('configurar_tarea', '')).first() if request.GET.get('configurar_tarea', '').isdecimal() else None,
     }
     # HTMX sustituye solo #calendario-mensual: nunca enviar toda la página.
     if request.headers.get('HX-Request') == 'true':
@@ -546,6 +563,7 @@ def crear_tarea_estudiante(request):
         raise PermissionDenied('Acción no permitida.')
     titulo = request.POST.get('titulo', '').strip()
     fecha_raw = request.POST.get('fecha_limite', '').strip()
+    hora_raw = request.POST.get('hora_inicio', '').strip()
     if not titulo or len(titulo) > 160:
         messages.error(request, 'Ingresa un título de hasta 160 caracteres.')
     else:
@@ -554,8 +572,50 @@ def crear_tarea_estudiante(request):
         except ValueError:
             messages.error(request, 'La fecha indicada no es válida.')
         else:
-            TareaEstudio.objects.create(estudiante=request.user, titulo=titulo, fecha_limite=fecha)
-            messages.success(request, 'Tarea añadida a tu planificación.')
+            from datetime import time
+            try:
+                hora = time.fromisoformat(hora_raw)
+            except (ValueError, TypeError):
+                messages.error(request, 'Selecciona una hora válida para la tarea.')
+                return redirect('academico:home_estudiante')
+            if fecha is None:
+                messages.error(request, 'Selecciona la fecha de inicio de la tarea.')
+                return redirect('academico:home_estudiante')
+            repeticion = request.POST.get('repeticion', 'ninguna')
+            if repeticion not in ('ninguna','diaria','semanal','mensual'):
+                messages.error(request, 'La repetición seleccionada no es válida.')
+                return redirect('academico:home_estudiante')
+            try:
+                minutos_antes = int(request.POST.get('minutos_antes', '15'))
+            except ValueError:
+                minutos_antes = -1
+            if minutos_antes not in (0,5,10,15,30,60):
+                messages.error(request, 'La antelación debe ser 0, 5, 10, 15, 30 o 60 minutos.')
+                return redirect('academico:home_estudiante')
+            import re
+            from .models import Curso
+            seccion_id = request.POST.get('seccion', '')
+            if not seccion_id.isdecimal():
+                messages.error(request, 'Selecciona una asignatura matriculada.')
+                return redirect('academico:home_estudiante')
+            perfil = Estudiante.objects.filter(usuario=request.user).first()
+            opciones = Curso.objects.filter(matriculados=perfil) if perfil else Curso.objects.none()
+            if perfil and not opciones.exists() and perfil.curso_id:
+                opciones = Curso.objects.filter(pk=perfil.curso_id)
+            seccion = opciones.filter(pk=seccion_id).first()
+            if seccion is None:
+                raise PermissionDenied('La asignatura no pertenece a tu matrícula.')
+            color = request.POST.get('color', '#4C849D').upper()
+            if not re.fullmatch(r'#[0-9A-F]{6}', color):
+                color = '#4C849D'
+            prioridad = request.POST.get('prioridad', 'media')
+            if prioridad not in ('alta', 'media', 'baja'):
+                prioridad = 'media'
+            tarea = TareaEstudio.objects.create(estudiante=request.user, titulo=titulo, fecha_limite=fecha,
+                seccion=seccion, color=color, prioridad=prioridad, hora_inicio=hora,
+                repeticion=repeticion, minutos_antes=minutos_antes)
+            messages.success(request, 'Tarea creada. Decide si deseas recordatorios.')
+            return redirect(f"{reverse('academico:home_estudiante')}?configurar_tarea={tarea.pk}#configurar-recordatorio")
     return redirect('academico:home_estudiante')
 
 
@@ -578,4 +638,31 @@ def eliminar_tarea_estudiante(request, tarea_id):
     if request.method != 'POST':
         raise PermissionDenied('Acción no permitida.')
     get_object_or_404(TareaEstudio, pk=tarea_id, estudiante=request.user).delete()
+    return redirect('academico:home_estudiante')
+
+
+@login_required
+@require_http_methods(['POST'])
+def configurar_recordatorio(request, tarea_id):
+    from .models import TareaEstudio
+    _requerir_rol(request, Usuario.Rol.ESTUDIANTE)
+    tarea = get_object_or_404(TareaEstudio, pk=tarea_id, estudiante=request.user)
+    decision = request.POST.get('activar')
+    if decision not in ('si', 'no'):
+        raise PermissionDenied('Selecciona Sí o No.')
+    if decision == 'si' and (not tarea.fecha_limite or not tarea.hora_inicio):
+        messages.error(request, 'Para recibir avisos debes asignar fecha y hora a la tarea.')
+        return redirect('academico:home_estudiante')
+    tarea.recordatorios_activos = decision == 'si'
+    tarea.save(update_fields=['recordatorios_activos'])
+    messages.success(request, 'Recordatorios internos activados.' if decision == 'si' else 'Recordatorios desactivados.')
+    return redirect('academico:home_estudiante')
+
+
+@login_required
+@require_http_methods(['POST'])
+def recordatorios_estudiante(request):
+    from .models import RecordatorioTarea
+    _requerir_rol(request, Usuario.Rol.ESTUDIANTE)
+    RecordatorioTarea.objects.filter(estudiante=request.user, leido=False).update(leido=True)
     return redirect('academico:home_estudiante')

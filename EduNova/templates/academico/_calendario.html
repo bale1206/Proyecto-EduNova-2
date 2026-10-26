@@ -28,6 +28,12 @@
                     {{ evento.titulo }}
                 </div>
                 {% endfor %}
+                {% for tarea in dia.tareas %}
+                <div class="edunova-calendar-task" style="--task-color:{{ tarea.color }}" title="{{ tarea.titulo }}">
+                  {% if tarea.prioridad == 'alta' %}<span class="edunova-calendar-urgent" aria-label="Alta prioridad">❗</span>{% endif %}
+                  {{ tarea.titulo }}
+                </div>
+                {% endfor %}
                 {% endif %}
             </div>
             {% endfor %}

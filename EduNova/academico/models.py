@@ -124,6 +124,14 @@ class Curso(models.Model):
 
 
 class Estudiante(models.Model):
+    class EstadoAvance(models.TextChoices):
+        AL_DIA = 'al_dia', 'Al día'
+        CON_RETRASO = 'con_retraso', 'Con retraso'
+
+    anio_carrera = models.PositiveSmallIntegerField('Año de carrera', null=True, blank=True,
+        choices=[(1, '1° año'), (2, '2° año'), (3, '3° año'), (4, '4° año')])
+    estado_avance = models.CharField('Situación académica declarada', max_length=15,
+        choices=EstadoAvance.choices, blank=True, default='')
     carrera = models.ForeignKey(Carrera, on_delete=models.SET_NULL, null=True, blank=True, related_name="estudiantes")
     secciones = models.ManyToManyField(Curso, blank=True, related_name="matriculados", verbose_name="Asignaturas / secciones inscritas")
     usuario = models.OneToOneField(
@@ -385,6 +393,13 @@ class TareaEstudio(models.Model):
     descripcion = models.TextField(blank=True)
     fecha_limite = models.DateField(null=True, blank=True)
     completada = models.BooleanField(default=False)
+    seccion = models.ForeignKey('Curso', null=True, blank=True, on_delete=models.SET_NULL, related_name='tareas_estudiantes', verbose_name='Asignatura y sección')
+    color = models.CharField(max_length=7, default='#4C849D')
+    prioridad = models.CharField(max_length=5, choices=[('alta', 'Alta'), ('media', 'Media'), ('baja', 'Baja')], default='media')
+    hora_inicio = models.TimeField(null=True, blank=True, verbose_name='Hora de realización')
+    repeticion = models.CharField(max_length=8, choices=[('ninguna','No repetir'),('diaria','Cada día'),('semanal','Cada semana'),('mensual','Cada mes')], default='ninguna')
+    minutos_antes = models.PositiveSmallIntegerField(choices=[(0,'A la hora'),(5,'5 minutos antes'),(10,'10 minutos antes'),(15,'15 minutos antes'),(30,'30 minutos antes'),(60,'1 hora antes')], default=15)
+    recordatorios_activos = models.BooleanField(default=False)
     creada_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -394,3 +409,17 @@ class TareaEstudio(models.Model):
 
     def __str__(self):
         return self.titulo
+
+
+class RecordatorioTarea(models.Model):
+    tarea = models.ForeignKey(TareaEstudio, on_delete=models.CASCADE, related_name='recordatorios')
+    estudiante = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='recordatorios_tareas')
+    programado_para = models.DateTimeField()
+    texto = models.CharField(max_length=300)
+    leido = models.BooleanField(default=False)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['tarea', 'programado_para'], name='uq_recordatorio_tarea_fecha')]
+        ordering = ['-creado_en']
+

@@ -62,7 +62,7 @@ class SeccionAdminForm(CursoForm):
 class EstudianteSeccionesForm(forms.ModelForm):
     class Meta:
         model = Estudiante
-        fields = ['usuario', 'rut_estudiante', 'nombre_completo', 'carrera', 'secciones']
+        fields = ['usuario', 'rut_estudiante', 'nombre_completo', 'carrera', 'anio_carrera', 'estado_avance', 'secciones']
         widgets = {'secciones': forms.SelectMultiple(attrs={'size': 10})}
 
     def clean(self):
@@ -105,7 +105,7 @@ class CursoAdmin(admin.ModelAdmin):
 
 @admin.register(Estudiante)
 class EstudianteAdmin(admin.ModelAdmin):
-    list_display = ('codigo_edunova', 'nombre_completo', 'rut_estudiante', 'carrera', 'secciones_resumen')
+    list_display = ('codigo_edunova', 'nombre_completo', 'rut_estudiante', 'carrera', 'anio_carrera', 'estado_avance', 'secciones_resumen')
     list_filter = ('carrera', 'secciones')
     form = EstudianteSeccionesForm
     exclude = ('curso', 'apoderado', 'apellido_familiar')
