@@ -16,7 +16,7 @@ from usuarios.models import Usuario
 
 from .forms import ActividadAdministrativaForm, CrearSeccionForm, CarreraForm, AsignarCarreraForm, MatricularSeccionForm, CursoForm, EventoForm, JustificacionRetiroForm, ObservacionForm, ActualizarObservacionForm
 from django.db.models import Case, When, Value, IntegerField, Count, Q
-from .models import Asignatura, Asistencia, Carrera, Curso, Estudiante, Evento, JustificacionRetiro, ObservacionComportamiento, RegistroAsistencia, SesionClase, MarcaAsistencia, AvisoAsistencia
+from .models import TareaEstudio, Asignatura, Asistencia, Carrera, Curso, Estudiante, Evento, JustificacionRetiro, ObservacionComportamiento, RegistroAsistencia, SesionClase, MarcaAsistencia, AvisoAsistencia
 from django.http import JsonResponse
 from comunicacion.models import MensajeComunicacion
 from .notificaciones_asistencia import avisar_estudiante
@@ -73,46 +73,7 @@ def _mes_anterior_siguiente(year, month):
 @login_required
 def home_docente(request):
     _requerir_rol(request, Usuario.Rol.DOCENTE)
-
-    cursos = Curso.objects.filter(Q(docentes=request.user) | Q(docente_jefe=request.user)).distinct().order_by('asignatura', 'seccion')
-    seccion_seleccionada = request.GET.get('seccion', '')
-    if not seccion_seleccionada.isdecimal():
-        seccion_seleccionada = ''
-    # Nunca permitir consultar el calendario de un docente ajeno.
-    if seccion_seleccionada and not cursos.filter(pk=seccion_seleccionada).exists():
-        seccion_seleccionada = ''
-    cursos_calendario = cursos.filter(pk=seccion_seleccionada) if seccion_seleccionada else cursos
-    ahora = date.today()
-
-    proxima_clase = (
-        Evento.objects.filter(curso__in=cursos_calendario, tipo=Evento.Tipo.CLASE, fecha__gte=ahora)
-        .order_by('fecha', 'hora_inicio')
-        .first()
-    )
-
-    notificaciones = mensajes_no_leidos(request.user)[:8]
-    total_no_leidos = mensajes_no_leidos(request.user).count()
-
-    year, month = _mes_actual_o_parametro(request)
-    (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
-    eventos_mes = Evento.objects.filter(curso__in=cursos_calendario, fecha__year=year, fecha__month=month)
-    semanas = _construir_calendario(year, month, eventos_mes)
-
-    contexto = {
-        'cursos': cursos, 'seccion_seleccionada': seccion_seleccionada,
-        'proxima_clase': proxima_clase,
-        'notificaciones': notificaciones,
-        'total_no_leidos': total_no_leidos,
-        'semanas': semanas,
-        'mes_nombre': MESES_ES[month],
-        'anio': year,
-        'mes': month,
-        'prev_year': prev_y, 'prev_month': prev_m,
-        'next_year': next_y, 'next_month': next_m,
-    }
-    if request.headers.get('HX-Request'):
-        return render(request, 'academico/_calendario.html', contexto)
-    return render(request, 'academico/home_docente.html', contexto)
+    return _portal_planificacion(request)
 
 
 @login_required
@@ -183,31 +144,7 @@ def detalle_estudiante(request, estudiante_id):
 @login_required
 def home_administrativo(request, evento_form=None):
     _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
-    carrera = request.user.carrera_dirigida
-    # La agenda permite usar todas las secciones, incluidas las históricas sin catálogo.
-    cursos = Curso.objects.select_related('docente_jefe', 'asignatura_catalogo').order_by('asignatura', 'seccion')
-    seleccion = request.GET.get('seccion', '')
-    if not seleccion.isdecimal() or not cursos.filter(pk=seleccion).exists():
-        seleccion = ''
-    visibles = cursos.filter(pk=seleccion) if seleccion else cursos
-    year, month = _mes_actual_o_parametro(request)
-    (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
-    eventos = Evento.objects.filter(curso__in=visibles, fecha__year=year, fecha__month=month)
-    proximos = Evento.objects.filter(curso__in=cursos, fecha__gte=date.today()).select_related('curso').order_by('fecha','hora_inicio')[:8]
-    form = evento_form if evento_form is not None else ActividadAdministrativaForm()
-    contexto = {
-        'carrera': carrera, 'cursos': cursos, 'seccion_seleccionada': seleccion,
-        'curso_form': CrearSeccionForm(user=request.user, initial={'carrera': carrera.pk} if carrera else {}),
-        'total_estudiantes': Estudiante.objects.count(),
-        'proximos_eventos': proximos, 'evento_form': form,
-        'semanas': _construir_calendario(year, month, eventos),
-        'mes_nombre': MESES_ES[month], 'anio': year, 'mes': month,
-        'prev_year': prev_y, 'prev_month': prev_m,
-        'next_year': next_y, 'next_month': next_m,
-    }
-    if request.headers.get('HX-Request'):
-        return render(request, 'academico/_calendario.html', contexto)
-    return render(request, 'academico/home_administrativo.html', contexto)
+    return _portal_planificacion(request)
 
 
 @login_required
@@ -306,19 +243,45 @@ def opciones_seccion(request):
 
 
 @login_required
+@require_http_methods(['POST'])
 def crear_evento(request):
-    _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
-    if request.method == 'POST':
-        form = ActividadAdministrativaForm(request.POST)
-        if form.is_valid():
-            evento = form.save(commit=False)
-            evento.creado_por = request.user
-            evento.save()
-            messages.success(request, f'"{evento.titulo}" agendado para {evento.curso}.')
-            return redirect('academico:home_administrativo')
-        messages.error(request, 'Revisa los datos del evento.')
-        return home_administrativo(request, evento_form=form)
-    return redirect('academico:home_administrativo')
+    """Eventos compartidos: docentes por sección, directores por sección o carrera."""
+    if request.user.rol not in (Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO):
+        raise PermissionDenied('Solo docentes y directores pueden publicar actividades.')
+    from datetime import time
+    titulo = request.POST.get('titulo', '').strip()
+    descripcion = request.POST.get('descripcion', '').strip()
+    tipo = request.POST.get('tipo', Evento.Tipo.OTRO)
+    seccion_id = request.POST.get('seccion', '')
+    alcance = request.POST.get('alcance', 'seccion')
+    if not titulo or len(titulo) > 150 or tipo not in Evento.Tipo.values:
+        messages.error(request, 'Revisa el título y el tipo de evento.')
+        return redirect(_portal_url(request.user))
+    try:
+        fecha = date.fromisoformat(request.POST.get('fecha', ''))
+        hora = time.fromisoformat(request.POST['hora_inicio']) if request.POST.get('hora_inicio') else None
+        fin = time.fromisoformat(request.POST['hora_fin']) if request.POST.get('hora_fin') else None
+    except ValueError:
+        messages.error(request, 'Fecha u hora no válida.')
+        return redirect(_portal_url(request.user))
+    if hora and fin and fin <= hora:
+        messages.error(request, 'La hora de término debe ser posterior a la de inicio.')
+        return redirect(_portal_url(request.user))
+    carrera = None
+    seccion = None
+    if alcance == 'carrera' and request.user.rol == Usuario.Rol.ADMINISTRATIVO:
+        carrera = request.user.carrera_dirigida
+        if carrera is None:
+            raise PermissionDenied('No tienes una carrera asignada.')
+    else:
+        if not seccion_id.isdecimal():
+            raise PermissionDenied('Selecciona una sección válida.')
+        seccion = get_object_or_404(_secciones_planificador(request.user), pk=seccion_id)
+    Evento.objects.create(curso=seccion, carrera=carrera, creado_por=request.user,
+                          tipo=tipo, titulo=titulo, descripcion=descripcion,
+                          fecha=fecha, hora_inicio=hora, hora_fin=fin)
+    messages.success(request, 'Evento publicado en los calendarios correspondientes.')
+    return redirect(_portal_url(request.user))
 
 
 @login_required
@@ -500,6 +463,132 @@ def tomar_asistencia(request):
     return render(request, 'academico/tomar_asistencia.html', {'cursos':secciones, 'fecha_hoy':timezone.localdate()})
 
 
+def _portal_url(user):
+    return 'academico:home_docente' if user.rol == Usuario.Rol.DOCENTE else 'academico:home_administrativo'
+
+
+def _secciones_planificador(user):
+    if user.rol == Usuario.Rol.DOCENTE:
+        return Curso.objects.filter(Q(docentes=user) | Q(docente_jefe=user)).distinct()
+    if user.rol == Usuario.Rol.ADMINISTRATIVO and user.carrera_dirigida_id:
+        return Curso.objects.filter(asignatura_catalogo__carreras__pk=user.carrera_dirigida_id).distinct()
+    return Curso.objects.none()
+
+
+def _portal_planificacion(request):
+    """Mismo calendario para docentes y directores; tareas privadas y eventos públicos."""
+    user = request.user
+    secciones = _secciones_planificador(user).order_by('asignatura', 'seccion')
+    seleccion = request.GET.get('seccion', '')
+    if not seleccion.isdecimal() or not secciones.filter(pk=seleccion).exists():
+        seleccion = ''
+    visibles = secciones.filter(pk=seleccion) if seleccion else secciones
+    eventos = Evento.objects.filter(curso__in=visibles)
+    if user.rol == Usuario.Rol.ADMINISTRATIVO and user.carrera_dirigida_id:
+        eventos = Evento.objects.filter(Q(curso__in=visibles) | Q(carrera_id=user.carrera_dirigida_id))
+    elif user.rol == Usuario.Rol.DOCENTE:
+        # Eventos de carrera también son visibles para el equipo de sus secciones.
+        carreras = Carrera.objects.filter(asignaturas__secciones__in=secciones).distinct()
+        eventos = Evento.objects.filter(Q(curso__in=visibles) | Q(carrera__in=carreras))
+    eventos = eventos.distinct().order_by('fecha', 'hora_inicio')
+    year, month = _mes_actual_o_parametro(request)
+    (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
+    semanas = _construir_calendario(year, month, eventos.filter(fecha__year=year, fecha__month=month))
+    from .programacion_tareas import fechas_tarea
+    import calendar
+    inicio, final = date(year, month, 1), date(year, month, calendar.monthrange(year, month)[1])
+    tareas = TareaEstudio.objects.filter(estudiante=user).select_related('seccion')
+    ocurrencias = {}
+    for tarea in tareas:
+        if seleccion and str(tarea.seccion_id) != seleccion:
+            continue
+        for fecha in fechas_tarea(tarea, inicio, final):
+            ocurrencias.setdefault(fecha.day, []).append(tarea)
+    for semana in semanas:
+        for dia in semana:
+            dia['tareas'] = ocurrencias.get(dia['numero'], []) if dia['numero'] else []
+    contexto = {'secciones': secciones, 'seccion_seleccionada': seleccion,
+        'semanas': semanas, 'mes_nombre': MESES_ES[month], 'anio': year, 'mes': month,
+        'prev_year': prev_y, 'prev_month': prev_m, 'next_year': next_y, 'next_month': next_m,
+        'tareas': tareas, 'proximos_eventos': eventos.filter(fecha__gte=timezone.localdate())[:8],
+        'es_director': user.rol == Usuario.Rol.ADMINISTRATIVO,
+        'recordatorios_no_leidos': user.recordatorios_tareas.filter(leido=False).count(),
+        'recordatorios_recientes': user.recordatorios_tareas.filter(leido=False)[:8],
+        'tarea_para_configurar': tareas.filter(pk=request.GET.get('configurar_tarea')).first() if request.GET.get('configurar_tarea', '').isdecimal() else None,
+    }
+    if request.headers.get('HX-Request') == 'true':
+        return render(request, 'academico/_calendario.html', contexto)
+    return render(request, 'academico/planificacion_equipo.html', contexto)
+
+
+@login_required
+@require_http_methods(['POST'])
+def crear_tarea_equipo(request):
+    from datetime import time
+    import re
+    if request.user.rol not in (Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO):
+        raise PermissionDenied
+    titulo = request.POST.get('titulo', '').strip()
+    if not titulo or len(titulo) > 160:
+        messages.error(request, 'Título inválido.')
+        return redirect(_portal_url(request.user))
+    seccion = None
+    seccion_id = request.POST.get('seccion', '')
+    if seccion_id:
+        if not seccion_id.isdecimal():
+            raise PermissionDenied
+        seccion = get_object_or_404(_secciones_planificador(request.user), pk=seccion_id)
+    try:
+        fecha = date.fromisoformat(request.POST.get('fecha_limite', ''))
+        hora = time.fromisoformat(request.POST.get('hora_inicio', ''))
+        minutos = int(request.POST.get('minutos_antes', '15'))
+    except (ValueError, TypeError):
+        messages.error(request, 'Fecha, hora o recordatorio inválido.')
+        return redirect(_portal_url(request.user))
+    repeticion = request.POST.get('repeticion', 'ninguna')
+    prioridad = request.POST.get('prioridad', 'media')
+    color = request.POST.get('color', '#4C849D').upper()
+    if repeticion not in ('ninguna', 'diaria', 'semanal', 'mensual') or prioridad not in ('alta', 'media', 'baja') or minutos not in (0,5,10,15,30,60):
+        raise PermissionDenied('Opción no válida.')
+    if not re.fullmatch(r'#[0-9A-F]{6}', color):
+        color = '#4C849D'
+    tarea = TareaEstudio.objects.create(estudiante=request.user, seccion=seccion, titulo=titulo,
+        fecha_limite=fecha, hora_inicio=hora, repeticion=repeticion, prioridad=prioridad,
+        minutos_antes=minutos, color=color)
+    return redirect(f"{reverse(_portal_url(request.user))}?configurar_tarea={tarea.pk}#configurar-recordatorio")
+
+
+@login_required
+@require_http_methods(['POST'])
+def tarea_equipo_accion(request, tarea_id, accion):
+    if request.user.rol not in (Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO):
+        raise PermissionDenied
+    tarea = get_object_or_404(TareaEstudio, pk=tarea_id, estudiante=request.user)
+    if accion == 'alternar':
+        tarea.completada = not tarea.completada
+        tarea.save(update_fields=['completada'])
+    elif accion == 'eliminar':
+        tarea.delete()
+    elif accion == 'recordatorio':
+        activar = request.POST.get('activar')
+        if activar not in ('si', 'no'):
+            raise PermissionDenied
+        tarea.recordatorios_activos = activar == 'si'
+        tarea.save(update_fields=['recordatorios_activos'])
+    else:
+        raise PermissionDenied
+    return redirect(_portal_url(request.user))
+
+
+@login_required
+@require_http_methods(['POST'])
+def recordatorios_equipo(request):
+    if request.user.rol not in (Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO):
+        raise PermissionDenied
+    request.user.recordatorios_tareas.filter(leido=False).update(leido=True)
+    return redirect(_portal_url(request.user))
+
+
 @login_required
 def home_estudiante(request):
     """Portal privado del estudiante; no depende del vínculo con apoderados."""
@@ -517,7 +606,7 @@ def home_estudiante(request):
     if seccion_seleccionada and not secciones.filter(pk=seccion_seleccionada).exists():
         seccion_seleccionada = ''
     visibles = secciones.filter(pk=seccion_seleccionada) if seccion_seleccionada else secciones
-    eventos = Evento.objects.filter(curso__in=visibles).order_by('fecha', 'hora_inicio')
+    eventos = Evento.objects.filter(Q(curso__in=visibles) | Q(carrera=perfil.carrera, carrera__isnull=False) if perfil else Q(pk__in=[])).distinct().order_by('fecha', 'hora_inicio')
     today = date.today()
     year, month = _mes_actual_o_parametro(request)
     (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)

@@ -264,7 +264,8 @@ class Evento(models.Model):
         REUNION = 'reunion', 'Reunión'
         OTRO = 'otro', 'Otro'
 
-    curso = models.ForeignKey(Curso, on_delete=models.SET_NULL, null=True, related_name='eventos')
+    curso = models.ForeignKey(Curso, on_delete=models.SET_NULL, null=True, blank=True, related_name='eventos')
+    carrera = models.ForeignKey('Carrera', on_delete=models.CASCADE, null=True, blank=True, related_name='eventos_planificacion')
     creado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='eventos_creados')
     tipo = models.CharField(max_length=20, choices=Tipo.choices, default=Tipo.CLASE)
     titulo = models.CharField(max_length=150)
@@ -388,7 +389,7 @@ class AvisoAsistencia(models.Model):
 
 class TareaEstudio(models.Model):
     """Tarea privada, gestionada exclusivamente por su estudiante propietario."""
-    estudiante = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='tareas_estudio', limit_choices_to={'rol': 'estudiante'})
+    estudiante = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='tareas_estudio')
     titulo = models.CharField(max_length=160)
     descripcion = models.TextField(blank=True)
     fecha_limite = models.DateField(null=True, blank=True)

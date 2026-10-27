@@ -2,7 +2,7 @@
 
 # EduNova
 
-Plataforma web de comunicación colegio-familia. Frontend con **HTMX + Alpine.js
+Plataforma web de Planificación Académica. Frontend con **HTMX + Alpine.js
 + Tailwind (CDN)**, backend con **Django**.
 
 Estado del proyecto: es un **prototipo funcional** para mostrar a un cliente

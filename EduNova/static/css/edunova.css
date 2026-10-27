@@ -341,3 +341,15 @@ html.dark .edunova-prioridad-alta {background:#4C2424;color:#FFE4E4;border-color
 .edunova-tarea-dialog::backdrop {background:rgba(12,23,34,.6);backdrop-filter:blur(3px)}
 .edunova-tarea-dialog [hidden] {display:none!important}
 @media(max-width:640px){.edunova-calendar-expanded #calendario-mensual .grid.grid-cols-7>div{min-height:5rem;padding:.25rem}.edunova-calendar-task{font-size:.65rem}}
+
+/* Vista lupa: resumen cronológico en una tarjeta flotante, sin alterar la cuadrícula. */
+#calendario-mensual { overflow: visible; }
+.edunova-zoom-day { position:relative; min-width:0; cursor:zoom-in; outline-offset:2px; }
+.edunova-zoom-day:focus-visible { outline: 2px solid var(--acento, #4C849D); }
+.edunova-day-detail { display:none; position:absolute; z-index:50; top:calc(100% + 6px); left:0; width:min(290px,75vw); max-height:280px; overflow:auto; padding:12px; border:1px solid var(--linea, #888); border-radius:12px; background:var(--fondo-tarjeta,var(--lino-2, #f5f0e8)); color:var(--texto,inherit); text-align:left; box-shadow:0 8px 24px rgba(0,0,0,.2); font-size:13px; white-space:normal; }
+.edunova-zoom-day:nth-child(7n) .edunova-day-detail, .edunova-zoom-day:nth-child(7n - 1) .edunova-day-detail {left:auto;right:0}
+.edunova-zoom-day:is(:hover,:focus-within,:focus) { z-index:30; box-shadow:0 0 0 2px var(--linea,#888); }
+.edunova-zoom-day:is(:hover,:focus-within,:focus) .edunova-day-detail {display:block;}
+.edunova-day-entry { display:block; padding:6px 0; border-bottom:1px solid var(--linea,#ddd); }
+@media (hover:none){.edunova-zoom-day {cursor:pointer}}
+@media (prefers-reduced-motion:reduce){.edunova-zoom-day{transition:none!important}}
