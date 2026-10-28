@@ -1,5 +1,3 @@
-> Actualización actual: consulta [LEEME_ACTUALIZACION.md](LEEME_ACTUALIZACION.md) para instalación, formularios nuevos y reparaciones. Los demás documentos de cambios describen etapas anteriores.
-
 # EduNova
 
 Plataforma web de Planificación Académica. Frontend con **HTMX + Alpine.js
