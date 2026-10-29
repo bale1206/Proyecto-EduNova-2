@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Mis secciones · EduNova{% endblock %}
+{% block content %}
+<main class="max-w-4xl mx-auto space-y-5">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <div>
+      <p class="text-sm text-muted">Mi espacio académico</p>
+      <h1 class="font-display text-2xl font-semibold">Revisar mis secciones</h1>
+      <p class="text-muted mt-1">Selecciona una sección por asignatura. El calendario usará exactamente estas secciones y sus horarios.</p>
+    </div>
+    <a class="btn-secondary px-3 py-2" href="{% url 'academico:home_estudiante' %}">Volver al calendario</a>
+  </div>
+  <section class="card p-5 space-y-3">
+    <p class="text-sm"><strong>Carrera:</strong> {{ perfil.carrera.nombre }}</p>
+    <p class="text-sm"><strong>Modalidad:</strong> {{ perfil.get_modalidad_display }}</p>
+    <h2 class="font-semibold">Secciones guardadas actualmente</h2>
+    {% if secciones_actuales %}
+      <ul class="list-disc pl-6 text-sm">
+      {% for sec in secciones_actuales %}<li>{{ sec.asignatura_visible }} — <strong>{{ sec.codigo_visible }}</strong></li>{% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-sm text-muted">No hay secciones guardadas en tu matrícula. Es posible que la cuenta tenga una sección histórica sin vincular.</p>
+    {% endif %}
+  </section>
+  <form method="post" class="card p-5 space-y-4">
+    {% csrf_token %}
+    <h2 class="font-display font-semibold text-lg">Secciones disponibles del semestre</h2>
+    {% if grupos %}
+      {% for grupo in grupos %}
+      <details class="edunova-matricula-grupo" {% if forloop.first %}open{% endif %}>
+        <summary>{{ grupo.asignatura.codigo }} · {{ grupo.asignatura.nombre }}</summary>
+        <fieldset>
+          <legend class="sr-only">Sección de {{ grupo.asignatura.nombre }}</legend>
+          {% for sec in grupo.secciones %}
+          <label class="edunova-matricula-opcion">
+            <input type="checkbox" name="secciones" value="{{ sec.pk }}" data-asignatura="{{ grupo.asignatura.pk }}" {% if sec.seleccionada %}checked{% endif %}>
+            <span>
+              <strong>{{ sec.codigo_visible }}</strong>
+              <span class="text-sm text-muted block">{{ sec.get_turno_display }} · {% for h in sec.horarios.all %}{{ h }}{% if not forloop.last %}; {% endif %}{% empty %}Horario por confirmar{% endfor %}</span>
+              {% if sec.docentes_oferta %}<span class="block text-xs text-muted">Docente: {{ sec.docentes_oferta }}</span>{% endif %}
+            </span>
+          </label>
+          {% endfor %}
+        </fieldset>
+      </details>
+      {% endfor %}
+      <p class="text-sm text-muted">Al guardar, esta selección reemplazará tu matrícula anterior. Los registros históricos de clases no se borrarán.</p>
+      <button type="submit" class="btn-primary px-4 py-2">Guardar mis secciones</button>
+    {% else %}
+      <p class="text-muted">No hay secciones disponibles para tu carrera y modalidad en la oferta del período actual. Contacta a administración académica.</p>
+    {% endif %}
+  </form>
+</main>
+<script>
+/* Elegir otra sección de una misma asignatura desmarca la anterior. */
+document.querySelectorAll('.edunova-matricula-opcion input').forEach(input => {
+  input.addEventListener('change', () => {
+    if (!input.checked) return;
+    document.querySelectorAll('.edunova-matricula-opcion input').forEach(other => {
+      if (other !== input && other.dataset.asignatura === input.dataset.asignatura) other.checked = false;
+    });
+  });
+});
+</script>
+{% endblock %}

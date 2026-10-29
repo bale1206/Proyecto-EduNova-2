@@ -36,17 +36,9 @@ def login_view(request):
 
 
 def registro_view(request):
-    if request.user.is_authenticated:
-        return redirect('usuarios:post_login_redirect')
-
-    form = RegistroForm(request.POST or None)
-    if request.method == 'POST' and form.is_valid():
-        usuario = form.save()
-        login(request, usuario)
-        messages.success(request, f'¡Bienvenido/a a EduNova, {usuario.first_name}!')
-        return redirect('usuarios:post_login_redirect')
-
-    return render(request, 'usuarios/registro.html', {'form': form})
+    """Entrada única: selección de estudiante, docente o director de carrera."""
+    from .registro_guiado import registro_guiado
+    return registro_guiado(request)
 
 
 def logout_view(request):

@@ -8,16 +8,6 @@ from .secciones import prefijo_asignatura, validar_asignatura, validar_seccion, 
 Usuario = settings.AUTH_USER_MODEL
 
 
-class PermisoTablaCSV(models.Model):
-    tabla = models.CharField(max_length=150, unique=True)
-    exportar = models.BooleanField(default=False)
-    importar = models.BooleanField(default=False)
-
-    class Meta:
-        verbose_name = 'Permiso de tabla CSV'
-        verbose_name_plural = 'Permisos de tablas CSV'
-
-
 class Carrera(models.Model):
     """Catálogo de carreras de la sede; no vincula directamente al docente."""
     escuela = models.CharField(max_length=120)
@@ -31,6 +21,24 @@ class Carrera(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+class MencionCarrera(models.Model):
+    """Mención perteneciente a una carrera. Puede existir más de una por carrera."""
+    carrera = models.ForeignKey(Carrera, on_delete=models.PROTECT, related_name='menciones')
+    nombre = models.CharField(max_length=160)
+    activa = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Mención de carrera'
+        verbose_name_plural = 'Menciones de carreras'
+        ordering = ['carrera__nombre', 'nombre']
+        constraints = [
+            models.UniqueConstraint(fields=['carrera', 'nombre'], name='uq_mencion_carrera_nombre'),
+        ]
+
+    def __str__(self):
+        return f'{self.nombre} · {self.carrera.nombre}'
 
 
 class Asignatura(models.Model):
@@ -52,12 +60,34 @@ class Asignatura(models.Model):
 class CarreraAsignatura(models.Model):
     carrera = models.ForeignKey(Carrera, on_delete=models.CASCADE, related_name='malla')
     asignatura = models.ForeignKey(Asignatura, on_delete=models.CASCADE, related_name='planes')
+    # NULL: asignatura común a todas las menciones de la carrera.
+    mencion = models.ForeignKey(
+        MencionCarrera, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='plan_asignaturas', verbose_name='Mención (opcional)',
+        help_text='Deja vacío si la asignatura es común a todas las menciones.',
+    )
     fuente_malla = models.URLField(blank=True)
+    anio_plan = models.PositiveSmallIntegerField(null=True, blank=True, choices=[(i, f"{i}° año") for i in range(1, 5)], verbose_name="Año curricular")
+    semestre_plan = models.PositiveSmallIntegerField(null=True, blank=True, choices=[(1, "Primer semestre"), (2, "Segundo semestre")], verbose_name="Semestre curricular")
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=['carrera', 'asignatura'], name='uq_carrera_asignatura')]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['carrera', 'asignatura'], condition=models.Q(mencion__isnull=True),
+                name='uq_carrera_asignatura_comun',
+            ),
+            models.UniqueConstraint(
+                fields=['carrera', 'asignatura', 'mencion'],
+                condition=models.Q(mencion__isnull=False), name='uq_carrera_asignatura_mencion',
+            ),
+        ]
         verbose_name = 'Asignatura de una carrera'
         verbose_name_plural = 'Mallas de carreras'
+
+    def clean(self):
+        super().clean()
+        if self.mencion_id and self.carrera_id and self.mencion.carrera_id != self.carrera_id:
+            raise ValidationError({'mencion': 'La mención debe pertenecer a la carrera de esta asignatura.'})
 
 
 class Curso(models.Model):
@@ -67,6 +97,15 @@ class Curso(models.Model):
         Usuario, blank=True, related_name='secciones_impartidas',
         limit_choices_to={'rol': 'docente'}, verbose_name='Docentes asignados',
     )
+    periodo_academico = models.ForeignKey(
+        'PeriodoAcademico', on_delete=models.PROTECT, null=True, blank=True,
+        related_name='secciones', verbose_name='Período académico',
+    )
+    codigo_institucional = models.CharField(
+        'Código de sección en Duoc UC', max_length=45, blank=True, db_index=True,
+        help_text='Ej.: OCY1104-001D. El identificador interno se conserva.',
+    )
+    docentes_oferta = models.TextField('Docentes informados en la oferta', blank=True, help_text='Nombres oficiales; no equivalen a cuentas verificadas.')
     asignatura_catalogo = models.ForeignKey(Asignatura, null=True, blank=True, on_delete=models.PROTECT, related_name="secciones")
     asignatura = models.CharField('Asignatura', max_length=150, validators=[validar_asignatura])
     turno = models.BooleanField('Turno', default=True, choices=[(True, 'Diurno'), (False, 'Vespertino')])
@@ -111,8 +150,22 @@ class Curso(models.Model):
                 if intento == 4 or not type(self).objects.using(using).filter(seccion__in=[self.seccion[:-1] + 'D', self.seccion[:-1] + 'V']).exists():
                     raise
 
+    @property
+    def codigo_visible(self):
+        """Código publicado en la oferta, o el interno si no existe."""
+        return self.codigo_institucional or self.seccion
+
+    @property
+    def asignatura_visible(self):
+        """Nombre del catálogo institucional, sin perder compatibilidad histórica."""
+        return self.asignatura_catalogo.nombre if self.asignatura_catalogo_id else self.asignatura
+
+    @property
+    def codigo_asignatura_visible(self):
+        return self.asignatura_catalogo.codigo if self.asignatura_catalogo_id else ''
+
     def __str__(self):
-        return f"{self.seccion} · {self.asignatura} ({self.get_turno_display()})"
+        return f"{self.codigo_visible} · {self.asignatura_visible} ({self.get_turno_display()})"
 
     class Meta:
         verbose_name = 'Sección de asignatura'
@@ -120,19 +173,65 @@ class Curso(models.Model):
         ordering = ['seccion']
         constraints = [
             models.UniqueConstraint(Substr('seccion', 1, Length('seccion') - 2), name='curso_correlativo_prefijo_unico'),
+            models.UniqueConstraint(fields=['periodo_academico', 'asignatura_catalogo', 'codigo_institucional'], condition=models.Q(periodo_academico__isnull=False) & ~models.Q(codigo_institucional=''), name='uq_oferta_periodo_asig_codigo'),
         ]
 
 
+class HorarioSeccion(models.Model):
+    class Dia(models.IntegerChoices):
+        LUNES = 1, 'Lunes'
+        MARTES = 2, 'Martes'
+        MIERCOLES = 3, 'Miércoles'
+        JUEVES = 4, 'Jueves'
+        VIERNES = 5, 'Viernes'
+        SABADO = 6, 'Sábado'
+        DOMINGO = 7, 'Domingo'
+
+    seccion = models.ForeignKey(Curso, related_name='horarios', on_delete=models.CASCADE)
+    dia_semana = models.PositiveSmallIntegerField(choices=Dia.choices)
+    hora_inicio = models.TimeField()
+    hora_fin = models.TimeField()
+
+    class Meta:
+        verbose_name = 'Horario de sección'
+        verbose_name_plural = 'Horarios de secciones'
+        ordering = ['dia_semana', 'hora_inicio']
+        constraints = [models.UniqueConstraint(fields=['seccion','dia_semana','hora_inicio'], name='uq_horario_seccion_inicio')]
+
+    def clean(self):
+        super().clean()
+        if self.hora_inicio and self.hora_fin and self.hora_fin <= self.hora_inicio:
+            raise ValidationError({'hora_fin': 'El término debe ser posterior al inicio.'})
+
+    def __str__(self):
+        return f'{self.get_dia_semana_display()} {self.hora_inicio:%H:%M}–{self.hora_fin:%H:%M}'
+
+
 class Estudiante(models.Model):
+    class Modalidad(models.TextChoices):
+        DIURNO = 'diurno', 'Diurno'
+        VESPERTINO = 'vespertino', 'Vespertino'
+
+    modalidad = models.CharField(
+        'Modalidad de estudio', max_length=12, choices=Modalidad.choices,
+        blank=True, default='',
+        help_text='Se define durante el registro. Los estudiantes antiguos pueden tenerla pendiente.',
+    )
+
     class EstadoAvance(models.TextChoices):
         AL_DIA = 'al_dia', 'Al día'
         CON_RETRASO = 'con_retraso', 'Con retraso'
 
+    anio_ingreso = models.PositiveSmallIntegerField('Año de ingreso', null=True, blank=True)
     anio_carrera = models.PositiveSmallIntegerField('Año de carrera', null=True, blank=True,
         choices=[(1, '1° año'), (2, '2° año'), (3, '3° año'), (4, '4° año')])
     estado_avance = models.CharField('Situación académica declarada', max_length=15,
         choices=EstadoAvance.choices, blank=True, default='')
     carrera = models.ForeignKey(Carrera, on_delete=models.SET_NULL, null=True, blank=True, related_name="estudiantes")
+    mencion = models.ForeignKey(
+        MencionCarrera, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='estudiantes', verbose_name='Mención de carrera',
+    )
     secciones = models.ManyToManyField(Curso, blank=True, related_name="matriculados", verbose_name="Asignaturas / secciones inscritas")
     usuario = models.OneToOneField(
         Usuario, on_delete=models.SET_NULL, null=True, blank=True,
@@ -154,6 +253,8 @@ class Estudiante(models.Model):
         if self.usuario_id:
             if self.usuario.rol != 'estudiante':
                 raise ValidationError({'usuario': 'La cuenta vinculada debe tener rol estudiante.'})
+        if self.mencion_id and (not self.carrera_id or self.mencion.carrera_id != self.carrera_id):
+            raise ValidationError({'mencion': 'Selecciona una mención de la carrera del estudiante.'})
 
     @property
     def codigo_edunova(self):
@@ -179,78 +280,6 @@ class Estudiante(models.Model):
         verbose_name = 'Estudiante'
         verbose_name_plural = 'Estudiantes'
         ordering = ['nombre_completo']
-
-
-class Asistencia(models.Model):
-    class Estado(models.TextChoices):
-        PRESENTE = 'presente', 'Presente'
-        AUSENTE = 'ausente', 'Ausente'
-        ATRASO = 'atraso', 'Atraso'
-        JUSTIFICADO = 'justificado', 'Justificado'
-
-    estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, related_name='asistencias')
-    fecha = models.DateField()
-    porcentaje_asistencia_actual = models.DecimalField(max_digits=5, decimal_places=2, default=100)
-    estado = models.CharField(max_length=20, choices=Estado.choices, default=Estado.PRESENTE)
-    registrado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='asistencias_registradas')
-
-    class Meta:
-        verbose_name = 'Asistencia'
-        verbose_name_plural = 'Asistencias'
-        ordering = ['-fecha']
-
-    def __str__(self):
-        return f"{self.estudiante} - {self.fecha} - {self.estado}"
-
-
-class Observacion(models.Model):
-    class Tipo(models.TextChoices):
-        SANCION = 'sancion', 'Sanción'
-        ACADEMICA = 'academica', 'Académica'
-        OTRA = 'otra', 'Otra'
-
-    estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, related_name='observaciones')
-    docente_o_inspector = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='observaciones_creadas')
-    fecha = models.DateField(auto_now_add=True)
-    tipo = models.CharField(max_length=30, choices=Tipo.choices, default=Tipo.OTRA)
-    contenido_texto = models.TextField()
-    confidencial = models.BooleanField(default=False)
-
-    class Meta:
-        verbose_name = 'Observación'
-        verbose_name_plural = 'Observaciones'
-        ordering = ['-fecha']
-
-    def __str__(self):
-        return f"{self.get_tipo_display()} - {self.estudiante}"
-
-
-class JustificacionRetiro(models.Model):
-    class TipoSolicitud(models.TextChoices):
-        RETIRO_ANTICIPADO = 'retiro_anticipado', 'Retiro anticipado'
-        INASISTENCIA = 'inasistencia', 'Justificación de inasistencia'
-        ATRASO = 'atraso', 'Justificación de atraso'
-
-    class EstadoAprobacion(models.TextChoices):
-        PENDIENTE = 'pendiente', 'Pendiente'
-        APROBADA = 'aprobada', 'Aprobada'
-        RECHAZADA = 'rechazada', 'Rechazada'
-
-    estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE, related_name='justificaciones')
-    apoderado = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='justificaciones_enviadas')
-    tipo_solicitud = models.CharField(max_length=30, choices=TipoSolicitud.choices)
-    motivo_texto = models.TextField()
-    archivo_certificado = models.FileField(upload_to='justificaciones/', blank=True, null=True)
-    estado_aprobacion = models.CharField(max_length=20, choices=EstadoAprobacion.choices, default=EstadoAprobacion.PENDIENTE)
-    creado_en = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = 'Justificación de retiro'
-        verbose_name_plural = 'Justificaciones de retiro'
-        ordering = ['-creado_en']
-
-    def __str__(self):
-        return f"{self.get_tipo_solicitud_display()} - {self.estudiante}"
 
 
 class Evento(models.Model):
@@ -424,3 +453,78 @@ class RecordatorioTarea(models.Model):
         constraints = [models.UniqueConstraint(fields=['tarea', 'programado_para'], name='uq_recordatorio_tarea_fecha')]
         ordering = ['-creado_en']
 
+
+
+class PeriodoAcademico(models.Model):
+    """Período histórico: las ofertas de diferentes semestres NO se sobrescriben."""
+    anio = models.PositiveSmallIntegerField()
+    semestre = models.PositiveSmallIntegerField(choices=[(1, 'Primer semestre'), (2, 'Segundo semestre')])
+    sede = models.CharField(max_length=100, default='Antonio Varas')
+
+    class Meta:
+        ordering = ['-anio', '-semestre', 'sede']
+        constraints = [models.UniqueConstraint(fields=['anio', 'semestre', 'sede'], name='uq_periodo_anio_semestre_sede')]
+        verbose_name = 'Período académico'
+        verbose_name_plural = 'Períodos académicos'
+
+    def __str__(self):
+        return f'{self.sede} · {self.anio}-{self.semestre}'
+
+
+class PlanEstudio(models.Model):
+    """Versión de malla por cohorte y mención. No cambia planes previos."""
+    carrera = models.ForeignKey(Carrera, on_delete=models.PROTECT, related_name='planes_estudio')
+    mencion = models.ForeignKey(MencionCarrera, on_delete=models.PROTECT, null=True, blank=True, related_name='planes_estudio')
+    anio_ingreso = models.PositiveSmallIntegerField('Año de ingreso de la cohorte')
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['carrera__nombre', '-anio_ingreso']
+        verbose_name = 'Versión de malla curricular'
+        verbose_name_plural = 'Versiones de mallas curriculares'
+        constraints = [
+            models.UniqueConstraint(fields=['carrera', 'anio_ingreso'], condition=models.Q(mencion__isnull=True), name='uq_plan_comun_ingreso'),
+            models.UniqueConstraint(fields=['carrera', 'mencion', 'anio_ingreso'], condition=models.Q(mencion__isnull=False), name='uq_plan_mencion_ingreso'),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.mencion_id and self.carrera_id and self.mencion.carrera_id != self.carrera_id:
+            raise ValidationError({'mencion': 'La mención debe pertenecer a la carrera.'})
+
+    def __str__(self):
+        return f'{self.carrera} · {self.mencion or "Común"} · cohorte {self.anio_ingreso}'
+
+
+class PlanAsignatura(models.Model):
+    plan = models.ForeignKey(PlanEstudio, on_delete=models.CASCADE, related_name='asignaturas')
+    asignatura = models.ForeignKey(Asignatura, on_delete=models.PROTECT, related_name='planes_versionados')
+    anio_curricular = models.PositiveSmallIntegerField(choices=[(i, f'{i}° año') for i in range(1, 5)])
+    semestre_curricular = models.PositiveSmallIntegerField(choices=[(1, 'Primero'), (2, 'Segundo')])
+
+    class Meta:
+        verbose_name = 'Asignatura en versión de malla'
+        verbose_name_plural = 'Asignaturas de versiones de mallas'
+        constraints = [models.UniqueConstraint(fields=['plan', 'asignatura'], name='uq_asignatura_version_malla')]
+
+
+class ImportacionAcademica(models.Model):
+    """Auditoría y ubicación PRIVADA de los archivos revisados por el equipo."""
+    TIPO = [('malla', 'Malla curricular'), ('oferta', 'Oferta semestral')]
+    ESTADO = [('aplicada', 'Aplicada'), ('pendiente', 'Pendiente de transcripción')]
+    tipo = models.CharField(max_length=10, choices=TIPO)
+    estado = models.CharField(max_length=12, choices=ESTADO)
+    archivo_nombre = models.CharField(max_length=240)
+    archivo_privado = models.CharField(max_length=120, blank=True)
+    sha256 = models.CharField(max_length=64)
+    usuario = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name='importaciones_academicas')
+    creado_en = models.DateTimeField(auto_now_add=True)
+    resumen = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['-creado_en']
+        verbose_name = 'Importación académica'
+        verbose_name_plural = 'Importaciones académicas'
+
+    def __str__(self):
+        return f'{self.get_tipo_display()} · {self.archivo_nombre} · {self.creado_en:%d/%m/%Y}'

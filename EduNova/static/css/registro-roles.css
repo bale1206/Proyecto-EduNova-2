@@ -1,0 +1,47 @@
+/* Registro guiado: tokens de tema, funciona con todas las paletas y dark/auto. */
+#registro-unificado [hidden], .registro-carga[hidden] { display:none!important; }
+.registro-perfil {
+  display:flex; flex-direction:column; align-items:flex-start; gap:.55rem; text-align:left;
+  border:1px solid var(--linea); border-radius:1rem; padding:1.25rem;
+  background:var(--fondo-input); color:var(--tinta); min-height:150px;
+  transition:border-color .15s, box-shadow .15s, background-color .15s;
+}
+.registro-perfil:hover, .registro-perfil:focus-visible, .registro-perfil[aria-pressed="true"] {
+  outline:2px solid var(--rio); outline-offset:2px; background:var(--superficie);
+}
+.registro-perfil small {color:var(--tinta-muted);font-size:.83rem;line-height:1.4}
+.registro-perfil-icono {font-size:1.55rem}
+.registro-etiqueta {display:block;font-weight:600;font-size:.92rem;margin-bottom:.45rem;color:var(--tinta)}
+.registro-select {
+  display:block;width:100%;padding:.8rem .95rem;border:1px solid var(--linea);
+  border-radius:.75rem;background:var(--fondo-input);color:var(--tinta);
+}
+.registro-select:focus-visible, .registro-opcion:focus-within, .registro-seccion:focus-within {
+  outline:2px solid var(--rio);outline-offset:2px;
+}
+.registro-opciones {display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.registro-opcion {display:flex;align-items:flex-start;gap:.75rem;padding:1rem;border:1px solid var(--linea);
+  background:var(--fondo-input);border-radius:.8rem;cursor:pointer;color:var(--tinta)}
+.registro-opcion input,.registro-seccion input {margin-top:.25rem;accent-color:var(--rio);flex-shrink:0}
+.registro-asignatura {border:1px solid var(--linea);border-radius:.8rem;background:var(--superficie);overflow:hidden}
+.registro-asignatura-titulo {padding:1rem;cursor:pointer;color:var(--tinta)}
+.registro-asignatura[open] .registro-asignatura-titulo {border-bottom:1px solid var(--linea)}
+.registro-asignatura-check {display:flex;align-items:center;gap:.5rem;margin-top:.45rem;cursor:pointer}
+.registro-seccion {display:flex;align-items:flex-start;gap:.75rem;padding:.85rem 1rem;cursor:pointer;border-bottom:1px solid var(--linea);color:var(--tinta)}
+.registro-seccion:last-child {border-bottom:none}
+.registro-seccion:hover, .registro-opcion:hover {background:var(--fondo-input)}
+.registro-resumen-item {border:1px solid var(--linea);border-radius:.75rem;padding:1rem;color:var(--tinta);background:var(--fondo-input)}
+.registro-aviso {border:1px solid var(--linea);border-left:4px solid var(--rio);background:var(--fondo-input);color:var(--tinta);border-radius:.7rem;padding:1rem;margin-bottom:1.2rem}
+#error-registro {color:var(--tinta);font-weight:600}
+.registro-carga {position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  background:rgba(15,20,25,.52);backdrop-filter:blur(6px)}
+.registro-carga-contenido {max-width:350px;margin:1rem;color:var(--tinta);background:var(--superficie)}
+.registro-reloj {font-size:2rem;display:inline-block;animation:registro-girar 1.6s ease-in-out infinite}
+@keyframes registro-girar {50% {transform:rotate(180deg)}}
+@media (prefers-reduced-motion:reduce) {.registro-reloj{animation:none}}
+html.a11y-reducir-movimiento .registro-reloj {animation:none}
+
+/* Menciones: agrupación limpia y contraste heredado de cada tema. */
+.registro-mencion-grupo {border:1px solid var(--linea);border-radius:.8rem;padding:.85rem 1rem;background:var(--superficie);color:var(--tinta)}
+.registro-mencion-grupo legend {padding:0 .35rem;color:var(--tinta)}
+.registro-select:disabled {opacity:.75;cursor:not-allowed}

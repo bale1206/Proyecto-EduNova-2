@@ -36,13 +36,31 @@
  <div class="space-y-6 lg:col-span-2">
   <section id="seccion-calendario" class="card p-5" aria-labelledby="calendario-titulo">
    <div class="flex items-center justify-between gap-2 mb-4 flex-wrap"><h2 id="calendario-titulo" class="font-display text-xl font-semibold">Calendario académico</h2><button type="button" id="calendario-expandir" aria-expanded="false" aria-controls="seccion-calendario" class="btn-secondary text-sm px-3 py-2">⛶ Ampliar calendario</button></div>
+   <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+     <p class="text-sm text-muted">Secciones matriculadas: {{ secciones.count }}</p>
+     <a href="{% url 'academico:ajustar_secciones_estudiante' %}" class="btn-secondary px-3 py-2 text-sm">Revisar o corregir mis secciones</a>
+   </div>
    {% if secciones %}
    <label for="seccion-estudiante" class="block text-sm font-medium mb-2">Mostrar actividades de</label>
    <select id="seccion-estudiante" class="surface-control w-full rounded-lg border p-2 mb-4" style="border-color:var(--linea)" onchange="location.href='?seccion='+encodeURIComponent(this.value)">
       <option value="">Todas mis asignaturas</option>
-      {% for sec in secciones %}<option value="{{ sec.pk }}" {% if seccion_seleccionada == sec.pk|stringformat:'s' %}selected{% endif %}>{{ sec.asignatura }} · {{ sec.seccion }}</option>{% endfor %}
+      {% for sec in secciones %}<option value="{{ sec.pk }}" {% if seccion_seleccionada == sec.pk|stringformat:'s' %}selected{% endif %}>{{ sec.codigo_asignatura_visible }} · {{ sec.asignatura_visible }} — {{ sec.codigo_visible }}</option>{% endfor %}
    </select>
-   {% else %}<p class="text-sm text-muted mb-3">Cuando te matriculen en secciones, aparecerán aquí sus evaluaciones y actividades.</p>{% endif %}
+   <details class="mb-3 rounded-lg border" style="border-color:var(--linea)">
+     <summary class="cursor-pointer font-medium text-sm p-3">Ver mis secciones y horarios inscritos</summary>
+     <div class="px-3 pb-3 space-y-2 text-sm">
+       {% for sec in secciones %}
+       <div class="rounded-lg p-2 surface-subtle">
+         <strong>{{ sec.codigo_asignatura_visible }} · {{ sec.asignatura_visible }} — {{ sec.codigo_visible }}</strong>
+         <span class="block text-muted mt-1">{% for horario in sec.horarios.all %}{{ horario }}{% if not forloop.last %}; {% endif %}{% empty %}Horario pendiente de publicación{% endfor %}</span>
+       </div>
+       {% endfor %}
+     </div>
+   </details>
+   {% if horarios_sin_cargar %}
+     <p class="text-sm text-muted mb-3">{{ horarios_sin_cargar }} sección(es) todavía sin horario cargado. Sus clases aparecerán al importar la oferta con horarios.</p>
+   {% endif %}
+   {% else %}<p class="text-sm text-muted mb-3">No aparecen secciones matriculadas. Usa «Revisar o corregir mis secciones» para seleccionar las del semestre actual.</p>{% endif %}
    {% include 'academico/_calendario.html' %}
   </section>
   <section class="card p-5" aria-labelledby="tareas-titulo">
@@ -54,7 +72,7 @@
     <label class="text-sm">Asignatura y sección
       <select name="seccion" class="w-full rounded-lg border px-3 py-2 surface-control mt-1" required>
        <option value="">Selecciona una asignatura</option>
-       {% for sec in secciones %}<option value="{{ sec.pk }}">{{ sec.asignatura }} · {{ sec.seccion }}</option>{% endfor %}
+       {% for sec in secciones %}<option value="{{ sec.pk }}">{{ sec.codigo_asignatura_visible }} · {{ sec.asignatura_visible }} — {{ sec.codigo_visible }}</option>{% endfor %}
       </select></label>
     <label class="text-sm">Fecha de inicio
       <input id="fecha-tarea" type="date" name="fecha_limite" required class="w-full rounded-lg border px-3 py-2 surface-control mt-1"></label>
@@ -98,7 +116,7 @@
    {% for tarea in tareas %}<li class="rounded-lg border p-3 flex flex-wrap items-center gap-3" style="border-color:var(--linea)">
     <form method="post" action="{% url 'academico:alternar_tarea_estudiante' tarea.id %}">{% csrf_token %}<button type="submit" class="btn-secondary px-3 py-1 text-sm" aria-label="Cambiar estado de {{ tarea.titulo }}">{% if tarea.completada %}↩ Pendiente{% else %}✓ Completar{% endif %}</button></form>
     <span class="edunova-task-dot" style="--task-color:{{ tarea.color }}" aria-hidden="true"></span>
-    <span class="flex-1 {% if tarea.completada %}line-through text-muted{% endif %}">{{ tarea.titulo }}<span class="block text-xs text-muted">{% if tarea.seccion %}{{ tarea.seccion.asignatura }} · {{ tarea.seccion.seccion }}{% endif %}</span></span>
+    <span class="flex-1 {% if tarea.completada %}line-through text-muted{% endif %}">{{ tarea.titulo }}<span class="block text-xs text-muted">{% if tarea.seccion %}{{ tarea.seccion.asignatura_visible }} · {{ tarea.seccion.codigo_visible }}{% endif %}</span></span>
     {% if tarea.prioridad == 'alta' %}<span class="edunova-prioridad-alta" aria-label="Alta prioridad">❗ Alta prioridad</span>{% elif tarea.prioridad == 'media' %}<span class="edunova-prioridad-neutra">Prioridad media</span>{% else %}<span class="edunova-prioridad-neutra">Prioridad baja</span>{% endif %}
     {% if tarea.recordatorios_activos and not tarea.completada %}<span class="text-xs text-muted" title="Recordatorios activos">🔔 Avisos activos</span>{% endif %}
     {% if tarea.fecha_limite %}<span class="text-xs text-muted">{{ tarea.fecha_limite|date:'d/m/Y' }}{% if tarea.hora_inicio %} · {{ tarea.hora_inicio|time:'H:i' }}{% endif %}{% if tarea.repeticion != 'ninguna' %} · {{ tarea.get_repeticion_display }}{% endif %}</span>{% endif %}

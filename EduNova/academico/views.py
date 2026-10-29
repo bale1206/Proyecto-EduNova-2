@@ -14,13 +14,14 @@ from django.urls import reverse
 from comunicacion.services import mensajes_no_leidos
 from usuarios.models import Usuario
 
-from .forms import ActividadAdministrativaForm, CrearSeccionForm, CarreraForm, AsignarCarreraForm, MatricularSeccionForm, CursoForm, EventoForm, JustificacionRetiroForm, ObservacionForm, ActualizarObservacionForm
+from .forms import ActividadAdministrativaForm, CrearSeccionForm, CarreraForm, AsignarCarreraForm, MatricularSeccionForm, CursoForm, EventoForm, ObservacionForm, ActualizarObservacionForm
 from django.db.models import Case, When, Value, IntegerField, Count, Q
-from .models import TareaEstudio, Asignatura, Asistencia, Carrera, Curso, Estudiante, Evento, JustificacionRetiro, ObservacionComportamiento, RegistroAsistencia, SesionClase, MarcaAsistencia, AvisoAsistencia
+from .models import TareaEstudio, Asignatura, Carrera, Curso, Estudiante, Evento, ObservacionComportamiento, RegistroAsistencia, SesionClase, MarcaAsistencia, AvisoAsistencia
 from django.http import JsonResponse
 from comunicacion.models import MensajeComunicacion
 from .notificaciones_asistencia import avisar_estudiante
 from .analitica import resumir_asistencia
+from .calendario_clases import clases_por_dia, secciones_eligibles
 
 MESES_ES = [
     '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -74,71 +75,6 @@ def _mes_anterior_siguiente(year, month):
 def home_docente(request):
     _requerir_rol(request, Usuario.Rol.DOCENTE)
     return _portal_planificacion(request)
-
-
-@login_required
-def home_apoderado(request):
-    _requerir_rol(request, Usuario.Rol.APODERADO)
-
-    estudiantes = Estudiante.objects.filter(apoderado=request.user).select_related('curso')
-
-    familias = {}
-    for estudiante in estudiantes:
-        familias.setdefault(estudiante.apellido_familiar or 'Sin apellido', []).append(estudiante)
-
-    total_no_leidos = mensajes_no_leidos(request.user).count()
-
-    contexto = {
-        'familias': familias,
-        'total_no_leidos': total_no_leidos,
-    }
-    return render(request, 'academico/home_apoderado.html', contexto)
-
-
-@login_required
-def detalle_estudiante(request, estudiante_id):
-    _requerir_rol(request, Usuario.Rol.APODERADO)
-    estudiante = get_object_or_404(Estudiante, id=estudiante_id, apoderado=request.user)
-
-    asistencias_recientes = Asistencia.objects.filter(estudiante=estudiante).order_by('-fecha')
-    asistencia_actual = asistencias_recientes.first()
-
-    ultimas_30 = asistencias_recientes[:30]
-    total = len(ultimas_30)
-    presentes = sum(1 for a in ultimas_30 if a.estado == Asistencia.Estado.PRESENTE)
-    resumen_asistencia = round((presentes / total) * 100, 1) if total else None
-
-    observaciones = estudiante.observaciones.filter(confidencial=False).exclude(tipo='positiva').order_by('-fecha')[:10]
-
-    year, month = _mes_actual_o_parametro(request)
-    (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
-    eventos_mes = Evento.objects.filter(curso=estudiante.curso, fecha__year=year, fecha__month=month) if estudiante.curso else Evento.objects.none()
-    semanas = _construir_calendario(year, month, eventos_mes)
-
-    proximas_evaluaciones = Evento.objects.filter(
-        curso=estudiante.curso, tipo=Evento.Tipo.EVALUACION, fecha__gte=date.today(),
-    ).order_by('fecha')[:5] if estudiante.curso else []
-
-    justificaciones = estudiante.justificaciones.order_by('-creado_en')[:10]
-
-    contexto = {
-        'estudiante': estudiante,
-        'asistencia_actual': asistencia_actual,
-        'resumen_asistencia': resumen_asistencia,
-        'observaciones': observaciones,
-        'proximas_evaluaciones': proximas_evaluaciones,
-        'justificaciones': justificaciones,
-        'justificacion_form': JustificacionRetiroForm(),
-        'semanas': semanas,
-        'mes_nombre': MESES_ES[month],
-        'anio': year,
-        'mes': month,
-        'prev_year': prev_y, 'prev_month': prev_m,
-        'next_year': next_y, 'next_month': next_m,
-    }
-    if request.headers.get('HX-Request'):
-        return render(request, 'academico/_calendario.html', contexto)
-    return render(request, 'academico/detalle_estudiante.html', contexto)
 
 
 @login_required
@@ -283,24 +219,6 @@ def crear_evento(request):
     messages.success(request, 'Evento publicado en los calendarios correspondientes.')
     return redirect(_portal_url(request.user))
 
-
-@login_required
-def crear_justificacion(request, estudiante_id):
-    _requerir_rol(request, Usuario.Rol.APODERADO)
-    estudiante = get_object_or_404(Estudiante, id=estudiante_id, apoderado=request.user)
-
-    if request.method == 'POST':
-        form = JustificacionRetiroForm(request.POST, request.FILES)
-        if form.is_valid():
-            justificacion = form.save(commit=False)
-            justificacion.estudiante = estudiante
-            justificacion.apoderado = request.user
-            justificacion.save()
-            messages.success(request, 'Justificación enviada. Quedará pendiente hasta que el colegio la revise.')
-        else:
-            messages.error(request, 'Revisa los datos de la justificación: ' + '; '.join(form.errors))
-
-    return redirect('academico:detalle_estudiante', estudiante_id=estudiante.id)
 
 @login_required
 def crear_observacion(request):
@@ -494,6 +412,10 @@ def _portal_planificacion(request):
     year, month = _mes_actual_o_parametro(request)
     (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
     semanas = _construir_calendario(year, month, eventos.filter(fecha__year=year, fecha__month=month))
+    clases_mes = clases_por_dia(list(visibles), year, month, hoy=timezone.localdate())
+    for semana in semanas:
+        for dia in semana:
+            dia['clases'] = clases_mes.get(dia['numero'], []) if dia['numero'] else []
     from .programacion_tareas import fechas_tarea
     import calendar
     inicio, final = date(year, month, 1), date(year, month, calendar.monthrange(year, month)[1])
@@ -596,17 +518,28 @@ def home_estudiante(request):
     _requerir_rol(request, Usuario.Rol.ESTUDIANTE)
     perfil = Estudiante.objects.filter(usuario=request.user).select_related('carrera', 'curso').first()
     tareas = TareaEstudio.objects.filter(estudiante=request.user).select_related('seccion')
-    secciones = Curso.objects.filter(matriculados=perfil).order_by('asignatura', 'seccion') if perfil else Curso.objects.none()
-    # Compatibilidad con registros antiguos, sin duplicar secciones.
-    if perfil and not secciones.exists() and perfil.curso_id:
-        secciones = Curso.objects.filter(pk=perfil.curso_id)
+    # La matrícula M2M es la fuente de verdad: NO usar perfil.curso como
+    # alternativa, porque podría apuntar a una sección histórica distinta.
+    secciones = (Curso.objects.filter(matriculados=perfil)
+                .select_related('asignatura_catalogo', 'periodo_academico')
+                .prefetch_related('horarios')
+                .order_by('asignatura_catalogo__nombre', 'codigo_institucional', 'seccion')
+                if perfil else Curso.objects.none())
     seccion_seleccionada = request.GET.get('seccion', '')
     if not seccion_seleccionada.isdecimal():
         seccion_seleccionada = ''
     if seccion_seleccionada and not secciones.filter(pk=seccion_seleccionada).exists():
         seccion_seleccionada = ''
     visibles = secciones.filter(pk=seccion_seleccionada) if seccion_seleccionada else secciones
-    eventos = Evento.objects.filter(Q(curso__in=visibles) | Q(carrera=perfil.carrera, carrera__isnull=False) if perfil else Q(pk__in=[])).distinct().order_by('fecha', 'hora_inicio')
+    # Eventos de una sección solo al filtrarla; los avisos generales de
+    # carrera se muestran cuando se visualizan todas las asignaturas.
+    if perfil:
+        filtro_eventos = Q(curso__in=visibles)
+        if not seccion_seleccionada and perfil.carrera_id:
+            filtro_eventos |= Q(carrera_id=perfil.carrera_id, curso__isnull=True)
+        eventos = Evento.objects.filter(filtro_eventos).distinct().order_by('fecha', 'hora_inicio')
+    else:
+        eventos = Evento.objects.none()
     today = date.today()
     year, month = _mes_actual_o_parametro(request)
     (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
@@ -621,10 +554,17 @@ def home_estudiante(request):
             continue
         for ocurrencia in fechas_tarea(tarea, desde, hasta):
             tareas_mes.setdefault(ocurrencia.day, []).append(tarea)
+    # Incorporar las clases recurrentes desde las secciones realmente matriculadas.
+    # Antes solo se generaban eventos y tareas: por eso el calendario mostraba
+    # «Sin actividades» aunque la sección tuviera horarios en Supabase.
+    clases_mes = clases_por_dia(visibles, year, month, hoy=timezone.localdate())
     for semana in semanas:
         for dia in semana:
-            dia['tareas'] = tareas_mes.get(dia['numero'], []) if dia['numero'] else []
+            numero = dia['numero']
+            dia['clases'] = clases_mes.get(numero, []) if numero else []
+            dia['tareas'] = tareas_mes.get(numero, []) if numero else []
     contexto = {
+        'horarios_sin_cargar': sum(not bool(sec.horarios.all()) for sec in secciones),
         'perfil': perfil, 'secciones': secciones, 'seccion_seleccionada': seccion_seleccionada, 'tareas': tareas, 'pendientes': tareas.filter(completada=False),
         'eventos_proximos': eventos.filter(fecha__gte=today)[:6],
         'mes_nombre': MESES_ES[month], 'anio': year, 'mes': month,
@@ -640,6 +580,52 @@ def home_estudiante(request):
     if request.headers.get('HX-Request') == 'true':
         return render(request, 'academico/_calendario.html', contexto)
     return render(request, 'academico/home_estudiante.html', contexto)
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def ajustar_secciones_estudiante(request):
+    """Permite corregir una matrícula vieja sin manipular Supabase a mano."""
+    _requerir_rol(request, Usuario.Rol.ESTUDIANTE)
+    perfil = Estudiante.objects.filter(usuario=request.user).select_related('carrera').first()
+    if not perfil or not perfil.carrera_id or not perfil.modalidad:
+        messages.error(request, 'Completa tu carrera y modalidad desde Django Admin antes de elegir secciones.')
+        return redirect('academico:home_estudiante')
+    opciones = secciones_eligibles(perfil)
+    if request.method == 'POST':
+        raw = request.POST.getlist('secciones')
+        if not raw or len(set(raw)) != len(raw) or any(not x.isdecimal() for x in raw):
+            messages.error(request, 'Selecciona al menos una sección válida, sin duplicados.')
+            return redirect('academico:ajustar_secciones_estudiante')
+        elegidas = list(opciones.filter(pk__in=[int(x) for x in raw]))
+        if len(elegidas) != len(raw):
+            messages.error(request, 'Una sección no pertenece a tu carrera, modalidad o período actual.')
+            return redirect('academico:ajustar_secciones_estudiante')
+        codigos_asignatura = [sec.asignatura_catalogo_id for sec in elegidas]
+        if len(set(codigos_asignatura)) != len(codigos_asignatura):
+            messages.error(request, 'Solo puedes seleccionar una sección por asignatura.')
+            return redirect('academico:ajustar_secciones_estudiante')
+        with transaction.atomic():
+            perfil = Estudiante.objects.select_for_update().get(pk=perfil.pk, usuario=request.user)
+            perfil.secciones.set(elegidas)
+            # Campo escolar heredado: solo se conserva para compatibilidad.
+            perfil.curso = elegidas[0]
+            perfil.save(update_fields=['curso'])
+        messages.success(request, 'Tus secciones y horarios quedaron sincronizados con el calendario.')
+        return redirect('academico:home_estudiante')
+
+    inscritas = set(perfil.secciones.values_list('id', flat=True))
+    agrupadas = {}
+    for sec in opciones:
+        clave = sec.asignatura_catalogo_id
+        if clave not in agrupadas:
+            agrupadas[clave] = {'asignatura': sec.asignatura_catalogo, 'secciones': []}
+        sec.seleccionada = sec.pk in inscritas
+        agrupadas[clave]['secciones'].append(sec)
+    return render(request, 'academico/ajustar_secciones_estudiante.html', {
+        'perfil': perfil, 'grupos': list(agrupadas.values()),
+        'secciones_actuales': perfil.secciones.select_related('asignatura_catalogo').all(),
+    })
 
 
 @login_required

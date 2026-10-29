@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Importaciones académicas · Administración EduNova{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/importacion-academica.css' %}">
+<section class="import-layout" aria-labelledby="import-titulo">
+  <div class="import-head">
+    <div>
+      <p class="import-eyebrow">EDUNOVA · HERRAMIENTAS INTERNAS</p>
+      <h1 id="import-titulo">Actualizar información académica</h1>
+      <p class="import-muted">Carga documentos oficiales, revisa sus datos y confirma las actualizaciones de Supabase.</p>
+    </div>
+    <a href="{% url 'admin:index' %}" class="import-btn import-secondary">Volver a Django Admin</a>
+  </div>
+  <div class="import-steps" aria-label="Etapas de importación">
+    <span><b>1</b> Seleccionar documento</span>
+    <span><b>2</b> Revisar datos</span>
+    <span><b>3</b> Confirmar cambios</span>
+  </div>
+
+  <div class="import-card">
+    <h2>1. Nueva importación</h2>
+    <p class="import-muted">Solo administradores técnicos pueden ejecutar esta operación. La carga no modifica la base hasta la confirmación.</p>
+    <form method="post" enctype="multipart/form-data" class="import-form" id="form-archivo">
+      {% csrf_token %}<input type="hidden" name="accion" value="previsualizar">
+      <div class="import-grid">
+        <label>Tipo de documento
+          <select name="tipo" id="import-tipo" required>
+            <option value="malla">Malla curricular</option>
+            <option value="oferta">Oferta académica semestral</option>
+          </select>
+        </label>
+        <label>Archivo
+          <input name="archivo" type="file" accept=".csv,.xlsx,.pdf" required aria-describedby="ayuda-archivo">
+        </label>
+      </div>
+      <p class="import-muted import-small" id="ayuda-archivo">Malla: CSV/XLSX estructurado para importar asignaturas; PDF para guardar como referencia. Oferta: Excel oficial (hoja BASE), o CSV. Máximo 12 MB.</p>
+      <div id="import-malla" class="import-grid import-params">
+        <label>Carrera
+          <select name="carrera" id="import-carrera">
+            <option value="">Selecciona una carrera</option>
+            {% for carrera in carreras %}<option value="{{ carrera.pk }}">{{ carrera.nombre }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>Mención (si corresponde)
+          <select name="mencion" id="import-mencion">
+            <option value="">Asignaturas comunes / sin mención</option>
+            {% for m in menciones %}<option data-carrera="{{ m.carrera_id }}" value="{{ m.pk }}">{{ m.nombre }} — {{ m.carrera.nombre }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>Año de ingreso de esta versión de malla
+          <input name="ingreso" type="number" min="2000" max="2100" value="2026" id="import-ingreso">
+        </label>
+        <p class="import-hint">El año de ingreso identifica la versión del plan; no reemplaza las versiones anteriores.</p>
+      </div>
+      <div id="import-oferta" class="import-grid import-params" hidden>
+        <label>Año de la oferta
+          <input name="anio" type="number" min="2000" max="2100" value="2026" id="import-anio">
+        </label>
+        <label>Semestre
+          <select name="semestre" id="import-semestre">
+            <option value="1">Primer semestre</option><option value="2" selected>Segundo semestre</option>
+          </select>
+        </label>
+        <p class="import-hint">Solo se procesan las filas de <strong>Antonio Varas</strong>. Los nombres de carreras se revisan en la vista previa.</p>
+      </div>
+      <div class="import-actions">
+        <a href="{% url 'edunova_importaciones_plantilla' %}" class="import-btn import-secondary">Descargar plantilla de malla CSV</a>
+        <button class="import-btn import-primary" type="submit">Analizar documento</button>
+      </div>
+    </form>
+  </div>
+
+  {% if preview and info %}
+  <div class="import-card" id="resultado-preview">
+    <h2>2. Vista previa · {{ info.nombre }}</h2>
+    {% if preview.errores %}
+      <div class="import-alert import-alert-error" role="alert"><strong>Corrige estos problemas antes de importar:</strong>
+        <ul>{% for err in preview.errores %}<li>{{ err }}</li>{% endfor %}</ul>
+      </div>
+    {% elif preview.pdf %}
+      <div class="import-alert"><strong>Malla PDF de referencia.</strong> Este documento se puede archivar para revisión administrativa, pero no se añadirán asignaturas automáticamente porque el formato visual no garantiza una lectura fiable. Transcribe la malla en la plantilla CSV y vuelve a subirla para actualizar el catálogo.</div>
+      <p class="import-muted">Carrera y año de ingreso seleccionados quedan registrados junto al archivo.</p>
+    {% elif info.tipo == 'malla' %}
+      <p><strong>{{ preview.total }}</strong> asignaturas válidas para la carrera seleccionada.</p>
+      <div class="import-table-wrapper"><table class="import-table">
+        <thead><tr><th>Código</th><th>Asignatura</th><th>Año curricular</th><th>Semestre</th></tr></thead>
+        <tbody>{% for fila in preview.filas|slice:':15' %}<tr><td>{{ fila.codigo }}</td><td>{{ fila.nombre }}</td><td>{{ fila.anio }}</td><td>{{ fila.semestre }}</td></tr>{% endfor %}</tbody>
+      </table></div>
+      {% if preview.total > 15 %}<p class="import-muted import-small">Mostrando las primeras 15 asignaturas. Se importarán {{ preview.total }}.</p>{% endif %}
+    {% else %}
+      <div class="import-kpis">
+        <div><strong>{{ preview.total }}</strong><span>filas académicas</span></div>
+        <div><strong>{{ preview.grupos|length }}</strong><span>secciones agrupadas</span></div>
+        <div><strong>{{ preview.carreras|length }}</strong><span>nombres de carreras</span></div>
+      </div>
+      {% if preview.advertencias %}<details class="import-alert"><summary>Advertencias del horario ({{ preview.advertencias|length }})</summary>
+        <ul>{% for w in preview.advertencias %}<li>{{ w }}</li>{% endfor %}</ul>
+      </details>{% endif %}
+      <p class="import-muted">Asocia cada carrera con una ya registrada o elige «Crear nueva carrera» para incorporarla con su escuela. Las carreras nuevas solo se guardarán cuando confirmes la importación. Si deseas omitir alguna, marca la confirmación de omisiones.</p>
+    {% endif %}
+    {% if not preview.errores %}
+      <form method="post" class="import-form">
+        {% csrf_token %}<input type="hidden" name="accion" value="aplicar">
+        {% if info.tipo == 'oferta' %}
+          <div class="import-mappings">
+            {% for fila in carreras_archivo %}
+            <div class="import-map-item" data-import-carrera>
+              <div class="import-map-row">
+                <div class="import-map-source"><strong>{{ fila.nombre }}</strong><small>{{ fila.cantidad }} filas del archivo</small></div>
+                <label class="import-map-label" for="map-{{ fila.clave }}">Destino en EduNova
+                  <select name="map_{{ fila.clave }}" id="map-{{ fila.clave }}" class="import-map-selector" aria-label="Asociación de {{ fila.nombre }}">
+                    <option value="" {% if not fila.seleccion %}selected{% endif %}>No importar esta carrera</option>
+                    {% for c in carreras %}<option value="{{ c.pk }}" {% if fila.seleccion == c.pk|stringformat:'s' %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}
+                    <option value="__crear__" {% if fila.seleccion == '__crear__' %}selected{% endif %}>＋ Crear nueva carrera…</option>
+                  </select>
+                </label>
+              </div>
+              <div class="import-create-fields" data-create-fields {% if fila.seleccion != '__crear__' %}hidden{% endif %}>
+                <label for="nuevo-nombre-{{ fila.clave }}">Nombre de la nueva carrera
+                  <input id="nuevo-nombre-{{ fila.clave }}" name="nuevo_nombre_{{ fila.clave }}" value="{{ fila.nombre_nuevo }}" maxlength="180" autocomplete="off" data-create-required>
+                </label>
+                <label for="nueva-escuela-{{ fila.clave }}">Escuela a la que pertenece
+                  <input id="nueva-escuela-{{ fila.clave }}" name="nueva_escuela_{{ fila.clave }}" value="{{ fila.escuela_nueva }}" maxlength="120" list="escuelas-edunova" placeholder="Ej. Informática y Telecomunicaciones" autocomplete="off" data-create-required>
+                </label>
+                <p class="import-map-note">Comprueba el nombre oficial de la carrera y su escuela. No se deducen automáticamente menciones a partir del Excel.</p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <datalist id="escuelas-edunova">
+            {% for escuela in escuelas %}<option value="{{ escuela }}">{% endfor %}
+          </datalist>
+          <label class="import-confirm-check"><input type="checkbox" name="confirmar_omisiones" value="si"><span>Entiendo que las carreras sin asociar no se importarán, sin eliminar su información anterior.</span></label>
+        {% endif %}
+        <label class="import-confirm-check"><input type="checkbox" required name="confirmado" value="si"><span>Revisé la vista previa y autorizo esta importación a Supabase.</span></label>
+        <div class="import-actions"><button type="submit" class="import-btn import-primary">Confirmar importación</button></div>
+      </form>
+    {% endif %}
+    <form method="post" class="import-cancel">{% csrf_token %}<input type="hidden" name="accion" value="cancelar"><button type="submit" class="import-btn import-secondary">Cancelar vista previa</button></form>
+  </div>
+  {% endif %}
+
+  <div class="import-card">
+    <h2>Historial de importaciones</h2>
+    <p class="import-muted">Los documentos se conservan fuera de las carpetas públicas y solo los superusuarios pueden descargarlos.</p>
+    {% if historial %}
+      <div class="import-table-wrapper"><table class="import-table">
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Archivo</th><th>Estado</th><th>Resultado</th></tr></thead>
+        <tbody>{% for item in historial %}<tr>
+          <td>{{ item.creado_en|date:'d/m/Y H:i' }}</td>
+          <td>{{ item.get_tipo_display }}</td>
+          <td><a href="{% url 'edunova_importaciones_archivo' item.pk %}">{{ item.archivo_nombre }}</a></td>
+          <td>{{ item.get_estado_display }}</td>
+          <td class="import-small">{% if item.resumen.secciones_procesadas %}{{ item.resumen.secciones_procesadas }} secciones{% elif item.resumen.filas %}{{ item.resumen.filas }} asignaturas{% else %}Referencia{% endif %}</td>
+        </tr>{% endfor %}</tbody>
+      </table></div>
+    {% else %}<p class="import-muted">Aún no se han aplicado importaciones desde este módulo.</p>{% endif %}
+  </div>
+</section>
+<script>
+(function () {
+  const tipo = document.getElementById('import-tipo');
+  const malla = document.getElementById('import-malla');
+  const oferta = document.getElementById('import-oferta');
+  const carrera = document.getElementById('import-carrera');
+  const mencion = document.getElementById('import-mencion');
+  function actualizar() {
+    malla.hidden = tipo.value !== 'malla';
+    oferta.hidden = tipo.value !== 'oferta';
+    Array.from(mencion.options).forEach(option => {
+      if (!option.value) return;
+      option.hidden = option.dataset.carrera !== carrera.value;
+      option.disabled = option.dataset.carrera !== carrera.value;
+    });
+    if (mencion.selectedOptions.length && mencion.selectedOptions[0].disabled) mencion.value = '';
+  }
+  document.querySelectorAll('[data-import-carrera]').forEach(fila => {
+    const selector = fila.querySelector('.import-map-selector');
+    const campos = fila.querySelector('[data-create-fields]');
+    if (!selector || !campos) return;
+    function mostrarCreacion() {
+      const crear = selector.value === '__crear__';
+      campos.hidden = !crear;
+      campos.querySelectorAll('[data-create-required]').forEach(campo => {
+        campo.disabled = !crear;
+        campo.required = crear;
+      });
+    }
+    selector.addEventListener('change', mostrarCreacion);
+    mostrarCreacion();
+  });
+  tipo.addEventListener('change', actualizar);
+  carrera.addEventListener('change', actualizar);
+  actualizar();
+})();
+</script>
+{% endblock %}

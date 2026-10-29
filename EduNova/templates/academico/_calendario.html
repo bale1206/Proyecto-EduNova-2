@@ -20,9 +20,30 @@
     <div class="grid grid-cols-7 gap-1">
         {% for semana in semanas %}
             {% for dia in semana %}
-            <div tabindex="0" class="edunova-zoom-day min-h-[4.5rem] rounded-lg p-1 text-xs {% if dia.numero %}surface-subtle{% endif %} {% if dia.es_hoy %}dia-hoy{% endif %}">
+            <div tabindex="0" class="edunova-zoom-day {% if dia.clases %}edunova-day-has-classes{% endif %} min-h-[4.5rem] rounded-lg p-1 text-xs {% if dia.numero %}surface-subtle{% endif %} {% if dia.es_hoy %}dia-hoy{% endif %}">
                 {% if dia.numero %}
-                <p class="font-medium text-muted mb-1">{{ dia.numero }}</p><div class="edunova-day-detail" aria-hidden="true"><strong>{{ dia.numero }} de {{ mes_nombre|lower }}</strong><span>{% for evento in dia.eventos %}<span class="edunova-day-entry">{% if evento.hora_inicio %}{{ evento.hora_inicio|time:"H:i" }} · {% endif %}{{ evento.titulo }}</span>{% endfor %}{% for tarea in dia.tareas %}<span class="edunova-day-entry">{% if tarea.hora_inicio %}{{ tarea.hora_inicio|time:"H:i" }} · {% endif %}{{ tarea.titulo }}{% if tarea.prioridad == "alta" %} ❗{% endif %}</span>{% endfor %}{% if not dia.eventos and not dia.tareas %}<span>Sin actividades</span>{% endif %}</span></div>
+                <p class="font-medium text-muted mb-1">{{ dia.numero }}</p><div class="edunova-day-detail" aria-hidden="true"><strong>{{ dia.numero }} de {{ mes_nombre|lower }}</strong><span>{% for clase in dia.clases %}<span class="edunova-day-entry">{{ clase.asignatura }} · {{ clase.codigo }}: {% for bloque in clase.bloques %}{{ bloque.inicio|time:"H:i" }}–{{ bloque.fin|time:"H:i" }}{% if not forloop.last %}; {% endif %}{% endfor %}</span>{% endfor %}{% for evento in dia.eventos %}<span class="edunova-day-entry">{% if evento.hora_inicio %}{{ evento.hora_inicio|time:"H:i" }} · {% endif %}{{ evento.titulo }}</span>{% endfor %}{% for tarea in dia.tareas %}<span class="edunova-day-entry">{% if tarea.hora_inicio %}{{ tarea.hora_inicio|time:"H:i" }} · {% endif %}{{ tarea.titulo }}{% if tarea.prioridad == "alta" %} ❗{% endif %}</span>{% endfor %}{% if not dia.clases and not dia.eventos and not dia.tareas %}<span>Sin actividades</span>{% endif %}</span></div>
+                {% for clase in dia.clases|slice:":2" %}
+                <div class="edunova-calendar-class edunova-class-slot">
+                    <button type="button" class="edunova-class-trigger"
+                            aria-label="{{ clase.asignatura }}, sección {{ clase.codigo }}. Ver horarios"
+                            aria-describedby="horario-{{ anio }}-{{ mes }}-{{ dia.numero }}-{{ clase.seccion_id }}"
+                            title="{{ clase.asignatura }} · {{ clase.codigo }}: {% for bloque in clase.bloques %}{{ bloque.inicio|time:'H:i' }}–{{ bloque.fin|time:'H:i' }}{% if not forloop.last %}; {% endif %}{% endfor %}">
+                        <span class="edunova-class-subject">{{ clase.asignatura }}</span>
+                        <span class="edunova-class-code">{{ clase.codigo }}</span>
+                    </button>
+                    <div class="edunova-class-hours" role="tooltip"
+                         id="horario-{{ anio }}-{{ mes }}-{{ dia.numero }}-{{ clase.seccion_id }}">
+                        <strong>{{ clase.asignatura }}</strong>
+                        <span class="edunova-class-hours-section">Sección {{ clase.codigo }}</span>
+                        <span class="edunova-class-hours-caption">Horario de clases:</span>
+                        {% for bloque in clase.bloques %}
+                        <span class="edunova-class-time-range">{{ bloque.inicio|time:'H:i' }} – {{ bloque.fin|time:'H:i' }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% if dia.clases|length > 2 %}<span class="edunova-calendar-more">+{{ dia.clases|length|add:'-2' }} clases · ver detalle</span>{% endif %}
                 {% for evento in dia.eventos %}
                 <div class="chip chip-{{ evento.tipo }} block truncate mb-0.5" title="{{ evento.titulo }}">
                     {{ evento.titulo }}

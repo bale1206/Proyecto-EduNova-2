@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 
 from usuarios.models import Usuario
 
-from .models import Carrera, Curso, Evento, JustificacionRetiro, ObservacionComportamiento
+from .models import Carrera, Curso, Evento, ObservacionComportamiento
 
 INPUT_CLASSES = (
     'w-full rounded-lg border px-3 py-2 text-sm focus:outline-none '
@@ -160,31 +160,6 @@ class ActividadAdministrativaForm(EventoForm):
         self.fields['curso'].queryset = Curso.objects.select_related('asignatura_catalogo').order_by('asignatura', 'seccion')
         self.fields['curso'].empty_label = 'Seleccionar asignatura y sección'
         self.fields['tipo'].choices = [(Evento.Tipo.REUNION, 'Reunión'), (Evento.Tipo.OTRO, 'Otro evento')]
-
-
-class JustificacionRetiroForm(forms.ModelForm):
-    """Formulario que llena el apoderado para justificar un retiro,
-    inasistencia o atraso de un estudiante suyo. El estudiante y el
-    apoderado se completan en la vista, no aquí; el estado de aprobación
-    queda en "pendiente" por defecto y lo revisa quien el colegio defina
-    (docente o administrativo) más adelante."""
-
-    class Meta:
-        model = JustificacionRetiro
-        fields = ['tipo_solicitud', 'motivo_texto', 'archivo_certificado']
-        labels = {
-            'tipo_solicitud': 'Tipo de solicitud',
-            'motivo_texto': 'Motivo',
-            'archivo_certificado': 'Certificado o respaldo (opcional)',
-        }
-        widgets = {
-            'motivo_texto': forms.Textarea(attrs={'rows': 4}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.widget.attrs.update({'class': INPUT_CLASSES, 'style': INPUT_STYLE})
 
 
 class ObservacionForm(forms.ModelForm):

@@ -26,3 +26,5 @@ staticfiles/
 # Archivos temporales
 *.log
 .pytest_cache/
+# Archivos académicos privados (nunca exponer en static/media ni subir a Git)
+private_imports/

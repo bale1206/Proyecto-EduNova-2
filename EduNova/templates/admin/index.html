@@ -1,0 +1,11 @@
+{% extends "admin/index.html" %}
+{% block content %}
+<div style="padding:1rem 1.1rem;margin-bottom:1.3rem;border:1px solid var(--hairline-color,#888);border-radius:.7rem;">
+  <strong>EduNova · Gestión académica</strong>
+  <p style="margin:.5rem 0">Mallas curriculares y ofertas por semestre, con revisión previa e historial de importaciones.</p>
+  {% if request.user.is_superuser %}
+  <a href="{% url 'edunova_importaciones_admin' %}" style="display:inline-block;padding:.65rem 1rem;border-radius:.4rem;background:var(--button-bg,#346);color:var(--button-fg,#fff);text-decoration:none">Abrir importador académico</a>
+  {% endif %}
+</div>
+{{ block.super }}
+{% endblock %}

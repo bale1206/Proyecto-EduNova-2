@@ -1,23 +1,43 @@
 from django.contrib import admin
 from django import forms
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 
 from usuarios.models import Usuario
 from .forms import CursoForm
 
-from .models import Asignatura, CarreraAsignatura, Asistencia, Carrera, Curso, Estudiante, Evento, JustificacionRetiro, Observacion, ObservacionComportamiento, RegistroAsistencia, SesionClase, MarcaAsistencia, AvisoAsistencia
+from .models import HorarioSeccion, Asignatura, CarreraAsignatura, MencionCarrera, Carrera, Curso, Estudiante, Evento, ObservacionComportamiento, RegistroAsistencia, SesionClase, MarcaAsistencia, AvisoAsistencia
+
+
+class MencionCarreraInline(admin.TabularInline):
+    model = MencionCarrera
+    extra = 0
+    fields = ('nombre', 'activa')
+
+
+@admin.register(MencionCarrera)
+class MencionCarreraAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'carrera', 'activa')
+    list_filter = ('carrera', 'activa')
+    search_fields = ('nombre', 'carrera__nombre')
 
 
 @admin.register(Carrera)
 class CarreraAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "escuela", "activa")
+    list_display = ("nombre", "escuela", "activa", "menciones_resumen")
     list_filter = ("escuela", "activa")
     search_fields = ("nombre",)
+    inlines = [MencionCarreraInline]
+
+    @admin.display(description='Menciones')
+    def menciones_resumen(self, obj):
+        return ', '.join(obj.menciones.filter(activa=True).values_list('nombre', flat=True)) or 'Por configurar'
 
 
 class CarreraAsignaturaInline(admin.TabularInline):
     model = CarreraAsignatura
     extra = 0
+    fields = ('carrera', 'mencion', 'anio_plan', 'semestre_plan', 'fuente_malla')
 
 
 @admin.register(Asignatura)
@@ -26,6 +46,11 @@ class AsignaturaAdmin(admin.ModelAdmin):
     search_fields = ('codigo', 'nombre')
     list_filter = ('activa',)
     inlines = [CarreraAsignaturaInline]
+
+
+class HorarioSeccionInline(admin.TabularInline):
+    model = HorarioSeccion
+    extra = 0
 
 
 class SeccionAdminForm(CursoForm):
@@ -62,7 +87,7 @@ class SeccionAdminForm(CursoForm):
 class EstudianteSeccionesForm(forms.ModelForm):
     class Meta:
         model = Estudiante
-        fields = ['usuario', 'rut_estudiante', 'nombre_completo', 'carrera', 'anio_carrera', 'estado_avance', 'secciones']
+        fields = ['usuario', 'rut_estudiante', 'nombre_completo', 'carrera', 'modalidad', 'mencion', 'anio_ingreso', 'anio_carrera', 'estado_avance', 'secciones']
         widgets = {'secciones': forms.SelectMultiple(attrs={'size': 10})}
 
     def clean(self):
@@ -71,18 +96,28 @@ class EstudianteSeccionesForm(forms.ModelForm):
         if not secciones:
             raise ValidationError('El estudiante debe estar inscrito en al menos una asignatura y sección.')
         carrera = data.get('carrera')
-        if carrera and secciones.exclude(asignatura_catalogo__carreras=carrera).exists():
-            raise ValidationError('Las asignaturas seleccionadas deben pertenecer a la carrera del estudiante.')
+        mencion = data.get('mencion')
+        if mencion and (not carrera or mencion.carrera_id != carrera.id):
+            raise ValidationError('La mención seleccionada no pertenece a la carrera.')
+        if carrera:
+            # En el registro estudiantil la mención ya no es obligatoria.
+            # Sin mención, se permiten todas las asignaturas de su carrera.
+            permitidas = CarreraAsignatura.objects.filter(carrera=carrera)
+            if mencion:
+                permitidas = permitidas.filter(Q(mencion__isnull=True) | Q(mencion=mencion))
+            if secciones.exclude(asignatura_catalogo_id__in=permitidas.values('asignatura_id')).exists():
+                raise ValidationError('Las secciones deben corresponder a la carrera del estudiante.')
         self.instance.curso = secciones.order_by('pk').first()
         return data
 
 
 @admin.register(Curso)
 class CursoAdmin(admin.ModelAdmin):
-    list_display = ('seccion', 'asignatura_catalogo', 'turno', 'docentes_resumen')
-    readonly_fields = ('seccion',)
+    inlines = [HorarioSeccionInline]
+    list_display = ('seccion', 'codigo_institucional', 'periodo_academico', 'asignatura_catalogo', 'turno', 'docentes_resumen')
+    readonly_fields = ('seccion', 'codigo_institucional', 'periodo_academico', 'docentes_oferta')
     search_fields = ('seccion', 'asignatura')
-    list_filter = ('turno',)
+    list_filter = ('turno', 'periodo_academico')
     form = SeccionAdminForm
     exclude = ('docente_jefe', 'asignatura')
 
@@ -105,8 +140,8 @@ class CursoAdmin(admin.ModelAdmin):
 
 @admin.register(Estudiante)
 class EstudianteAdmin(admin.ModelAdmin):
-    list_display = ('codigo_edunova', 'nombre_completo', 'rut_estudiante', 'carrera', 'anio_carrera', 'estado_avance', 'secciones_resumen')
-    list_filter = ('carrera', 'secciones')
+    list_display = ('codigo_edunova', 'nombre_completo', 'rut_estudiante', 'carrera', 'modalidad', 'mencion', 'anio_ingreso', 'anio_carrera', 'estado_avance', 'secciones_resumen')
+    list_filter = ('carrera', 'modalidad', 'mencion', 'secciones')
     form = EstudianteSeccionesForm
     exclude = ('curso', 'apoderado', 'apellido_familiar')
 
@@ -115,17 +150,6 @@ class EstudianteAdmin(admin.ModelAdmin):
         return ', '.join(str(sec) for sec in obj.secciones.all()) or 'Sin matrícula'
     search_fields = ('nombre_completo', 'rut_estudiante')
 
-
-@admin.register(Asistencia)
-class AsistenciaAdmin(admin.ModelAdmin):
-    list_display = ('estudiante', 'fecha', 'estado', 'porcentaje_asistencia_actual')
-    list_filter = ('estado', 'fecha')
-
-
-@admin.register(Observacion)
-class ObservacionAdmin(admin.ModelAdmin):
-    list_display = ('estudiante', 'tipo', 'fecha', 'confidencial')
-    list_filter = ('tipo', 'confidencial')
 
 @admin.register(ObservacionComportamiento)
 class ObservacionComportamientoAdmin(admin.ModelAdmin):
@@ -140,12 +164,6 @@ class ObservacionComportamientoAdmin(admin.ModelAdmin):
     
     # Campos que el administrador no debería editar manualmente
     readonly_fields = ('fecha_creacion', 'fecha_actualizacion')
-
-@admin.register(JustificacionRetiro)
-class JustificacionRetiroAdmin(admin.ModelAdmin):
-    list_display = ('estudiante', 'tipo_solicitud', 'estado_aprobacion', 'creado_en')
-    list_filter = ('estado_aprobacion', 'tipo_solicitud')
-
 
 @admin.register(Evento)
 class EventoAdmin(admin.ModelAdmin):
@@ -202,3 +220,41 @@ class AvisoAsistenciaAdmin(admin.ModelAdmin):
     list_display = ('destinatario', 'creado_en', 'leido')
     list_filter = ('leido',)
     readonly_fields = ('destinatario', 'marca', 'texto', 'creado_en')
+
+
+# El importador masivo vive en /admin/importaciones-academicas/.
+from .models import PeriodoAcademico, PlanEstudio, PlanAsignatura, ImportacionAcademica
+
+
+@admin.register(PeriodoAcademico)
+class PeriodoAcademicoAdmin(admin.ModelAdmin):
+    list_display = ('anio', 'semestre', 'sede')
+    list_filter = ('anio', 'semestre', 'sede')
+
+
+class PlanAsignaturaInline(admin.TabularInline):
+    model = PlanAsignatura
+    extra = 0
+
+
+@admin.register(PlanEstudio)
+class PlanEstudioAdmin(admin.ModelAdmin):
+    list_display = ('carrera', 'mencion', 'anio_ingreso', 'actualizado_en')
+    list_filter = ('carrera', 'anio_ingreso')
+    inlines = [PlanAsignaturaInline]
+
+
+@admin.register(ImportacionAcademica)
+class ImportacionAcademicaAdmin(admin.ModelAdmin):
+    list_display = ('creado_en', 'tipo', 'estado', 'archivo_nombre', 'usuario')
+    list_filter = ('tipo', 'estado', 'creado_en')
+    readonly_fields = ('creado_en', 'tipo', 'estado', 'archivo_nombre', 'archivo_privado', 'sha256', 'usuario', 'resumen')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

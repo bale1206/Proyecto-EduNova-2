@@ -2,7 +2,7 @@
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import Asistencia, Estudiante, MarcaAsistencia, RegistroAsistencia
+from .models import Estudiante, MarcaAsistencia, RegistroAsistencia
 
 
 def resumir_asistencia(secciones, carrera):
@@ -32,14 +32,7 @@ def resumir_asistencia(secciones, carrera):
     eliminadas = set(MarcaAsistencia.objects.filter(
         estudiante__in=alumnos, sesion__seccion__isnull=True,
     ).values_list('estudiante_id', 'sesion__fecha'))
-    # Prioridad: lista por sesión > registro histórico > modelo escolar.
-    antiguas = Asistencia.objects.filter(estudiante_id__in=seccion_unica).select_related('estudiante').order_by('fecha', 'pk')
-    for registro in antiguas.iterator():
-        if (registro.estudiante_id, registro.fecha) in eliminadas:
-            continue
-        clave = (seccion_unica[registro.estudiante_id], registro.fecha, registro.estudiante_id)
-        registros[clave] = (registro.estado in (Asistencia.Estado.PRESENTE, Asistencia.Estado.ATRASO), registro.estudiante.carrera_id is None)
-
+    # Prioridad: lista por sesión > registro histórico de asistencia.
     historiales = RegistroAsistencia.objects.filter(estudiante__in=alumnos).filter(
         Q(seccion_id__in=ids) | Q(seccion__isnull=True, estudiante_id__in=seccion_unica)
     ).select_related('estudiante').order_by('fecha', 'pk')

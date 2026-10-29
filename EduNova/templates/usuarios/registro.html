@@ -1,78 +1,155 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
 {% block title %}Crear cuenta · EduNova{% endblock %}
-
 {% block content %}
-<div class="max-w-lg mx-auto card p-8">
-    <h2 class="font-display text-2xl font-semibold mb-1">Crea tu cuenta</h2>
-    <p class="text-sm text-muted mb-6">
-        Por ahora EduNova está habilitado para docentes y estudiantes.
-    </p>
-
-    <form method="post" enctype="multipart/form-data" class="space-y-5">
-        {% csrf_token %}
+<div class="max-w-4xl mx-auto card p-5 md:p-8" id="registro-unificado">
+  <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+    <div>
+      <p class="text-muted text-sm">EduNova · Registro universitario</p>
+      <h1 class="font-display text-2xl md:text-3xl font-semibold">Crea tu cuenta</h1>
+      <p class="text-muted text-sm mt-1" id="subtitulo-registro">Primero elige cómo utilizarás EduNova.</p>
+    </div>
+    <span id="paso-indicador" class="text-sm font-semibold" aria-live="polite">Paso 1 de 5</span>
+  </div>
+  <div class="rounded-full h-2 mb-7" style="background:var(--linea);overflow:hidden">
+    <div id="progreso-registro" class="rounded-full h-full" style="width:20%;background:var(--rio);transition:width .25s"></div>
+  </div>
+  <form method="post" id="form-registro-unificado" novalidate>
+    {% csrf_token %}
+    <input name="rol" id="rol-registro" type="hidden" value="{{ request.POST.rol|default:'' }}">
+    {% if form.errors %}
+      <div class="registro-aviso" role="alert" id="errores-servidor">
+        <strong>Revisa los datos antes de continuar:</strong>
         {{ form.non_field_errors }}
+        {% for campo in form %}{% if campo.errors %}<p>{{ campo.label }}: {{ campo.errors|join:', ' }}</p>{% endif %}{% endfor %}
+      </div>
+    {% endif %}
 
-        <div>
-            <p class="block text-sm font-medium mb-2">Soy...</p>
-            <div class="grid grid-cols-2 gap-3">
-                {% for radio in form.rol %}
-                <label class="card px-3 py-3 text-sm cursor-pointer flex items-center gap-2 has-[:checked]:ring-2" style="--tw-ring-color: var(--rio);">
-                    {{ radio.tag }}
-                    {{ radio.choice_label }}
-                </label>
-                {% endfor %}
-            </div>
-            {% if form.rol.errors %}<p class="text-sm text-error mt-1">{{ form.rol.errors.0 }}</p>{% endif %}
+    <section data-step="1" aria-labelledby="titulo-rol">
+      <h2 id="titulo-rol" class="text-xl font-semibold mb-2">¿Cómo utilizarás EduNova?</h2>
+      <p class="text-muted text-sm mb-5">Tu perfil determina qué información académica configuraremos.</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3" role="group" aria-label="Tipo de cuenta">
+        <button class="registro-perfil" type="button" data-role="estudiante" aria-pressed="false">
+          <span class="registro-perfil-icono" aria-hidden="true">🎓</span>
+          <strong>Estudiante</strong>
+          <small>Mi carrera, asignaturas y secciones</small>
+        </button>
+        <button class="registro-perfil" type="button" data-role="docente" aria-pressed="false">
+          <span class="registro-perfil-icono" aria-hidden="true">📚</span>
+          <strong>Docente</strong>
+          <small>Carreras y secciones que imparto</small>
+        </button>
+        <button class="registro-perfil" type="button" data-role="administrativo" aria-pressed="false">
+          <span class="registro-perfil-icono" aria-hidden="true">🏛️</span>
+          <strong>Director de carrera</strong>
+          <small>Escuela y carreras a mi cargo</small>
+        </button>
+      </div>
+    </section>
+
+    <section data-step="2" hidden aria-labelledby="titulo-datos-academicos">
+      <h2 class="text-xl font-semibold mb-2" id="titulo-datos-academicos">Tu información académica</h2>
+      <p class="text-muted text-sm mb-5" id="ayuda-academica"></p>
+
+      <div data-only="estudiante">
+        <label for="carrera_id" class="registro-etiqueta">Carrera</label>
+        <select class="registro-select" name="carrera_id" id="carrera_id">
+          <option value="">Selecciona tu carrera</option>
+          {% for carrera in carreras %}<option value="{{ carrera.pk }}" {% if request.POST.carrera_id == carrera.pk|stringformat:'s' %}selected{% endif %}>{{ carrera.nombre }} · {{ carrera.escuela }}</option>{% endfor %}
+        </select>
+        <label for="modalidad-estudiante" class="registro-etiqueta mt-5">Modalidad</label>
+        <select class="registro-select" name="modalidad" id="modalidad-estudiante" required>
+          <option value="">Selecciona tu modalidad</option>
+          <option value="diurno" {% if request.POST.modalidad == 'diurno' %}selected{% endif %}>Diurno</option>
+          <option value="vespertino" {% if request.POST.modalidad == 'vespertino' %}selected{% endif %}>Vespertino</option>
+        </select>
+        <p class="text-muted text-xs mt-2">Solo se mostrarán secciones de la modalidad que elijas.</p>
+        <label for="anio_ingreso" class="registro-etiqueta mt-5">Año de ingreso</label>
+        <select class="registro-select" name="anio_ingreso" id="anio_ingreso">
+          <option value="">Selecciona el año</option>
+          {% for anio in anios_ingreso %}<option value="{{ anio }}" {% if request.POST.anio_ingreso == anio|stringformat:'s' %}selected{% endif %}>{{ anio }}</option>{% endfor %}
+        </select>
+        <p class="text-muted text-sm mt-4">{% if semestre_actual %}Período de referencia: {{ semestre_actual }}.° semestre de {{ anio_actual }}.{% else %}Fuera del período marzo–diciembre: podrás revisar todas las asignaturas disponibles.{% endif %}</p>
+      </div>
+
+      <div data-only="docente" hidden>
+        <p class="text-muted text-sm mb-3">Marca todas las carreras donde impartes clases. Luego selecciona tus asignaturas y secciones.</p>
+        <div id="carreras-docente" class="registro-opciones"></div>
+        <div class="mt-5" id="bloque-menciones-docente">
+          <p class="registro-etiqueta">Menciones en las que impartes clases</p>
+          <p class="text-muted text-sm mb-3">Selecciona las menciones de cada carrera, antes de continuar a las asignaturas.</p>
+          <div id="menciones-docente" class="space-y-3" aria-live="polite"></div>
         </div>
+      </div>
 
-        <p class="text-sm text-muted">La cuenta se crea una sola vez. Tu carrera y tus asignaturas se vinculan posteriormente por gestión académica; no necesitas escogerlas aquí.</p>
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">RUT</label>
-                {{ form.rut }}
-                {% if form.rut.errors %}<p class="text-sm text-error mt-1">{{ form.rut.errors.0 }}</p>{% endif %}
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Teléfono</label>
-                {{ form.telefono }}
-            </div>
+      <div data-only="administrativo" hidden>
+        <label for="escuela-registro" class="registro-etiqueta">Escuela</label>
+        <select id="escuela-registro" name="escuela" class="registro-select">
+          <option value="">Selecciona tu escuela</option>
+          {% regroup carreras by escuela as escuelas %}
+          {% for grupo in escuelas %}<option value="{{ grupo.grouper }}" {% if request.POST.escuela == grupo.grouper %}selected{% endif %}>{{ grupo.grouper }}</option>{% endfor %}
+        </select>
+        <div class="mt-5">
+          <p class="registro-etiqueta">Carreras que diriges</p>
+          <div id="carreras-director" class="registro-opciones"></div>
         </div>
+      </div>
+    </section>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">Nombre</label>
-                {{ form.first_name }}
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Apellidos</label>
-                {{ form.apellidos }}
-            </div>
-        </div>
+    <section data-step="3" hidden aria-labelledby="titulo-seleccion">
+      <h2 id="titulo-seleccion" class="text-xl font-semibold mb-2">Asignaturas y secciones</h2>
+      <p class="text-muted text-sm mb-4" id="descripcion-seleccion"></p>
+      <label data-only="estudiante" class="flex items-start gap-3 mb-4 text-sm cursor-pointer">
+        <input type="checkbox" id="personalizar-asignaturas">
+        <span>Personalizar: ver toda la malla de mi carrera (incluye asignaturas atrasadas)</span>
+      </label>
+      <div id="asignaturas-lista" class="space-y-3"></div>
+      <p class="text-muted text-xs mt-4">Los horarios y docentes no disponibles aparecerán como «Por confirmar».</p>
+    </section>
 
-        <div>
-            <label class="block text-sm font-medium mb-1">Correo electrónico</label>
-            {{ form.email }}
-        </div>
+    <section data-step="4" hidden aria-labelledby="titulo-cuenta">
+      <h2 id="titulo-cuenta" class="text-xl font-semibold mb-2">Datos de tu cuenta</h2>
+      <p class="text-muted text-sm mb-5">La cuenta se crea una sola vez y mantiene todas tus asignaturas vinculadas.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for field in form %}{% if field.name != 'rol' %}
+          <div>
+            <label for="{{ field.id_for_label }}" class="registro-etiqueta">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<p class="text-sm" role="alert" style="color:var(--tinta)">{{ field.errors|join:', ' }}</p>{% endif %}
+          </div>
+        {% endif %}{% endfor %}
+      </div>
+      <p class="text-muted text-xs mt-4">La verificación por correo institucional se incorporará en una etapa posterior.</p>
+    </section>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">Contraseña</label>
-                {{ form.password1 }}
-                {% if form.password1.errors %}<p class="text-sm text-error mt-1">{{ form.password1.errors.0 }}</p>{% endif %}
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Confirmar contraseña</label>
-                {{ form.password2 }}
-                {% if form.password2.errors %}<p class="text-sm text-error mt-1">{{ form.password2.errors.0 }}</p>{% endif %}
-            </div>
-        </div>
+    <section data-step="5" hidden aria-labelledby="titulo-confirmacion">
+      <h2 id="titulo-confirmacion" class="text-xl font-semibold mb-2">Revisa tu información</h2>
+      <p class="text-muted text-sm mb-5">Confirma tu selección antes de crear la cuenta. Puedes volver y corregirla.</p>
+      <div id="resumen-registro" class="space-y-3" aria-live="polite"></div>
+    </section>
 
-        <button type="submit" class="btn-primary w-full py-2.5 font-medium">Crear cuenta</button>
-    </form>
-
-    <p class="text-sm text-muted mt-6 text-center">
-        ¿Ya tienes cuenta?
-        <a href="{% url 'usuarios:login' %}" class="font-medium" style="color: var(--rio);">Inicia sesión</a>
-    </p>
+    <p id="error-registro" class="text-sm mt-4" role="alert" aria-live="polite"></p>
+    <div class="flex flex-wrap justify-between gap-3 mt-7">
+      <button type="button" id="paso-volver" class="btn-secondary px-5 py-2.5" hidden>← Volver</button>
+      <button type="button" id="paso-continuar" class="btn-primary px-6 py-2.5 ml-auto">Continuar →</button>
+      <button type="submit" id="confirmar-registro" class="btn-primary px-6 py-2.5 ml-auto" hidden>Confirmar y crear cuenta</button>
+    </div>
+  </form>
+  <p class="text-muted text-sm mt-6">¿Ya tienes cuenta? <a href="{% url 'usuarios:login' %}" class="underline">Inicia sesión</a></p>
 </div>
+<div id="carga-asignaturas" hidden class="registro-carga" role="status" aria-live="polite" aria-label="Calculando asignaturas">
+  <div class="registro-carga-contenido card text-center p-6">
+    <span aria-hidden="true" class="registro-reloj">⌛</span>
+    <strong class="block mt-2">Calculando asignaturas disponibles de este semestre…</strong>
+    <p class="text-muted text-sm mt-1">Revisando carrera, año y secciones registradas</p>
+  </div>
+</div>
+{{ preseleccion|json_script:'registro-previo' }}
+{{ catalogos|json_script:'catalogo-onboarding' }}
+{{ semestre_actual|json_script:'semestre-onboarding' }}
+{{ anio_actual|json_script:'anio-onboarding' }}
+{{ carreras_json|json_script:'carreras-onboarding' }}
+{{ menciones_json|json_script:'menciones-onboarding' }}
+<link rel="stylesheet" href="{% static 'css/registro-roles.css' %}">
+<script src="{% static 'js/registro-roles.js' %}" defer></script>
 {% endblock %}

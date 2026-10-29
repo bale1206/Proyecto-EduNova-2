@@ -68,7 +68,7 @@ class Usuario(AbstractUser):
         ADMINISTRADOR = 'administrador', 'Administrador'
 
     # Roles que puede elegir cualquier persona en el registro público
-    ROLES_ACTIVOS = (Rol.DOCENTE, Rol.ESTUDIANTE)
+    ROLES_ACTIVOS = (Rol.ESTUDIANTE, Rol.DOCENTE, Rol.ADMINISTRATIVO)
 
     rut = models.CharField('RUT', max_length=12, unique=True)
     apellidos = models.CharField('Apellidos', max_length=50)
@@ -77,7 +77,20 @@ class Usuario(AbstractUser):
     carrera_dirigida = models.ForeignKey(
         'academico.Carrera', on_delete=models.PROTECT, null=True, blank=True,
         related_name='directores', verbose_name='Carrera dirigida',
-        help_text='Solo para directores de carrera; una carrera por director.',
+        help_text='Carrera principal (compatibilidad con el panel actual).',
+    )
+    carreras_dirigidas = models.ManyToManyField(
+        'academico.Carrera', blank=True, related_name='directores_asignados',
+        verbose_name='Carreras dirigidas',
+        help_text='Todas las carreras del director de carrera.',
+    )
+    carreras_docencia = models.ManyToManyField(
+        'academico.Carrera', blank=True, related_name='docentes_registrados',
+        verbose_name='Carreras donde imparte clases',
+    )
+    menciones_docencia = models.ManyToManyField(
+        'academico.MencionCarrera', blank=True, related_name='docentes_registrados',
+        verbose_name='Menciones en las que imparte clases',
     )
     asignaturas_asociadas = models.ManyToManyField(
         'academico.Asignatura', blank=True, related_name='docentes_asociados',

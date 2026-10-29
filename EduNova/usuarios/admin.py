@@ -18,7 +18,7 @@ class UsuarioAdmin(UserAdmin):
     ordering = ('apellidos',)
     fieldsets = (
         (None, {'fields': ('rut', 'password')}),
-        ('Datos personales', {'fields': ('first_name', 'apellidos', 'email', 'telefono', 'rol', 'carrera_dirigida', 'asignaturas_asociadas')}),
+        ('Datos personales', {'fields': ('first_name', 'apellidos', 'email', 'telefono', 'rol', 'carrera_dirigida', 'carreras_dirigidas', 'carreras_docencia', 'menciones_docencia', 'asignaturas_asociadas')}),
         ('Permisos', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
     )
     add_fieldsets = (

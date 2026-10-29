@@ -1,0 +1,52 @@
+/* Hereda variables de paleta y accesibilidad de EduNova. */
+.import-layout{max-width:1040px;margin:0 auto;color:var(--tinta)}
+.import-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1.2rem;flex-wrap:wrap;margin-bottom:1.3rem}
+.import-head h1{font-size:clamp(1.45rem,3vw,2rem);font-weight:750;line-height:1.25;margin:.3rem 0}
+.import-eyebrow{font-size:.75rem;font-weight:750;letter-spacing:.07em;color:var(--rio)}
+.import-muted{color:var(--tinta-muted,var(--tinta));opacity:.86;line-height:1.6}
+.import-small{font-size:.85rem}
+.import-card{background:var(--superficie);border:1px solid var(--linea);border-radius:1rem;padding:clamp(1rem,3vw,1.6rem);margin:1rem 0;box-shadow:0 5px 18px rgba(0,0,0,.03)}
+.import-card h2{font-size:1.24rem;font-weight:750;margin:0 0 .45rem}
+.import-steps{display:flex;flex-wrap:wrap;gap:.65rem;margin-bottom:1.3rem}
+.import-steps span{padding:.4rem .75rem;border:1px solid var(--linea);border-radius:99px;font-size:.83rem;background:var(--superficie)}
+.import-steps b{display:inline-grid;place-content:center;border-radius:50%;height:1.3rem;width:1.3rem;background:var(--fondo-input);margin-right:.4rem}
+.import-form{margin-top:1.2rem}.import-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.import-grid label{font-weight:650;font-size:.91rem;display:flex;flex-direction:column;gap:.45rem}
+.import-grid input,.import-grid select,.import-mappings select{color:var(--tinta);background:var(--fondo-input);border:1px solid var(--linea);padding:.75rem;border-radius:.65rem;min-height:45px;width:100%}
+.import-grid input[type=file]{overflow:hidden}
+.import-grid :is(input,select):focus-visible,.import-mappings select:focus-visible,.import-btn:focus-visible{outline:3px solid var(--rio);outline-offset:2px}
+.import-params{padding:1rem;margin:1rem 0;border-radius:.75rem;background:var(--lino-2,var(--fondo-input));border:1px solid var(--linea)}
+.import-params[hidden]{display:none}.import-hint{font-size:.85rem;line-height:1.5;color:var(--tinta);opacity:.86;align-self:end}
+.import-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:.8rem;margin-top:1.3rem}
+.import-btn{border-radius:.65rem;padding:.67rem 1.1rem;font-weight:650;display:inline-flex;align-items:center;justify-content:center;min-height:42px;text-decoration:none;cursor:pointer;border:1px solid var(--linea);transition:filter .15s}
+.import-primary{background:var(--rio);color:var(--texto-acento,#fff);border-color:var(--rio)}
+.import-secondary{background:var(--fondo-input);color:var(--tinta)}.import-btn:hover{filter:brightness(.93)}
+.import-alert{padding:1rem;margin:1rem 0;border-radius:.7rem;border:1px solid var(--linea);background:var(--fondo-input);color:var(--tinta)}
+.import-alert-error{border-left:4px solid #B94B40}.import-alert ul{list-style:disc;margin:.6rem 0 0 1.2rem;max-height:180px;overflow:auto;font-size:.85rem}
+.import-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin:.9rem 0}
+.import-kpis>div{background:var(--fondo-input);padding:.8rem;border-radius:.6rem;border:1px solid var(--linea)}
+.import-kpis strong{font-size:1.45rem;display:block}.import-kpis span{display:block;font-size:.8rem;opacity:.86}
+.import-table-wrapper{overflow-x:auto;margin-top:.9rem}.import-table{border-collapse:collapse;width:100%;font-size:.89rem;text-align:left}
+.import-table th,.import-table td{padding:.65rem .6rem;border-bottom:1px solid var(--linea);vertical-align:top;word-break:break-word}
+.import-table th{background:var(--fondo-input);font-weight:700;white-space:nowrap}
+.import-table a{color:var(--rio);text-decoration:underline;text-underline-offset:3px}
+.import-mappings{max-height:410px;overflow-y:auto;border:1px solid var(--linea);border-radius:.7rem;padding:.3rem}
+.import-map-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.8rem;align-items:center;padding:.65rem;border-bottom:1px solid var(--linea)}
+.import-map-row:nth-child(even){background:var(--fondo-input)}.import-map-row small{display:block;font-size:.78rem;opacity:.75;margin-top:.15rem}
+.import-confirm-check{display:flex;gap:.65rem;align-items:flex-start;margin:1rem 0;font-size:.92rem;line-height:1.55}
+.import-confirm-check input{width:1.2rem;height:1.2rem;accent-color:var(--rio);margin-top:.2rem;flex-shrink:0}
+.import-cancel{margin-top:.5rem;text-align:right}
+@media(max-width:640px){.import-grid,.import-map-row{grid-template-columns:1fr}.import-kpis{grid-template-columns:1fr}.import-actions{justify-content:stretch}.import-actions .import-btn{width:100%}}
+
+/* Creación optativa de carreras desde la correspondencia de la oferta. */
+.import-map-item{border-bottom:1px solid var(--linea)}
+.import-map-item:last-child{border-bottom:0}
+.import-map-item:nth-child(even){background:var(--fondo-input)}
+.import-map-item .import-map-row{border-bottom:0}
+.import-map-label,.import-create-fields label{display:flex;flex-direction:column;gap:.4rem;font-weight:600;font-size:.86rem;color:var(--tinta)}
+.import-create-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;padding:.75rem;margin:0 .55rem .65rem;border:1px solid var(--linea);border-radius:.65rem;background:var(--superficie)}
+.import-create-fields[hidden]{display:none}
+.import-create-fields input{background:var(--fondo-input);color:var(--tinta);border:1px solid var(--linea);border-radius:.65rem;padding:.75rem;min-height:45px;width:100%;font:inherit}
+.import-create-fields input:focus-visible{outline:3px solid var(--rio);outline-offset:2px}
+.import-map-note{grid-column:1/-1;margin:0;color:var(--tinta-muted,var(--tinta));font-size:.8rem;line-height:1.45}
+@media(max-width:640px){.import-create-fields{grid-template-columns:1fr}}
