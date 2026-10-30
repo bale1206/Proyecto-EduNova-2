@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Prueba de verificación por correo · EduNova{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto card p-5 sm:p-8 space-y-6">
+  <div>
+    <p class="text-sm text-muted mb-1">EduNova · Herramienta privada de administración</p>
+    <h1 class="text-2xl font-semibold">Verificación de correo · Prueba</h1>
+    <p class="text-sm text-muted mt-2">Comprueba el envío por Gmail y la validación de un código numérico de seis dígitos. No crea, activa ni elimina cuentas.</p>
+  </div>
+  {% if aviso %}
+    <div role="status" class="rounded-lg p-3" style="background:var(--lino-2);color:var(--tinta);border:1px solid var(--linea);">{{ aviso }}</div>
+  {% endif %}
+  {% if error %}
+    <div role="alert" class="rounded-lg p-3" style="border:2px solid var(--rio);color:var(--tinta);background:var(--superficie);">{{ error }}</div>
+  {% endif %}
+
+  <section class="space-y-3" aria-labelledby="titulo-envio">
+    <h2 id="titulo-envio" class="font-semibold text-lg">1. Enviar código de prueba</h2>
+    <form method="post" class="space-y-3">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="enviar">
+      <label for="email-prueba" class="block font-medium text-sm">Correo destinatario</label>
+      <input id="email-prueba" name="email" type="email" maxlength="254" autocomplete="email" required
+             value="{{ destino }}" placeholder="tu-correo@gmail.com"
+             class="w-full rounded-lg border p-3" style="background:var(--superficie);border-color:var(--linea);color:var(--tinta);">
+      <button type="submit" class="btn-primary px-4 py-2.5">{% if desafio_pendiente %}Solicitar otro código{% else %}Enviar código{% endif %}</button>
+      {% if espera_reenvio %}
+        <p class="text-xs text-muted">Un nuevo envío estará disponible en aproximadamente {{ espera_reenvio }} segundos.</p>
+      {% endif %}
+    </form>
+  </section>
+
+  {% if desafio_pendiente %}
+  <section class="space-y-3 border-t pt-5" style="border-color:var(--linea)" aria-labelledby="titulo-codigo">
+    <h2 id="titulo-codigo" class="font-semibold text-lg">2. Comprobar el código recibido</h2>
+    <p class="text-sm text-muted">Enviado a {{ destino }}. Vence en {{ validez_minutos }} minutos desde el envío. Intentos restantes: {{ intentos_restantes }}.</p>
+    <form method="post" class="space-y-3">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="verificar">
+      <label class="block text-sm font-medium" for="codigo-prueba">Código de 6 dígitos</label>
+      <input id="codigo-prueba" name="codigo" type="text" maxlength="6" minlength="6" pattern="[0-9]{6}"
+             autocomplete="one-time-code" inputmode="numeric" required placeholder="000000"
+             class="w-full max-w-xs rounded-lg border p-3 tracking-widest text-center text-xl"
+             style="background:var(--superficie);border-color:var(--linea);color:var(--tinta);">
+      <div><button type="submit" class="btn-primary px-4 py-2.5">Verificar código</button></div>
+    </form>
+  </section>
+  {% endif %}
+  <p class="text-xs text-muted border-t pt-4" style="border-color:var(--linea)">Esta pantalla solo funciona para superusuarios autenticados. Los códigos se guardan como hash en la sesión, caducan y se invalidan después de un uso. La verificación del alta y la eliminación de cuentas quedan para otra etapa.</p>
+</div>
+{% endblock %}

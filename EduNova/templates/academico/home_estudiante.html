@@ -35,7 +35,7 @@
 <div id="portal-estudiante-grid" class="grid gap-6 lg:grid-cols-3">
  <div class="space-y-6 lg:col-span-2">
   <section id="seccion-calendario" class="card p-5" aria-labelledby="calendario-titulo">
-   <div class="flex items-center justify-between gap-2 mb-4 flex-wrap"><h2 id="calendario-titulo" class="font-display text-xl font-semibold">Calendario académico</h2><button type="button" id="calendario-expandir" aria-expanded="false" aria-controls="seccion-calendario" class="btn-secondary text-sm px-3 py-2">⛶ Ampliar calendario</button></div>
+   <div class="flex items-center justify-between gap-2 mb-4 flex-wrap"><h2 id="calendario-titulo" class="font-display text-xl font-semibold">Calendario académico</h2><div class="flex items-center gap-2">{% include 'academico/_nuevo_estudiante.html' %}<button type="button" id="calendario-expandir" aria-expanded="false" aria-controls="seccion-calendario" class="btn-secondary text-sm px-3 py-2">⛶ Ampliar calendario</button></div></div>
    <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
      <p class="text-sm text-muted">Secciones matriculadas: {{ secciones.count }}</p>
      <a href="{% url 'academico:ajustar_secciones_estudiante' %}" class="btn-secondary px-3 py-2 text-sm">Revisar o corregir mis secciones</a>
@@ -64,40 +64,7 @@
    {% include 'academico/_calendario.html' %}
   </section>
   <section class="card p-5" aria-labelledby="tareas-titulo">
-   <h2 id="tareas-titulo" class="font-display text-xl font-semibold mb-4">Mis tareas</h2>
-   <form method="post" action="{% url 'academico:crear_tarea_estudiante' %}" class="grid sm:grid-cols-2 gap-3 mb-5">
-    {% csrf_token %}
-    <label class="text-sm">Nombre de la tarea
-      <input id="titulo-tarea" name="titulo" maxlength="160" required class="w-full rounded-lg border px-3 py-2 surface-control mt-1" placeholder="Ej. Preparar evaluación de inglés"></label>
-    <label class="text-sm">Asignatura y sección
-      <select name="seccion" class="w-full rounded-lg border px-3 py-2 surface-control mt-1" required>
-       <option value="">Selecciona una asignatura</option>
-       {% for sec in secciones %}<option value="{{ sec.pk }}">{{ sec.codigo_asignatura_visible }} · {{ sec.asignatura_visible }} — {{ sec.codigo_visible }}</option>{% endfor %}
-      </select></label>
-    <label class="text-sm">Fecha de inicio
-      <input id="fecha-tarea" type="date" name="fecha_limite" required class="w-full rounded-lg border px-3 py-2 surface-control mt-1"></label>
-    <label class="text-sm">Hora de realización
-      <input type="time" name="hora_inicio" value="10:00" required class="w-full rounded-lg border px-3 py-2 surface-control mt-1"></label>
-    <label class="text-sm">Repetir tarea
-      <select name="repeticion" class="w-full rounded-lg border px-3 py-2 surface-control mt-1">
-        <option value="ninguna">No repetir</option><option value="diaria">Todos los días</option><option value="semanal">Cada semana</option><option value="mensual">Cada mes</option>
-      </select></label>
-    <label class="text-sm">Recordar con antelación (si activas los avisos)
-      <select name="minutos_antes" class="w-full rounded-lg border px-3 py-2 surface-control mt-1">
-        <option value="0">A la hora</option><option value="5">5 minutos antes</option><option value="10">10 minutos antes</option><option value="15" selected>15 minutos antes</option><option value="30">30 minutos antes</option><option value="60">1 hora antes</option>
-      </select></label>
-    <label class="text-sm">Prioridad
-      <select name="prioridad" class="w-full rounded-lg border px-3 py-2 surface-control mt-1"><option value="baja">Baja</option><option value="media" selected>Media</option><option value="alta">Alta</option></select></label>
-    <fieldset class="sm:col-span-2"><legend class="text-sm mb-2">Color para identificar la tarea</legend>
-      <div class="flex flex-wrap gap-3" id="colores-tarea">
-      <label class="color-tarea-opcion"><input type="radio" name="color" value="#4C849D" checked><span style="--muestra:#4C849D"></span><span class="sr-only">Azul</span></label>
-      <label class="color-tarea-opcion"><input type="radio" name="color" value="#C28756"><span style="--muestra:#C28756"></span><span class="sr-only">Terracota</span></label>
-      <label class="color-tarea-opcion"><input type="radio" name="color" value="#758B67"><span style="--muestra:#758B67"></span><span class="sr-only">Oliva</span></label>
-      <label class="color-tarea-opcion"><input type="radio" name="color" value="#9661A0"><span style="--muestra:#9661A0"></span><span class="sr-only">Violeta</span></label>
-      <label class="color-tarea-opcion"><input type="radio" name="color" value="#A06C74"><span style="--muestra:#A06C74"></span><span class="sr-only">Rosa</span></label>
-      </div></fieldset>
-    <button class="btn-primary px-4 py-2 sm:col-span-2" type="submit" {% if not secciones %}disabled{% endif %}>+ Crear tarea</button>
-   </form>
+   <h2 id="tareas-titulo" class="font-display text-xl font-semibold mb-4">Mis tareas y actividades</h2>
    {% if tarea_para_configurar %}
    <dialog id="configurar-recordatorio" class="edunova-tarea-dialog p-5" aria-labelledby="titulo-recordatorio">
      <form method="post" action="{% url 'academico:configurar_recordatorio' tarea_para_configurar.pk %}" id="form-recordatorio">
@@ -114,15 +81,15 @@
    {% endif %}
    {% if tareas %}<ul class="space-y-2">
    {% for tarea in tareas %}<li class="rounded-lg border p-3 flex flex-wrap items-center gap-3" style="border-color:var(--linea)">
-    <form method="post" action="{% url 'academico:alternar_tarea_estudiante' tarea.id %}">{% csrf_token %}<button type="submit" class="btn-secondary px-3 py-1 text-sm" aria-label="Cambiar estado de {{ tarea.titulo }}">{% if tarea.completada %}↩ Pendiente{% else %}✓ Completar{% endif %}</button></form>
+    {% if tarea.tipo_actividad == "tarea" %}<form method="post" action="{% url 'academico:alternar_tarea_estudiante' tarea.id %}">{% csrf_token %}<button type="submit" class="btn-secondary px-3 py-1 text-sm" aria-label="Cambiar estado de {{ tarea.titulo }}">{% if tarea.completada %}↩ Pendiente{% else %}✓ Completar{% endif %}</button></form>{% endif %}
     <span class="edunova-task-dot" style="--task-color:{{ tarea.color }}" aria-hidden="true"></span>
-    <span class="flex-1 {% if tarea.completada %}line-through text-muted{% endif %}">{{ tarea.titulo }}<span class="block text-xs text-muted">{% if tarea.seccion %}{{ tarea.seccion.asignatura_visible }} · {{ tarea.seccion.codigo_visible }}{% endif %}</span></span>
+    <span class="flex-1 {% if tarea.completada %}line-through text-muted{% endif %}">{{ tarea.titulo }}<span class="block text-xs text-muted">{{ tarea.get_tipo_actividad_display }} · {% if tarea.seccion %}{{ tarea.seccion.asignatura_visible }} · {{ tarea.seccion.codigo_visible }}{% endif %}</span></span>
     {% if tarea.prioridad == 'alta' %}<span class="edunova-prioridad-alta" aria-label="Alta prioridad">❗ Alta prioridad</span>{% elif tarea.prioridad == 'media' %}<span class="edunova-prioridad-neutra">Prioridad media</span>{% else %}<span class="edunova-prioridad-neutra">Prioridad baja</span>{% endif %}
     {% if tarea.recordatorios_activos and not tarea.completada %}<span class="text-xs text-muted" title="Recordatorios activos">🔔 Avisos activos</span>{% endif %}
     {% if tarea.fecha_limite %}<span class="text-xs text-muted">{{ tarea.fecha_limite|date:'d/m/Y' }}{% if tarea.hora_inicio %} · {{ tarea.hora_inicio|time:'H:i' }}{% endif %}{% if tarea.repeticion != 'ninguna' %} · {{ tarea.get_repeticion_display }}{% endif %}</span>{% endif %}
     <form method="post" action="{% url 'academico:eliminar_tarea_estudiante' tarea.id %}">{% csrf_token %}<button type="submit" class="text-sm text-muted hover:underline" aria-label="Eliminar {{ tarea.titulo }}">Eliminar</button></form>
    </li>{% endfor %}</ul>
-   {% else %}<p class="text-sm text-muted">Aún no tienes tareas. Agrega una para comenzar a planificar.</p>{% endif %}
+   {% else %}<p class="text-sm text-muted">Todavía no tienes actividades. Usa «+ Nuevo» en el calendario para crear una.</p>{% endif %}
   </section>
  </div>
  <aside class="space-y-6">
@@ -135,8 +102,11 @@
    <p class="text-xs text-muted mt-4">Las calificaciones y créditos se incorporarán en una etapa posterior.</p>
   </div>
   <div class="card p-5"><h2 class="font-display font-semibold mb-3">Próximas actividades</h2>
-   {% if eventos_proximos %}<ul class="space-y-2">{% for ev in eventos_proximos %}<li class="text-sm">{{ ev.fecha|date:'d/m' }} · {{ ev.titulo }}</li>{% endfor %}</ul>
-   {% else %}<p class="text-sm text-muted">Sin eventos académicos publicados.</p>{% endif %}
+   {% if agenda_proxima %}<ul class="space-y-2">{% for actividad in agenda_proxima %}<li class="text-sm">
+     <span class="text-muted">{{ actividad.fecha|date:'d/m' }}{% if actividad.hora %} · {{ actividad.hora|time:'H:i' }}{% endif %}</span>
+     <span class="block font-medium">{{ actividad.titulo }}</span><span class="text-xs text-muted">{{ actividad.tipo }}</span>
+   </li>{% endfor %}</ul>
+   {% else %}<p class="text-sm text-muted">Sin actividades académicas próximas.</p>{% endif %}
   </div>
  </aside>
 </div>

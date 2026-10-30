@@ -457,3 +457,17 @@ html.dark .edunova-prioridad-alta {background:#4C2424;color:#FFE4E4;border-color
    al interactuar con una clase prevalece el detalle específico de horarios. */
 .edunova-day-has-classes:is(:hover,:focus) > .edunova-day-detail { display:block; }
 .edunova-day-has-classes:has(.edunova-class-slot:is(:hover,:focus-within)) > .edunova-day-detail { display:none; }
+
+/* Menú contextual + Nuevo y formularios accesibles, compatibles con las paletas. */
+.edunova-nuevo { position: relative; flex-shrink: 0; }
+.edunova-nuevo-trigger { display: inline-flex; align-items: center; justify-content: center; padding: .55rem .9rem; cursor: pointer; font-weight: 600; list-style: none; }
+.edunova-nuevo-trigger::-webkit-details-marker { display: none; }
+.edunova-nuevo-trigger:focus-visible, .edunova-nuevo-opciones button:focus-visible { outline: 3px solid var(--amanecer); outline-offset: 3px; }
+.edunova-nuevo-opciones { position: absolute; right: 0; top: calc(100% + .45rem); min-width: 11.5rem; background: var(--superficie); color: var(--tinta); border: 1px solid var(--linea); border-radius: .75rem; box-shadow: 0 .8rem 2rem #0004; padding: .3rem; z-index: 20; }
+.edunova-nuevo-opciones button { text-align: left; display: block; width: 100%; border-radius: .5rem; padding: .6rem .8rem; color: var(--tinta); }
+.edunova-nuevo-opciones button:hover { background: var(--lino-2); }
+.edunova-nuevo-modal { width: min(95vw, 39rem); max-height: min(88vh, 820px); overflow-y: auto; background: var(--superficie); color: var(--tinta); border: 1px solid var(--linea); border-radius: 1rem; padding: 1.25rem; box-shadow: 0 1.4rem 3rem #0006; }
+.edunova-nuevo-modal::backdrop { background: rgba(13, 20, 27, .60); backdrop-filter: blur(3px); }
+.edunova-nuevo-modal [hidden] { display: none !important; }
+.edunova-nuevo-modal input, .edunova-nuevo-modal textarea, .edunova-nuevo-modal select { background: var(--fondo-input); color: var(--tinta); border-color: var(--linea); }
+@media (prefers-reduced-motion: reduce) { .edunova-nuevo-modal::backdrop { backdrop-filter: none; } }

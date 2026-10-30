@@ -417,7 +417,14 @@ class AvisoAsistencia(models.Model):
 
 
 class TareaEstudio(models.Model):
-    """Tarea privada, gestionada exclusivamente por su estudiante propietario."""
+    """Actividad personal (tarea, evaluación, reunión o evento); nunca se publica en una sección."""
+    class TipoActividad(models.TextChoices):
+        TAREA = 'tarea', 'Tarea'
+        EVALUACION = 'evaluacion', 'Evaluación'
+        REUNION = 'reunion', 'Reunión'
+        EVENTO = 'evento', 'Evento'
+
+    tipo_actividad = models.CharField(max_length=12, choices=TipoActividad.choices, default=TipoActividad.TAREA)
     estudiante = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='tareas_estudio')
     titulo = models.CharField(max_length=160)
     descripcion = models.TextField(blank=True)

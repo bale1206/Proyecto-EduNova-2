@@ -1,0 +1,48 @@
+<div class="edunova-nuevo" data-nuevo-calendario>
+  <details class="edunova-nuevo-menu">
+    <summary class="btn-primary edunova-nuevo-trigger" aria-label="Crear una nueva actividad">+ Nuevo</summary>
+    <div class="edunova-nuevo-opciones" role="group" aria-label="Tipo de actividad">
+      <button type="button" data-crear-tipo="tarea">✓ Tarea</button>
+      <button type="button" data-crear-tipo="evaluacion">◉ Evaluación</button>
+      <button type="button" data-crear-tipo="reunion">♧ Reunión</button>
+      <button type="button" data-crear-tipo="evento">▣ Evento</button>
+    </div>
+  </details>
+  <dialog class="edunova-nuevo-modal" aria-labelledby="edunova-nuevo-titulo">
+    <form method="post" action="{% url 'academico:crear_tarea_estudiante' %}" class="space-y-3">
+      {% csrf_token %}
+      <input type="hidden" name="tipo_actividad" value="tarea" data-tipo-input>
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <div><p class="text-sm text-muted">Mi calendario · Solo para mí</p>
+          <h3 class="font-display text-xl font-semibold" id="edunova-nuevo-titulo" data-titulo-modal>Nueva tarea</h3></div>
+        <button type="button" class="btn-secondary px-3 py-1" data-cerrar-nuevo aria-label="Cerrar ventana">✕</button>
+      </div>
+      <p class="text-sm text-muted">Las actividades personales no se publican a otros estudiantes ni docentes.</p>
+      <label class="block text-sm">Nombre de la actividad
+        <input name="titulo" required maxlength="160" placeholder="Ej. Preparar evaluación de inglés" class="surface-control border rounded-lg w-full p-2 mt-1"></label>
+      <label class="block text-sm">Descripción (opcional)
+        <textarea name="descripcion" rows="2" class="surface-control border rounded-lg w-full p-2 mt-1" placeholder="Información para recordar o preparar"></textarea></label>
+      <label class="block text-sm">Asignatura y sección
+        <select name="seccion" required class="surface-control border rounded-lg w-full p-2 mt-1">
+          <option value="">Selecciona una asignatura</option>
+          {% for sec in secciones %}<option value="{{ sec.pk }}" {% if seccion_seleccionada == sec.pk|stringformat:'s' %}selected{% endif %}>{{ sec.codigo_asignatura_visible }} · {{ sec.asignatura_visible }} — {{ sec.codigo_visible }}</option>{% endfor %}
+        </select></label>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="text-sm">Fecha
+          <input type="date" name="fecha_limite" required class="surface-control border rounded-lg w-full p-2 mt-1"></label>
+        <label class="text-sm">Hora de inicio
+          <input type="time" name="hora_inicio" value="10:00" required class="surface-control border rounded-lg w-full p-2 mt-1"></label>
+        <label class="text-sm">Repetición
+          <select name="repeticion" class="surface-control border rounded-lg w-full p-2 mt-1"><option value="ninguna">No repetir</option><option value="diaria">Diaria</option><option value="semanal">Semanal</option><option value="mensual">Mensual</option></select></label>
+        <label class="text-sm" data-anticipacion>Antelación (si activas recordatorios)
+          <select name="minutos_antes" class="surface-control border rounded-lg w-full p-2 mt-1"><option value="0">A la hora</option><option value="5">5 minutos</option><option value="10">10 minutos</option><option value="15" selected>15 minutos</option><option value="30">30 minutos</option><option value="60">1 hora</option></select></label>
+        <label class="text-sm" data-prioridad>Prioridad
+          <select name="prioridad" class="surface-control border rounded-lg w-full p-2 mt-1"><option value="baja">Baja</option><option value="media" selected>Media</option><option value="alta">Alta</option></select></label>
+        <label class="text-sm">Color de identificación
+          <input type="color" name="color" value="#4C849D" class="surface-control border rounded-lg w-full h-10 p-1 mt-1" aria-label="Color de la actividad"></label>
+      </div>
+      <div class="flex justify-end gap-2 pt-2"><button type="button" data-cerrar-nuevo class="btn-secondary px-4 py-2">Cancelar</button>
+        <button type="submit" class="btn-primary px-4 py-2">Guardar en mi calendario</button></div>
+    </form>
+  </dialog>
+</div>

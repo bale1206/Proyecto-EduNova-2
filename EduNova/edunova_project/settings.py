@@ -164,3 +164,19 @@ else:
     CHANNEL_LAYERS = {'default':{'BACKEND':'channels.layers.InMemoryChannelLayer'}}
 
 # Opcional: configurar para notificaciones Web Push a dispositivos suscritos.
+
+
+# Correo saliente (etapa 1: prueba manual desde terminal, SIN códigos OTP).
+# Por defecto se imprime en la consola: no se envían correos reales hasta
+# habilitar SMTP explícitamente en el archivo .env privado.
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend'
+)
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'true').strip().lower() in ('1', 'true', 'yes', 'on')
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'false').strip().lower() in ('1', 'true', 'yes', 'on')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL') or EMAIL_HOST_USER or 'no-reply@edunova.local'
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '20'))

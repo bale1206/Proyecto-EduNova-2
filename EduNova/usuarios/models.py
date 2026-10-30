@@ -170,3 +170,30 @@ class Usuario(AbstractUser):
     class Meta:
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'
+
+
+class VerificacionCorreoEstudiante(models.Model):
+    """Desafío OTP asociado a una cuenta estudiantil aún inactiva.
+
+    La sesión identifica al solicitante, pero los intentos y límites se guardan
+    en PostgreSQL para que funcionen también con varios procesos Django.
+    """
+    usuario = models.OneToOneField(
+        'usuarios.Usuario', on_delete=models.CASCADE,
+        related_name='verificacion_correo_estudiante',
+    )
+    codigo_hash = models.CharField(max_length=255)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    enviado_en = models.DateTimeField()
+    vence_en = models.DateTimeField()
+    intentos_restantes = models.PositiveSmallIntegerField(default=5)
+    envios_ventana = models.PositiveSmallIntegerField(default=1)
+    inicio_ventana = models.DateTimeField()
+    confirmado_en = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Verificación pendiente de estudiante'
+        verbose_name_plural = 'Verificaciones pendientes de estudiantes'
+
+    def __str__(self):
+        return f'Verificación estudiantil #{self.usuario_id}'

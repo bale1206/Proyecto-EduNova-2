@@ -1,7 +1,4 @@
-"""Registro guiado por rol, reutiliza el modelo universitario real.
-
-No implementa verificación de correo institucional ni cambios al inicio de sesión.
-"""
+"""Registro guiado por rol. Estudiantes verifican su correo antes de activar la cuenta."""
 from django.contrib import messages
 from django.contrib.auth import login
 from django.db import transaction
@@ -13,6 +10,7 @@ from django.views.decorators.http import require_http_methods
 from academico.models import Asignatura, Carrera, CarreraAsignatura, Curso, Estudiante, MencionCarrera, PlanAsignatura, PeriodoAcademico
 from .forms import RegistroForm
 from .models import Usuario
+from .verificacion_registro import SESSION_KEY, ErrorCorreoEstudiante, crear_verificacion
 
 
 def periodo_actual(hoy=None):
@@ -184,35 +182,46 @@ def registro_guiado(request):
                     errores.append('Selecciona al menos una sección de cada asignatura elegida.')
 
         if form.is_valid() and not errores:
-            with transaction.atomic():
-                usuario = form.save(commit=False)
-                usuario.rol = rol
-                if rol == Usuario.Rol.ADMINISTRATIVO:
-                    # Campo histórico para compatibilidad con el portal de dirección.
-                    usuario.carrera_dirigida = carreras_elegidas[0]
-                usuario.save()
+            try:
+                with transaction.atomic():
+                    usuario = form.save(commit=False)
+                    usuario.rol = rol
+                    if rol == Usuario.Rol.ESTUDIANTE:
+                        usuario.is_active = False
+                    if rol == Usuario.Rol.ADMINISTRATIVO:
+                        # Campo histórico para compatibilidad con el portal de dirección.
+                        usuario.carrera_dirigida = carreras_elegidas[0]
+                    usuario.save()
+                    if rol == Usuario.Rol.ESTUDIANTE:
+                        perfil = Estudiante.objects.select_for_update().get(usuario=usuario)
+                        perfil.carrera = carrera
+                        perfil.modalidad = modalidad
+                        perfil.mencion = None  # Ya no se solicita mención al estudiante.
+                        perfil.anio_ingreso = ingreso
+                        perfil.anio_carrera = anio_actual - ingreso + 1
+                        perfil.curso = secciones[0]  # Compatibilidad; matrícula real es M2M.
+                        perfil.save(update_fields=['carrera', 'modalidad', 'mencion', 'anio_ingreso', 'anio_carrera', 'curso'])
+                        perfil.secciones.set(secciones)
+                    elif rol == Usuario.Rol.DOCENTE:
+                        usuario.carreras_docencia.set(carreras_elegidas)
+                        usuario.menciones_docencia.set(menciones_elegidas)
+                        usuario.asignaturas_asociadas.set(asignaturas)
+                        for seccion in secciones:
+                            seccion.docentes.add(usuario)
+                    else:
+                        usuario.carreras_dirigidas.set(carreras_elegidas)
+                    if rol == Usuario.Rol.ESTUDIANTE:
+                        crear_verificacion(request, usuario)
+            except ErrorCorreoEstudiante as exc:
+                form.add_error(None, str(exc))
+            else:
                 if rol == Usuario.Rol.ESTUDIANTE:
-                    perfil = Estudiante.objects.select_for_update().get(usuario=usuario)
-                    perfil.carrera = carrera
-                    perfil.modalidad = modalidad
-                    perfil.mencion = None  # Ya no se solicita mención al estudiante.
-                    perfil.anio_ingreso = ingreso
-                    perfil.anio_carrera = anio_actual - ingreso + 1
-                    perfil.curso = secciones[0]  # Compatibilidad; matrícula real es M2M.
-                    perfil.save(update_fields=['carrera', 'modalidad', 'mencion', 'anio_ingreso', 'anio_carrera', 'curso'])
-                    perfil.secciones.set(secciones)
-                elif rol == Usuario.Rol.DOCENTE:
-                    usuario.carreras_docencia.set(carreras_elegidas)
-                    usuario.menciones_docencia.set(menciones_elegidas)
-                    usuario.asignaturas_asociadas.set(asignaturas)
-                    for seccion in secciones:
-                        seccion.docentes.add(usuario)
-                else:
-                    usuario.carreras_dirigidas.set(carreras_elegidas)
-            # No cambiar el login automático: ese cambio quedó pendiente por solicitud.
-            login(request, usuario)
-            messages.success(request, 'Cuenta creada y selección académica guardada.')
-            return redirect('usuarios:post_login_redirect')
+                    request.session[SESSION_KEY] = usuario.pk
+                    return redirect('usuarios:verificar_registro_estudiante')
+                # Conservamos el flujo de docentes y directores sin cambios.
+                login(request, usuario)
+                messages.success(request, 'Cuenta creada y selección académica guardada.')
+                return redirect('usuarios:post_login_redirect')
         for err in errores:
             form.add_error(None, err)
 

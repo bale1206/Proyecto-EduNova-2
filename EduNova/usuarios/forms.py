@@ -40,6 +40,15 @@ class RegistroForm(UserCreationForm):
                 continue
             field.widget.attrs.update({'class': INPUT_CLASSES, 'style': INPUT_STYLE})
 
+    def clean_email(self):
+        correo = self.cleaned_data['email'].strip().lower()
+        if self.data.get('rol') == Usuario.Rol.ESTUDIANTE:
+            if correo.rsplit('@', 1)[-1] != 'duocuc.cl':
+                raise ValidationError('Para registrarte como estudiante utiliza un correo @duocuc.cl.')
+            if Usuario.objects.filter(email__iexact=correo).exists():
+                raise ValidationError('Este correo ya está registrado. Inicia sesión o contacta a soporte.')
+        return correo
+
     def clean_rut(self):
         rut = self.cleaned_data['rut'].strip().upper().replace('.', '')
         if Usuario.objects.filter(rut=rut).exists():

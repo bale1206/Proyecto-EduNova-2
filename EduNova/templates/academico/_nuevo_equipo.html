@@ -1,0 +1,54 @@
+<div class="edunova-nuevo" data-nuevo-calendario>
+  <details class="edunova-nuevo-menu">
+    <summary class="btn-primary edunova-nuevo-trigger" aria-label="Crear una nueva actividad">+ Nuevo</summary>
+    <div class="edunova-nuevo-opciones" role="group" aria-label="Tipo de actividad">
+      <button type="button" data-crear-tipo="reunion">♧ Reunión</button>
+      <button type="button" data-crear-tipo="otro">▣ Evento</button>
+      {% if not es_director %}<button type="button" data-crear-tipo="evaluacion">◉ Evaluación</button>{% endif %}
+    </div>
+  </details>
+  <dialog class="edunova-nuevo-modal" aria-labelledby="edunova-nuevo-titulo">
+    <form method="post" action="{% url 'academico:crear_evento' %}" class="space-y-3">
+      {% csrf_token %}
+      <input type="hidden" name="tipo" value="reunion" data-tipo-input>
+      <div class="flex items-start justify-between gap-3">
+        <div><p class="text-sm text-muted">Agenda académica · Publicación compartida</p>
+          <h3 id="edunova-nuevo-titulo" data-titulo-modal class="font-display text-xl font-semibold">Nueva reunión</h3></div>
+        <button type="button" class="btn-secondary px-3 py-1" data-cerrar-nuevo aria-label="Cerrar ventana">✕</button>
+      </div>
+      <p class="text-sm text-muted">Se mostrará en los calendarios de las personas asociadas a la sección o carrera elegida.</p>
+      <label class="block text-sm">Título<input name="titulo" maxlength="150" required class="surface-control border rounded-lg w-full p-2 mt-1"></label>
+      <label class="block text-sm">Descripción (opcional)<textarea name="descripcion" rows="2" class="surface-control border rounded-lg w-full p-2 mt-1"></textarea></label>
+      {% if es_director %}
+        <label class="block text-sm">Carrera
+          <select name="carrera" required class="surface-control border rounded-lg w-full p-2 mt-1">
+            <option value="">Selecciona una carrera</option>
+            {% for c in carreras_director %}<option value="{{ c.pk }}" {% if carrera_seleccionada == c.pk|stringformat:'s' %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}
+          </select></label>
+        <label class="block text-sm">Destinatarios
+          <select name="alcance" data-alcance class="surface-control border rounded-lg w-full p-2 mt-1"><option value="carrera">Toda la carrera</option><option value="seccion">Una sección</option></select>
+        </label>
+        <label class="block text-sm" data-grupo-seccion hidden>Sección
+          <select name="seccion" class="surface-control border rounded-lg w-full p-2 mt-1">
+            <option value="">Selecciona una sección</option>
+            {% for s in secciones %}<option value="{{ s.pk }}" {% if seccion_seleccionada == s.pk|stringformat:'s' %}selected{% endif %}>{{ s.asignatura_visible }} — {{ s.codigo_visible }}</option>{% endfor %}
+          </select>
+        </label>
+        <p class="text-xs text-muted">Para publicar en otra carrera, selecciónala primero en el filtro del calendario.</p>
+      {% else %}
+        <label class="block text-sm">Asignatura y sección
+          <select name="seccion" required class="surface-control border rounded-lg w-full p-2 mt-1">
+            <option value="">Selecciona la sección</option>
+            {% for s in secciones %}<option value="{{ s.pk }}" {% if seccion_seleccionada == s.pk|stringformat:'s' %}selected{% endif %}>{{ s.asignatura_visible }} — {{ s.codigo_visible }}</option>{% endfor %}
+          </select></label>
+      {% endif %}
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <label class="text-sm">Fecha<input type="date" name="fecha" required class="surface-control border rounded-lg w-full p-2 mt-1"></label>
+        <label class="text-sm">Hora de inicio<input type="time" name="hora_inicio" class="surface-control border rounded-lg w-full p-2 mt-1"></label>
+        <label class="text-sm">Hora de término<input type="time" name="hora_fin" class="surface-control border rounded-lg w-full p-2 mt-1"></label>
+      </div>
+      <div class="flex justify-end gap-2 pt-2"><button type="button" data-cerrar-nuevo class="btn-secondary px-4 py-2">Cancelar</button>
+        <button type="submit" class="btn-primary px-4 py-2">Publicar actividad</button></div>
+    </form>
+  </dialog>
+</div>

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Verificar correo de estudiante · EduNova{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto card p-5 md:p-8" style="margin-top:1.5rem">
+  <p class="text-muted text-sm">EduNova · Registro estudiantil</p>
+  <h1 class="font-display text-2xl md:text-3xl font-semibold mt-2">Verifica tu correo</h1>
+  <p class="text-muted text-sm mt-3">
+    Enviamos un código de seis dígitos a <strong style="color:var(--tinta)">{{ correo }}</strong>.
+    La cuenta permanecerá inactiva hasta confirmar el código.
+  </p>
+  {% if error %}<div role="alert" class="mt-5 rounded-lg p-3" style="border:1px solid var(--linea);background:var(--superficie);color:var(--tinta)">{{ error }}</div>{% endif %}
+  {% if aviso %}<div role="status" class="mt-5 rounded-lg p-3" style="border:1px solid var(--linea);background:var(--superficie);color:var(--tinta)">{{ aviso }}</div>{% endif %}
+  <form method="post" class="mt-6 space-y-4" autocomplete="off">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="verificar">
+    <label for="codigo-estudiante" class="font-semibold block">Código de verificación</label>
+    <input id="codigo-estudiante" name="codigo" type="text" inputmode="numeric"
+           pattern="[0-9]{6}" minlength="6" maxlength="6" required
+           autocomplete="one-time-code" placeholder="000000" autofocus
+           class="w-full rounded-lg border px-4 py-3 text-xl tracking-widest"
+           style="border-color:var(--linea);color:var(--tinta);background:var(--superficie)"
+           aria-describedby="codigo-ayuda">
+    <p id="codigo-ayuda" class="text-muted text-xs">Válido durante 10 minutos · Máximo 5 intentos. Revisa también Spam.</p>
+    <button class="btn-primary px-5 py-3 w-full" type="submit">Verificar y activar cuenta</button>
+  </form>
+  <div class="mt-6 pt-5" style="border-top:1px solid var(--linea)">
+    <p class="text-muted text-sm mb-3">¿No recibiste el mensaje?</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="accion" value="reenviar">
+      <button class="btn-secondary px-4 py-2" type="submit" id="reenviar-codigo" {% if espera_reenvio %}disabled{% endif %}>
+        Solicitar otro código
+      </button>
+      <span id="espera-codigo" aria-live="polite" class="text-muted text-xs ml-2"
+            data-segundos="{{ espera_reenvio }}">
+        {% if espera_reenvio %}Podrás reenviar en {{ espera_reenvio }} segundos.{% endif %}
+      </span>
+    </form>
+    <p class="text-muted text-xs mt-4">Si no solicitaste esta cuenta, puedes ignorar el correo.</p>
+  </div>
+</div>
+<script>
+(() => {
+  const text = document.getElementById('espera-codigo');
+  const button = document.getElementById('reenviar-codigo');
+  if (!text || !button) return;
+  let seconds = Number(text.dataset.segundos || 0);
+  if (seconds <= 0) return;
+  const interval = setInterval(() => {
+    seconds = Math.max(0, seconds - 1);
+    text.textContent = seconds ? `Podrás reenviar en ${seconds} segundos.` : '';
+    if (!seconds) { button.disabled = false; clearInterval(interval); }
+  }, 1000);
+})();
+</script>
+{% endblock %}
