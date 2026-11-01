@@ -1,6 +1,5 @@
 """Registro guiado por rol. Estudiantes verifican su correo antes de activar la cuenta."""
 from django.contrib import messages
-from django.contrib.auth import login
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import redirect, render
@@ -11,6 +10,7 @@ from academico.models import Asignatura, Carrera, CarreraAsignatura, Curso, Estu
 from .forms import RegistroForm
 from .models import Usuario
 from .verificacion_registro import SESSION_KEY, ErrorCorreoEstudiante, crear_verificacion
+from .verificacion_roles import (SESSION_KEY_ROLES, ErrorCorreoRol, crear_verificacion_rol)
 
 
 def periodo_actual(hoy=None):
@@ -110,6 +110,14 @@ def registro_guiado(request):
     if request.method == 'POST':
         if rol not in {Usuario.Rol.ESTUDIANTE, Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO}:
             errores.append('Selecciona el tipo de cuenta antes de continuar.')
+        # En la versión de prueba Gmail, el registro de personal permanece
+        # bloqueado hasta comprobar la entrega SMTP con el comando manual.
+        from django.conf import settings
+        if rol in (Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO) and not settings.EDUNOVA_ROLE_OTP_READY:
+            errores.append('Primero confirma la recepción del correo de prueba y habilita la verificación de personal.')
+        # Gmail de demostración no debe permitir autosuscribir roles privilegiados en producción.
+        if rol in (Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO) and not settings.DEBUG:
+            errores.append('El registro de personal con Gmail está habilitado solo en modo de demostración.')
         carreras_ids = []
         if rol == Usuario.Rol.ESTUDIANTE:
             carrera_raw = request.POST.get('carrera_id', '')
@@ -186,8 +194,8 @@ def registro_guiado(request):
                 with transaction.atomic():
                     usuario = form.save(commit=False)
                     usuario.rol = rol
-                    if rol == Usuario.Rol.ESTUDIANTE:
-                        usuario.is_active = False
+                    # Ninguna cuenta nueva puede iniciar sesión antes de acreditar el correo.
+                    usuario.is_active = False
                     if rol == Usuario.Rol.ADMINISTRATIVO:
                         # Campo histórico para compatibilidad con el portal de dirección.
                         usuario.carrera_dirigida = carreras_elegidas[0]
@@ -212,16 +220,16 @@ def registro_guiado(request):
                         usuario.carreras_dirigidas.set(carreras_elegidas)
                     if rol == Usuario.Rol.ESTUDIANTE:
                         crear_verificacion(request, usuario)
-            except ErrorCorreoEstudiante as exc:
+                    elif rol in (Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO):
+                        crear_verificacion_rol(request, usuario)
+            except (ErrorCorreoEstudiante, ErrorCorreoRol) as exc:
                 form.add_error(None, str(exc))
             else:
                 if rol == Usuario.Rol.ESTUDIANTE:
                     request.session[SESSION_KEY] = usuario.pk
                     return redirect('usuarios:verificar_registro_estudiante')
-                # Conservamos el flujo de docentes y directores sin cambios.
-                login(request, usuario)
-                messages.success(request, 'Cuenta creada y selección académica guardada.')
-                return redirect('usuarios:post_login_redirect')
+                request.session[SESSION_KEY_ROLES] = usuario.pk
+                return redirect('usuarios:verificar_registro_rol')
         for err in errores:
             form.add_error(None, err)
 

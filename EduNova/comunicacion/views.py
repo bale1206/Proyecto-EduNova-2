@@ -1,23 +1,19 @@
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, render
+from django.core.exceptions import PermissionDenied
 
-from .forms import ComunicadoForm
 from .models import MensajeComunicacion
 from .services import mensajes_no_leidos, mensajes_para
 
 
 @login_required
 def enviar_comunicado(request):
-    form = ComunicadoForm(request.POST or None, request.FILES or None, usuario=request.user)
-    if request.method == 'POST' and form.is_valid():
-        comunicado = form.save(commit=False)
-        comunicado.remitente = request.user
-        comunicado.save()
-        messages.success(request, f'Comunicado "{comunicado.asunto}" enviado (folio {comunicado.folio}).')
-        return redirect('usuarios:post_login_redirect')
+    """Deshabilitado: los anuncios institucionales se realizan en Blackboard AVA.
 
-    return render(request, 'comunicacion/enviar_comunicado.html', {'form': form})
+    Se conserva la URL histórica, pero ninguna cuenta puede usarla para crear
+    comunicados (incluso por POST directo). Los mensajes previos no se borran.
+    """
+    raise PermissionDenied('Los comunicados y anuncios se gestionan en Blackboard AVA.')
 
 
 @login_required

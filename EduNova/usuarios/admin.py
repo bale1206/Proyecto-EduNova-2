@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import Usuario
+from .models import Usuario, VerificacionCorreoRol
 from .forms import UsuarioAdminCreationForm, UsuarioAdminChangeForm
 
 
@@ -37,3 +37,30 @@ class UsuarioAdmin(UserAdmin):
         if not perfil:
             return 'Sin ficha'
         return format_html('<a href="{}">Asignar asignaturas / secciones</a>', reverse('admin:academico_estudiante_change', args=[perfil.pk]))
+
+
+@admin.register(VerificacionCorreoRol)
+class VerificacionCorreoRolAdmin(admin.ModelAdmin):
+    """Historial de códigos enviados a docentes y directores; sin aprobación manual."""
+    list_display = ('usuario', 'correo', 'confirmado_en', 'vence_en', 'activo')
+    list_filter = ('confirmado_en', 'usuario__rol')
+    search_fields = ('usuario__rut', 'usuario__email')
+    readonly_fields = ('usuario', 'codigo_hash', 'creado_en', 'enviado_en', 'vence_en',
+                       'intentos_restantes', 'envios_ventana', 'inicio_ventana', 'confirmado_en')
+
+    @admin.display(description='Correo')
+    def correo(self, obj):
+        return obj.usuario.email
+
+    @admin.display(boolean=True, description='Activa')
+    def activo(self, obj):
+        return obj.usuario.is_active
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser

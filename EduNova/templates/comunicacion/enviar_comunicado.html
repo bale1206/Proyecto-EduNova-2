@@ -6,9 +6,9 @@
     <h1 class="font-display text-2xl font-semibold mb-1">Nuevo comunicado</h1>
     <p class="text-sm text-muted mb-6">
         {% if user.rol == 'docente' %}
-        Envíalo a un apoderado en particular o a todo un curso.
+        Compártelo con un estudiante o con las secciones que impartes.
         {% else %}
-        Se enviará al docente jefe del curso correspondiente.
+        Envía tu mensaje a un docente o a un destinatario académico autorizado.
         {% endif %}
     </p>
 
@@ -58,7 +58,7 @@
 
         <div class="space-y-2 text-sm">
             {% if form.copia_utp_direccion %}
-            <label class="flex items-center gap-2">{{ form.copia_utp_direccion }} Enviar copia a UTP/Dirección</label>
+            <label class="flex items-center gap-2">{{ form.copia_utp_direccion }} Enviar copia a dirección académica</label>
             {% endif %}
             <label class="flex items-center gap-2">{{ form.requiere_firma_digital }} Requiere firma digital de respuesta</label>
             <label class="flex items-center gap-2">{{ form.exige_recibo_lectura }} Exigir confirmación de lectura</label>

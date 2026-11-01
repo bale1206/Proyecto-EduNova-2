@@ -471,3 +471,9 @@ html.dark .edunova-prioridad-alta {background:#4C2424;color:#FFE4E4;border-color
 .edunova-nuevo-modal [hidden] { display: none !important; }
 .edunova-nuevo-modal input, .edunova-nuevo-modal textarea, .edunova-nuevo-modal select { background: var(--fondo-input); color: var(--tinta); border-color: var(--linea); }
 @media (prefers-reduced-motion: reduce) { .edunova-nuevo-modal::backdrop { backdrop-filter: none; } }
+
+/* Botones independientes de publicación para docente y dirección. */
+.edunova-nuevo-acciones { display:flex;flex-wrap:wrap;gap:.5rem;align-items:center; }
+.edunova-nuevo-acciones button { min-height: 2.75rem; white-space:nowrap; }
+.edunova-nuevo-acciones button:focus-visible { outline: 3px solid var(--amanecer); outline-offset: 3px; }
+@media(max-width:640px) { .edunova-nuevo-acciones { justify-content:flex-start; } }

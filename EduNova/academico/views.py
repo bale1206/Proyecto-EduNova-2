@@ -1,5 +1,4 @@
 import calendar as cal
-from types import SimpleNamespace
 from datetime import date
 
 from django.db import transaction
@@ -85,40 +84,38 @@ def home_administrativo(request, evento_form=None):
 
 @login_required
 def analitica_carrera(request):
-    """Filtros encadenados: carrera, asignatura de su malla y sección."""
-    if not request.user.is_superuser:
-        _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
-    carreras = Carrera.objects.all().order_by('escuela', 'nombre')
-    carrera_id = request.GET.get('carrera')
-    historico = carrera_id == 'historico'
-    if carrera_id is None:
-        carrera = carreras.filter(pk=request.user.carrera_dirigida_id).first() or carreras.first()
+    """Analítica por asignatura y sección SOLO para las carreras del director."""
+    if request.user.is_superuser:
+        carreras = Carrera.objects.all().order_by('escuela', 'nombre')
     else:
-        carrera = carreras.filter(pk=carrera_id).first() if carrera_id.isdecimal() else None
-    asignaturas = Asignatura.objects.filter(carreras=carrera).distinct().order_by('nombre', 'codigo') if carrera else Asignatura.objects.none()
+        _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
+        carreras = _carreras_director(request.user)
+
+    carrera_id = request.GET.get('carrera', '')
+    if carrera_id and not carrera_id.isdecimal():
+        raise PermissionDenied('Selecciona una carrera autorizada.')
+    if carrera_id:
+        carrera = get_object_or_404(carreras, pk=carrera_id)
+    else:
+        carrera = carreras.filter(pk=request.user.carrera_dirigida_id).first() or carreras.first()
+
+    asignaturas = (Asignatura.objects.filter(carreras=carrera).distinct().order_by('nombre', 'codigo')
+                   if carrera else Asignatura.objects.none())
     codigo = request.GET.get('asignatura', '')
     elegida = asignaturas.filter(pk=codigo).first() if codigo.isdecimal() else None
     if not elegida:
         elegida = asignaturas.first()
-    disponibles = Curso.objects.filter(asignatura_catalogo=elegida).order_by('seccion') if elegida else Curso.objects.none()
-    if historico:
-        # Estas secciones no pueden asociarse a una carrera sin inventar datos.
-        # Se consultan en una selección explícita, independiente de las mallas.
-        nombres = Curso.objects.filter(asignatura_catalogo__isnull=True).values_list('asignatura', flat=True).distinct().order_by('asignatura')
-        asignaturas = [SimpleNamespace(pk=nombre, nombre=nombre) for nombre in nombres]
-        elegida = next((asignatura for asignatura in asignaturas if asignatura.pk == codigo), None)
-        if elegida is None and asignaturas:
-            elegida = asignaturas[0]
-        disponibles = Curso.objects.filter(asignatura_catalogo__isnull=True, asignatura=elegida.pk).order_by('seccion') if elegida else Curso.objects.none()
+    disponibles = (Curso.objects.filter(asignatura_catalogo=elegida).order_by('seccion')
+                   if elegida else Curso.objects.none())
     seccion_id = request.GET.get('seccion', '')
     if not seccion_id.isdecimal() or not disponibles.filter(pk=seccion_id).exists():
         seccion_id = ''
     visibles = disponibles.filter(pk=seccion_id) if seccion_id else disponibles
-    resumen = resumir_asistencia(visibles, carrera)
+    resumen = resumir_asistencia(visibles, carrera) if carrera else {}
     return render(request, 'academico/analitica_carrera.html', {
-        'carreras':carreras, 'carrera':carrera, 'asignaturas':asignaturas, 'asignatura_seleccionada':elegida,
-        'historico': historico,
-        'secciones_disponibles':disponibles, 'seccion_seleccionada':seccion_id,
+        'carreras': carreras, 'carrera': carrera, 'asignaturas': asignaturas,
+        'asignatura_seleccionada': elegida,
+        'secciones_disponibles': disponibles, 'seccion_seleccionada': seccion_id,
         **resumen,
     })
 
@@ -140,22 +137,16 @@ def matricular_seccion(request):
 
 @login_required
 def crear_curso(request):
-    _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
-    form = CrearSeccionForm(request.POST if request.method == 'POST' else None, user=request.user)
-    if request.method == 'POST' and form.is_valid():
-        try:
-            with transaction.atomic():
-                seccion = form.save()
-            messages.success(request, f'Sección {seccion.seccion} creada correctamente.')
-            return redirect('academico:home_administrativo')
-        except ValidationError as exc:
-            form.add_error(None, exc)
-    return render(request, 'academico/crear_seccion.html', {'form': form}, status=200)
+    """La creación de secciones corresponde al equipo técnico, no a directores."""
+    if not request.user.is_superuser:
+        raise PermissionDenied('Solo Django Admin puede crear secciones.')
+    return redirect('admin:academico_curso_add')
 
 
 @login_required
 def opciones_seccion(request):
-    _requerir_rol(request, Usuario.Rol.ADMINISTRATIVO)
+    if not request.user.is_superuser:
+        raise PermissionDenied('Solo Django Admin puede administrar secciones.')
     carreras = Carrera.objects.all()
     carrera_id = request.GET.get('carrera', '')
     from django.http import Http404
@@ -215,23 +206,15 @@ def crear_evento(request):
             raise PermissionDenied('Selecciona una sección que impartas.')
         seccion = get_object_or_404(_secciones_planificador(request.user), pk=sid)
     else:
-        # Un director solo puede publicar dentro de sus carreras asignadas.
+        # El director solo agenda reuniones/eventos de una carrera completa.
+        # NO puede publicar por sección ni crear evaluaciones/clases.
         carrera_id = request.POST.get('carrera', '')
         if not carrera_id.isdecimal():
             raise PermissionDenied('Selecciona una carrera válida.')
-        carrera_autorizada = get_object_or_404(_carreras_director(request.user), pk=carrera_id)
-        alcance = request.POST.get('alcance', 'carrera')
-        if alcance == 'carrera':
-            carrera = carrera_autorizada
-        elif alcance == 'seccion':
-            sid = request.POST.get('seccion', '')
-            if not sid.isdecimal():
-                raise PermissionDenied('Selecciona una sección válida.')
-            seccion = get_object_or_404(
-                _secciones_planificador(request.user).filter(
-                    asignatura_catalogo__carreras=carrera_autorizada), pk=sid)
-        else:
-            raise PermissionDenied('Alcance no permitido.')
+        carrera = get_object_or_404(_carreras_director(request.user), pk=carrera_id)
+        if request.POST.get('alcance', 'carrera') != 'carrera' or request.POST.get('seccion'):
+            raise PermissionDenied('El director únicamente agenda actividades de carrera.')
+
 
     Evento.objects.create(curso=seccion, carrera=carrera, creado_por=request.user,
                           tipo=tipo, titulo=titulo, descripcion=descripcion,
@@ -417,64 +400,83 @@ def _carreras_director(user):
 def _secciones_planificador(user):
     if user.rol == Usuario.Rol.DOCENTE:
         return Curso.objects.filter(Q(docentes=user) | Q(docente_jefe=user)).distinct()
-    if user.rol == Usuario.Rol.ADMINISTRATIVO:
-        return Curso.objects.filter(asignatura_catalogo__carreras__in=_carreras_director(user)).distinct()
+    # Dirección de carrera no publica ni gestiona actividades por sección.
     return Curso.objects.none()
 
 
 def _portal_planificacion(request):
-    """Agenda docente por sección y dirección por carrera; tareas existentes privadas."""
+    """Docentes: clases y evaluaciones. Directores: únicamente reuniones y eventos."""
     user = request.user
     es_director = user.rol == Usuario.Rol.ADMINISTRATIVO
     carreras_director = _carreras_director(user) if es_director else Carrera.objects.none()
-    carrera_id = ''
     carrera_actual = None
+    carrera_id = ''
+    seleccion = ''
+    secciones = Curso.objects.none()
+
     if es_director:
         carrera_id = request.GET.get('carrera', '')
-        if carrera_id.isdecimal():
-            carrera_actual = carreras_director.filter(pk=carrera_id).first()
-        if carrera_actual is None:
-            carrera_actual = carreras_director.filter(pk=user.carrera_dirigida_id).first() or carreras_director.first()
+        if carrera_id and not carrera_id.isdecimal():
+            raise PermissionDenied('Carrera no válida.')
+        if carrera_id:
+            # No permitir consultar eventos de carreras ajenas por URL.
+            carrera_actual = get_object_or_404(carreras_director, pk=carrera_id)
+        else:
+            carrera_actual = (carreras_director.filter(pk=user.carrera_dirigida_id).first()
+                             or carreras_director.first())
         carrera_id = str(carrera_actual.pk) if carrera_actual else ''
-    secciones = _secciones_planificador(user)
-    if es_director:
-        secciones = secciones.filter(asignatura_catalogo__carreras=carrera_actual) if carrera_actual else secciones.none()
-    secciones = secciones.select_related('asignatura_catalogo').distinct().order_by('asignatura', 'seccion')
-    seleccion = request.GET.get('seccion', '')
-    if not seleccion.isdecimal() or not secciones.filter(pk=seleccion).exists():
-        seleccion = ''
-    visibles = secciones.filter(pk=seleccion) if seleccion else secciones
-    if es_director:
-        eventos = Evento.objects.filter(Q(curso__in=visibles) | Q(carrera=carrera_actual)) if carrera_actual else Evento.objects.none()
+        if carrera_actual:
+            # Compatibilidad con reuniones/eventos antiguos vinculados a sección,
+            # pero sin traer clases ni evaluaciones ni mostrar horarios docentes.
+            eventos = Evento.objects.filter(
+                tipo__in=(Evento.Tipo.REUNION, Evento.Tipo.OTRO)
+            ).filter(
+                Q(carrera=carrera_actual) |
+                Q(curso__asignatura_catalogo__carreras=carrera_actual)
+            ).distinct().order_by('fecha', 'hora_inicio')
+        else:
+            eventos = Evento.objects.none()
+        tareas = TareaEstudio.objects.none()
     else:
-        # Los docentes pueden ver también las actividades generales de sus carreras.
+        secciones = (_secciones_planificador(user)
+                     .select_related('asignatura_catalogo').distinct()
+                     .order_by('asignatura', 'seccion'))
+        seleccion = request.GET.get('seccion', '')
+        if not seleccion.isdecimal() or not secciones.filter(pk=seleccion).exists():
+            seleccion = ''
+        visibles = secciones.filter(pk=seleccion) if seleccion else secciones
         carreras = Carrera.objects.filter(asignaturas__secciones__in=secciones).distinct()
-        eventos = Evento.objects.filter(Q(curso__in=visibles) | Q(carrera__in=carreras))
-    eventos = eventos.distinct().order_by('fecha', 'hora_inicio')
+        eventos = (Evento.objects.filter(Q(curso__in=visibles) | Q(carrera__in=carreras))
+                   .distinct().order_by('fecha', 'hora_inicio'))
+        tareas = TareaEstudio.objects.filter(estudiante=user).select_related('seccion')
+
     year, month = _mes_actual_o_parametro(request)
     (prev_y, prev_m), (next_y, next_m) = _mes_anterior_siguiente(year, month)
     semanas = _construir_calendario(year, month, eventos.filter(fecha__year=year, fecha__month=month))
-    clases_mes = clases_por_dia(list(visibles), year, month, hoy=timezone.localdate())
-    for semana in semanas:
-        for dia in semana:
-            dia['clases'] = clases_mes.get(dia['numero'], []) if dia['numero'] else []
-    from .programacion_tareas import fechas_tarea
-    import calendar
-    inicio, final = date(year, month, 1), date(year, month, calendar.monthrange(year, month)[1])
-    tareas = TareaEstudio.objects.filter(estudiante=user).select_related('seccion')
-    secciones_visibles_ids = set(secciones.values_list('pk', flat=True)) if es_director else set()
-    ocurrencias = {}
-    for tarea in tareas:
-        if seleccion and str(tarea.seccion_id) != seleccion:
-            continue
-        # Si la dirección eligió otra carrera, no mezclar actividades privadas de otras secciones.
-        if es_director and tarea.seccion_id and tarea.seccion_id not in secciones_visibles_ids:
-            continue
-        for fecha in fechas_tarea(tarea, inicio, final):
-            ocurrencias.setdefault(fecha.day, []).append(tarea)
-    for semana in semanas:
-        for dia in semana:
-            dia['tareas'] = ocurrencias.get(dia['numero'], []) if dia['numero'] else []
+
+    if es_director:
+        # Solo eventos y reuniones. Nunca generar bloques de clases o tareas.
+        for semana in semanas:
+            for dia in semana:
+                dia['clases'] = []
+                dia['tareas'] = []
+    else:
+        from .programacion_tareas import fechas_tarea
+        import calendar
+        clases_mes = clases_por_dia(list(visibles), year, month, hoy=timezone.localdate())
+        inicio = date(year, month, 1)
+        final = date(year, month, calendar.monthrange(year, month)[1])
+        ocurrencias = {}
+        for tarea in tareas:
+            if seleccion and str(tarea.seccion_id) != seleccion:
+                continue
+            for fecha in fechas_tarea(tarea, inicio, final):
+                ocurrencias.setdefault(fecha.day, []).append(tarea)
+        for semana in semanas:
+            for dia in semana:
+                dia['clases'] = clases_mes.get(dia['numero'], []) if dia['numero'] else []
+                dia['tareas'] = ocurrencias.get(dia['numero'], []) if dia['numero'] else []
+
     contexto = {
         'secciones': secciones, 'seccion_seleccionada': seleccion,
         'carreras_director': carreras_director, 'carrera_seleccionada': carrera_id,
@@ -483,10 +485,14 @@ def _portal_planificacion(request):
         'prev_year': prev_y, 'prev_month': prev_m, 'next_year': next_y, 'next_month': next_m,
         'tareas': tareas, 'proximos_eventos': eventos.filter(fecha__gte=timezone.localdate())[:8],
         'es_director': es_director,
-        'recordatorios_no_leidos': user.recordatorios_tareas.filter(leido=False).count(),
-        'recordatorios_recientes': user.recordatorios_tareas.filter(leido=False)[:8],
-        'tarea_para_configurar': tareas.filter(pk=request.GET.get('configurar_tarea')).first() if request.GET.get('configurar_tarea', '').isdecimal() else None,
     }
+    if not es_director:
+        contexto.update({
+            'recordatorios_no_leidos': user.recordatorios_tareas.filter(leido=False).count(),
+            'recordatorios_recientes': user.recordatorios_tareas.filter(leido=False)[:8],
+            'tarea_para_configurar': (tareas.filter(pk=request.GET.get('configurar_tarea')).first()
+                if request.GET.get('configurar_tarea', '').isdecimal() else None),
+        })
     if request.headers.get('HX-Request') == 'true':
         return render(request, 'academico/_calendario.html', contexto)
     return render(request, 'academico/planificacion_equipo.html', contexto)
@@ -497,8 +503,8 @@ def _portal_planificacion(request):
 def crear_tarea_equipo(request):
     from datetime import time
     import re
-    if request.user.rol not in (Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO):
-        raise PermissionDenied
+    if request.user.rol != Usuario.Rol.DOCENTE:
+        raise PermissionDenied('El director únicamente agenda reuniones y eventos.')
     titulo = request.POST.get('titulo', '').strip()
     if not titulo or len(titulo) > 160:
         messages.error(request, 'Título inválido.')
@@ -532,8 +538,8 @@ def crear_tarea_equipo(request):
 @login_required
 @require_http_methods(['POST'])
 def tarea_equipo_accion(request, tarea_id, accion):
-    if request.user.rol not in (Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO):
-        raise PermissionDenied
+    if request.user.rol != Usuario.Rol.DOCENTE:
+        raise PermissionDenied('La dirección no administra tareas privadas desde este portal.')
     tarea = get_object_or_404(TareaEstudio, pk=tarea_id, estudiante=request.user)
     if accion == 'alternar':
         tarea.completada = not tarea.completada
@@ -554,8 +560,8 @@ def tarea_equipo_accion(request, tarea_id, accion):
 @login_required
 @require_http_methods(['POST'])
 def recordatorios_equipo(request):
-    if request.user.rol not in (Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO):
-        raise PermissionDenied
+    if request.user.rol != Usuario.Rol.DOCENTE:
+        raise PermissionDenied('La dirección solo gestiona reuniones y eventos.')
     request.user.recordatorios_tareas.filter(leido=False).update(leido=True)
     return redirect(_portal_url(request.user))
 

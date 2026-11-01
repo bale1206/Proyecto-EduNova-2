@@ -50,11 +50,8 @@ class Usuario(AbstractUser):
 
     Roles:
       - docente
-      - apoderado
-      - administrativo: directores y encargados de asignar cursos,
-        evaluaciones, reuniones, etc. No se ofrece en el registro público
-        por ahora (se crea desde /admin/ por un administrador); se agrega
-        para dejar el modelo listo cuando se defina el flujo de creación.
+      - estudiante: matrícula y planificación universitaria
+      - administrativo: dirección de carrera y gestión de reuniones, eventos.
       - administrador: rol exclusivo de los superusuarios del sistema. Se
         asigna automáticamente al crear un superusuario (manage.py
         createsuperuser) y no puede elegirse de otra forma.
@@ -197,3 +194,26 @@ class VerificacionCorreoEstudiante(models.Model):
 
     def __str__(self):
         return f'Verificación estudiantil #{self.usuario_id}'
+
+
+class VerificacionCorreoRol(models.Model):
+    """OTP para docentes/directores registrados. Solo hash del código, nunca texto plano."""
+    usuario = models.OneToOneField(
+        'usuarios.Usuario', on_delete=models.CASCADE,
+        related_name='verificacion_correo_rol',
+    )
+    codigo_hash = models.CharField(max_length=255)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    enviado_en = models.DateTimeField()
+    vence_en = models.DateTimeField()
+    intentos_restantes = models.PositiveSmallIntegerField(default=5)
+    envios_ventana = models.PositiveSmallIntegerField(default=1)
+    inicio_ventana = models.DateTimeField()
+    confirmado_en = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Verificación de correo de personal académico'
+        verbose_name_plural = 'Verificaciones de personal académico'
+
+    def __str__(self):
+        return f'Verificación académica #{self.usuario_id}'

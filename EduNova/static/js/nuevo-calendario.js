@@ -6,7 +6,7 @@
     const dialogo = root.querySelector('.edunova-nuevo-modal');
     const tipo = root.querySelector('[data-tipo-input]');
     const titulo = root.querySelector('[data-titulo-modal]');
-    if (!dialogo || !menu || !tipo || !titulo) return;
+    if (!dialogo || !tipo || !titulo) return;
     const nombres = { tarea: 'tarea', reunion: 'reunión', evaluacion: 'evaluación', evento: 'evento', otro: 'evento' };
     root.querySelectorAll('[data-crear-tipo]').forEach(boton => {
       boton.addEventListener('click', () => {
@@ -14,7 +14,7 @@
         if (!Object.prototype.hasOwnProperty.call(nombres, valor)) return;
         tipo.value = valor;
         titulo.textContent = (valor === 'otro' || valor === 'evento' ? 'Nuevo ' : 'Nueva ') + nombres[valor];
-        menu.open = false;
+        if (menu) menu.open = false;
         if (typeof dialogo.showModal === 'function') dialogo.showModal();
       });
     });
@@ -38,7 +38,7 @@
     }
     // Cierra el desplegable si se hace clic fuera; no cambia el calendario.
     document.addEventListener('click', evento => {
-      if (!root.contains(evento.target)) menu.open = false;
+      if (menu && !root.contains(evento.target)) menu.open = false;
     });
   }
   if (document.readyState === 'loading') {

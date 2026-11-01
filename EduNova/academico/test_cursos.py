@@ -56,7 +56,7 @@ class CursosSeccionesTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('turno', form.errors)
 
-    def test_administrativo_crea_curso_desde_su_panel(self):
+    def test_director_no_puede_crear_secciones_desde_su_panel(self):
         carrera = Carrera.objects.create(nombre='Carrera de prueba', escuela='Pruebas')
         materia = Asignatura.objects.create(codigo='HIS-PRUEBA', nombre='Historia')
         materia.carreras.add(carrera)
@@ -64,15 +64,15 @@ class CursosSeccionesTests(TestCase):
         usuario = Usuario.objects.create_user(rut='55555555-1', rol='administrativo', carrera_dirigida=carrera)
         self.client.force_login(usuario)
         panel = self.client.get(reverse('academico:home_administrativo'))
-        self.assertContains(panel, 'name="asignatura_catalogo"')
-        self.assertContains(panel, 'name="turno"')
-        self.assertNotContains(panel, 'name="grado_curso"')
-        response = self.client.post(reverse('academico:crear_curso'), {'carrera': carrera.pk, 'asignatura_catalogo': materia.pk, 'turno': 'false', 'docentes': [profesor.pk]})
-        self.assertRedirects(response, reverse('academico:home_administrativo'))
-        self.assertEqual(Curso.objects.get().seccion, 'HIS-000-V')
-        usuario.rol = 'docente'
-        usuario.save()
-        self.assertEqual(self.client.post(reverse('academico:crear_curso'), {'asignatura': 'Historia', 'turno': 'true'}).status_code, 403)
+        self.assertEqual(panel.status_code, 200)
+        self.assertNotContains(panel, 'name="asignatura_catalogo"')
+        self.assertNotContains(panel, 'name="turno"')
+        response = self.client.post(reverse('academico:crear_curso'), {
+            'carrera': carrera.pk, 'asignatura_catalogo': materia.pk,
+            'turno': 'false', 'docentes': [profesor.pk]
+        })
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Curso.objects.exists())
 
     def test_admin_de_cursos_utiliza_nuevo_formulario(self):
         admin = Usuario.objects.create_superuser(rut='55555555-2')

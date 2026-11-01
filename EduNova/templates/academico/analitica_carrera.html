@@ -24,6 +24,6 @@
 </section>
 <section class="card p-5 mt-5"><h2 class="font-semibold mb-3">Detalle por sección</h2>
 <div class="space-y-3">{% for d in detalle %}<div class="flex justify-between gap-2 border-b pb-2" style="border-color:var(--linea)"><span>{{ d.seccion.seccion }}</span><strong>{% if d.porcentaje is not None %}{{ d.porcentaje }}%{% else %}Sin registros{% endif %}</strong></div>{% empty %}<p class="text-muted">No hay secciones disponibles.</p>{% endfor %}</div></section>
-<p class="text-xs text-muted mt-3">Asistencia = presencias ÷ (presencias + ausencias) × 100. Se cuenta una marca por estudiante, sección y día, incluyendo el historial identificable sin duplicados. Los atrasos del historial escolar cuentan como presencia. El total se calcula sobre registros, no como promedio de porcentajes por sección.</p>
+<p class="text-xs text-muted mt-3">Asistencia = presencias ÷ (presencias + ausencias) × 100. Se cuenta una marca por estudiante, sección y día, incluyendo el historial identificable sin duplicados. Los registros históricos de atrasos se consideran presencias. El total se calcula sobre registros, no como promedio de porcentajes por sección.</p>
 {% if sin_carrera %}<p class="text-xs text-muted mt-2">Se incluyen {{ sin_carrera }} registros de estudiantes sin carrera asignada en las secciones seleccionadas. Asigna su carrera en la administración para precisar este filtro.</p>{% endif %}
 {% else %}<p class="card p-5 text-muted">Selecciona una carrera con asignaturas registradas para consultar su asistencia.</p>{% endif %}{% endblock %}

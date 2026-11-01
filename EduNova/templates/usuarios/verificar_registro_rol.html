@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Confirmar correo académico · EduNova{% endblock %}
+{% block content %}
+<div class="card max-w-lg mx-auto p-7 space-y-5">
+  <p class="text-sm text-muted">EduNova · Registro de {{ rol|lower }}</p>
+  <h1 class="font-display text-2xl font-semibold">Confirma tu correo electrónico</h1>
+  <p class="text-muted text-sm">Enviamos un código de seis dígitos a <strong>{{ correo }}</strong>. Es válido durante diez minutos.</p>
+  {% if error %}<p class="registro-aviso" role="alert">{{ error }}</p>{% endif %}
+  {% if aviso %}<p class="registro-aviso" role="status">{{ aviso }}</p>{% endif %}
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="verificar">
+    <label for="codigo-personal" class="block text-sm font-semibold">Código de verificación</label>
+    <input id="codigo-personal" name="codigo" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required class="surface-control border rounded-lg w-full px-4 py-3 font-semibold tracking-widest" placeholder="000000">
+    <p class="text-sm text-muted">Intentos restantes: {{ intentos_restantes }}</p>
+    <button type="submit" class="btn-primary px-5 py-3 w-full" {% if vencido or not intentos_restantes %}disabled{% endif %}>Verificar correo</button>
+  </form>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="reenviar">
+    <button class="btn-secondary px-4 py-2 w-full" type="submit">Solicitar otro código</button>
+    {% if espera_reenvio %}<p class="text-xs text-muted mt-2">Espera {{ espera_reenvio }} segundos antes de reenviar.</p>{% endif %}
+  </form>
+  <p class="text-xs text-muted">Si no solicitaste este registro, no compartas el código. Al confirmarlo se activará tu cuenta y podrás iniciar sesión.</p>
+</div>
+{% endblock %}

@@ -42,11 +42,20 @@ class RegistroForm(UserCreationForm):
 
     def clean_email(self):
         correo = self.cleaned_data['email'].strip().lower()
-        if self.data.get('rol') == Usuario.Rol.ESTUDIANTE:
-            if correo.rsplit('@', 1)[-1] != 'duocuc.cl':
-                raise ValidationError('Para registrarte como estudiante utiliza un correo @duocuc.cl.')
-            if Usuario.objects.filter(email__iexact=correo).exists():
-                raise ValidationError('Este correo ya está registrado. Inicia sesión o contacta a soporte.')
+        from django.conf import settings
+        rol = self.data.get('rol')
+        dominios = {
+            Usuario.Rol.ESTUDIANTE: 'duocuc.cl',
+            **getattr(settings, 'EDUNOVA_ROLE_EMAIL_DOMAINS', {
+                Usuario.Rol.DOCENTE: 'profesor.duoc.cl',
+                Usuario.Rol.ADMINISTRATIVO: 'duoc.cl',
+            }),
+        }
+        esperado = dominios.get(rol)
+        if esperado and correo.rsplit('@', 1)[-1] != esperado:
+            raise ValidationError(f'Para este perfil utiliza tu correo @{esperado}.')
+        if Usuario.objects.filter(email__iexact=correo).exists():
+            raise ValidationError('Este correo ya está registrado. Inicia sesión o contacta a soporte.')
         return correo
 
     def clean_rut(self):

@@ -1,24 +1,13 @@
 {% extends 'base.html' %}
-{% block title %}Agenda de dirección · EduNova{% endblock %}
+{% block title %}Dirección de carrera · EduNova{% endblock %}
 {% block content %}
-<h1 class="font-display text-2xl font-semibold mb-1">Agenda de dirección</h1><div class="flex gap-4 my-4"><a href="{% url 'academico:lista_observaciones' %}">Observaciones</a><a href="{% url 'academico:panel_csv' %}">Planillas académicas</a></div>
-{% if sin_carrera %}<div class="card p-6">Un administrador debe asignarte una carrera desde Django Admin.</div>
-{% else %}
-<p class="text-muted mb-6">Organiza reuniones, actividades y eventos de todas las secciones.</p>
-<div class="grid lg:grid-cols-3 gap-5">
- <div class="lg:col-span-2 space-y-5">
-  <div class="card p-5"><h2 class="font-semibold mb-4">Crear sección</h2>{% include "academico/_form_seccion.html" with form=curso_form %}</div><div class="card p-4">{% include 'academico/_calendario.html' %}</div>
-  <div class="card p-5"><h2 class="font-semibold mb-4">Agendar actividad</h2><p class="text-sm text-muted mb-4">Selecciona entre todas las secciones registradas, incluidas las creadas anteriormente.</p>
-   <form method="post" action="{% url 'academico:crear_evento' %}" class="grid sm:grid-cols-2 gap-4">{% csrf_token %}
-    {{ evento_form.non_field_errors }}
-    {% if not cursos %}<p class="text-sm text-muted sm:col-span-2">Todavía no hay secciones registradas. Crea una en el formulario superior para agendar actividades.</p>{% endif %}
-    {% for campo in evento_form %}<div><label class="block text-sm font-medium mb-1" for="{{ campo.id_for_label }}">{{ campo.label }}</label>{{ campo }}{{ campo.errors }}</div>{% endfor %}
-    <button class="btn-primary sm:col-span-2 py-2.5" type="submit">Guardar evento</button>
-   </form></div>
- </div>
- <aside class="space-y-4"><div class="card p-5"><h2 class="font-semibold mb-3">Próximas actividades</h2>
-  <ul class="space-y-3">{% for ev in proximos_eventos %}<li class="text-sm">{{ ev.fecha|date:'d/m' }} · {{ ev.titulo }}</li>{% empty %}<li class="text-sm text-muted">Sin actividades próximas.</li>{% endfor %}</ul></div>
-  <a class="card p-5 block" href="{% url 'academico:analitica_carrera' %}"><h2 class="font-semibold">Análisis de asistencia →</h2><p class="text-sm text-muted mt-2">Consulta la asistencia por asignatura y sección.</p></a>
- </aside>
-</div>{% endif %}
+<section class="card p-6 max-w-2xl mx-auto space-y-4">
+  <p class="text-sm text-muted">Dirección de carrera</p>
+  <h1 class="font-display text-2xl font-semibold">Agenda de dirección de carrera</h1>
+  <p class="text-muted">La vista general permite agendar reuniones y eventos. El seguimiento de asistencia está disponible en una vista separada.</p>
+  <div class="flex gap-3 flex-wrap">
+    <a class="btn-primary px-4 py-2" href="{% url 'academico:home_administrativo' %}">Ir a mi agenda</a>
+    <a class="btn-secondary px-4 py-2" href="{% url 'academico:analitica_carrera' %}">Ver analítica de asistencia</a>
+  </div>
+</section>
 {% endblock %}
