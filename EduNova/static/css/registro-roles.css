@@ -31,8 +31,38 @@
 .registro-seccion:last-child {border-bottom:none}
 .registro-seccion:hover, .registro-opcion:hover {background:var(--fondo-input)}
 .registro-resumen-item {border:1px solid var(--linea);border-radius:.75rem;padding:1rem;color:var(--tinta);background:var(--fondo-input)}
-.registro-aviso {border:1px solid var(--linea);border-left:4px solid var(--rio);background:var(--fondo-input);color:var(--tinta);border-radius:.7rem;padding:1rem;margin-bottom:1.2rem}
-#error-registro {color:var(--tinta);font-weight:600}
+/* Errores del registro: alto contraste y color rojo en modo claro, oscuro y automático. */
+#registro-unificado .registro-aviso-error {
+  border:1px solid #DC2626;
+  border-left:5px solid #DC2626;
+  border-radius:.7rem;
+  padding:1rem;
+  margin-bottom:1.2rem;
+  background:#FFF1F2;
+  color:#991B1B;
+}
+#registro-unificado .registro-error-encabezado {display:flex;align-items:center;gap:.6rem;margin-bottom:.35rem}
+#registro-unificado .registro-error-icono {font-size:1.15rem;flex-shrink:0;line-height:1.1}
+#registro-unificado .registro-error-detalle {margin:.35rem 0 0;line-height:1.5}
+#registro-unificado .registro-aviso-error .errorlist {margin:.35rem 0;padding-left:1.25rem;list-style:disc}
+#registro-unificado .registro-error-campo {color:#991B1B;font-weight:600;margin-top:.35rem}
+#registro-unificado #error-registro:not(:empty) {
+  color:#991B1B;
+  background:#FFF1F2;
+  border:1px solid #DC2626;
+  border-left:5px solid #DC2626;
+  border-radius:.7rem;
+  padding:.85rem 1rem;
+  font-weight:600;
+}
+html.dark #registro-unificado .registro-aviso-error,
+html.dark #registro-unificado #error-registro:not(:empty) {
+  color:#FFE4E6;
+  background:#421D23;
+  border-color:#FDA4AF;
+}
+html.dark #registro-unificado .registro-error-campo {color:#FDA4AF}
+
 .registro-carga {position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
   background:rgba(15,20,25,.52);backdrop-filter:blur(6px)}
 .registro-carga-contenido {max-width:350px;margin:1rem;color:var(--tinta);background:var(--superficie)}
