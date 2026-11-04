@@ -27,14 +27,25 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "proyecto-edunova-2.onrender.com",
+]
 
 render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 
-if render_host:
+if render_host and render_host not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(render_host)
 
-CSRF_TRUSTED_ORIGINS = ["https://proyecto-edunova-2.onrender.com/"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://proyecto-edunova-2.onrender.com",
+]
+
+if render_host:
+    render_origin = f"https://{render_host}"
+    if render_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_origin)
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
