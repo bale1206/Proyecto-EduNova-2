@@ -34,9 +34,7 @@ render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 if render_host:
     ALLOWED_HOSTS.append(render_host)
 
-CSRF_TRUSTED_ORIGINS = (
-    [f"https://{render_host}"] if render_host else []
-)
+CSRF_TRUSTED_ORIGINS = ["https://proyecto-edunova-2.onrender.com/"]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
