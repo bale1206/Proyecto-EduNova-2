@@ -3,8 +3,8 @@
 {% block content %}
 <div class="mb-6"><p class="text-sm text-muted">{% if es_director %}Dirección de carrera{% else %}Espacio docente{% endif %}</p>
 <h1 class="font-display text-3xl font-semibold">{% if es_director %}Agenda de dirección de carrera{% else %}Mi planificación académica{% endif %}</h1>
-<p class="text-muted mt-2">{% if es_director %}Organiza reuniones y eventos de tus carreras. Para consultar porcentajes de asistencia, utiliza la vista de analítica.{% else %}Gestiona tus asignaturas y publica actividades en tus secciones.{% endif %}</p>
-{% if es_director %}<a href="{% url 'academico:analitica_carrera' %}" class="btn-secondary inline-block px-3 py-2 mt-3 text-sm">Ver analítica de asistencia →</a>{% endif %}</div>
+<p class="text-muted mt-2">{% if es_director %}Organiza reuniones y eventos de tus carreras.{% else %}Gestiona tus asignaturas y publica actividades en tus secciones.{% endif %}</p>
+</div>
 {% if not es_director %}<section class="card p-4 mb-5"><details><summary class="cursor-pointer font-semibold">🔔 Recordatorios {% if recordatorios_no_leidos %}({{ recordatorios_no_leidos }} sin leer){% endif %}</summary>
 {% for r in recordatorios_recientes %}<p class="surface-subtle rounded-lg p-2 mt-2">{{ r.texto }}</p>{% empty %}<p class="text-muted mt-2">No hay recordatorios pendientes.</p>{% endfor %}
 {% if recordatorios_no_leidos %}<form method="post" action="{% url 'academico:recordatorios_equipo' %}">{% csrf_token %}<button class="btn-secondary px-3 py-2 mt-2">Marcar como leídos</button></form>{% endif %}</details></section>{% endif %}
