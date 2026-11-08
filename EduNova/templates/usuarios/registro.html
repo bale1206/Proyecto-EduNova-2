@@ -18,15 +18,10 @@
     {% csrf_token %}
     <input name="rol" id="rol-registro" type="hidden" value="{{ request.POST.rol|default:'' }}">
     {% if form.errors %}
-      <div class="registro-aviso registro-aviso-error" role="alert" id="errores-servidor" aria-labelledby="registro-errores-titulo">
-        <div class="registro-error-encabezado">
-          <span class="registro-error-icono" aria-hidden="true">⚠</span>
-          <strong id="registro-errores-titulo">Revisa los datos antes de continuar:</strong>
-        </div>
+      <div class="registro-aviso" role="alert" id="errores-servidor">
+        <strong>Revisa los datos antes de continuar:</strong>
         {{ form.non_field_errors }}
-        {% for campo in form %}{% if campo.errors %}
-          <p class="registro-error-detalle"><strong>{{ campo.label }}:</strong> {{ campo.errors|join:', ' }}</p>
-        {% endif %}{% endfor %}
+        {% for campo in form %}{% if campo.errors %}<p>{{ campo.label }}: {{ campo.errors|join:', ' }}</p>{% endif %}{% endfor %}
       </div>
     {% endif %}
 
@@ -120,7 +115,7 @@
           <div>
             <label for="{{ field.id_for_label }}" class="registro-etiqueta">{{ field.label }}</label>
             {{ field }}
-            {% if field.errors %}<p class="registro-error-campo text-sm" role="alert">{{ field.errors|join:', ' }}</p>{% endif %}
+            {% if field.errors %}<p class="text-sm" role="alert" style="color:var(--tinta)">{{ field.errors|join:', ' }}</p>{% endif %}
           </div>
         {% endif %}{% endfor %}
       </div>
