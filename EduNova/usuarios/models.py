@@ -68,7 +68,10 @@ class Usuario(AbstractUser):
     ROLES_ACTIVOS = (Rol.ESTUDIANTE, Rol.DOCENTE, Rol.ADMINISTRATIVO)
 
     rut = models.CharField('RUT', max_length=12, unique=True)
-    apellidos = models.CharField('Apellidos', max_length=50)
+    # Nombre del atributo histórico conservado: formularios, consultas y reportes
+    # existentes continúan usando `apellidos`. En PostgreSQL la columna real
+    # se llama `apellido`, por eso indicamos db_column explícitamente.
+    apellidos = models.CharField('Apellido', max_length=50, db_column='apellido')
     rol = models.CharField(max_length=30, choices=Rol.choices)
     telefono = models.CharField('Teléfono', max_length=15, blank=True)
     carrera_dirigida = models.ForeignKey(

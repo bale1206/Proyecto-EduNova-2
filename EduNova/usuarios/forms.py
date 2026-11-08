@@ -28,7 +28,7 @@ class RegistroForm(UserCreationForm):
         fields = ['rut', 'first_name', 'apellidos', 'email', 'telefono', 'rol']
         labels = {
             'first_name': 'Nombre',
-            'apellidos': 'Apellidos',
+            'apellidos': 'Apellido',
             'email': 'Correo electrónico',
             'telefono': 'Teléfono',
         }
