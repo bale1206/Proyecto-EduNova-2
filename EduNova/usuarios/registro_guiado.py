@@ -111,9 +111,6 @@ def registro_guiado(request):
     if request.method == 'POST':
         if rol not in {Usuario.Rol.ESTUDIANTE, Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO}:
             errores.append('Selecciona el tipo de cuenta antes de continuar.')
-        # En la versión de prueba Gmail, el registro de personal permanece
-        # bloqueado hasta comprobar la entrega SMTP con el comando manual.
-        from django.conf import settings
         if rol in (Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO) and not settings.EDUNOVA_ROLE_OTP_READY:
             errores.append('Primero confirma la recepción del correo de prueba y habilita la verificación de personal.')
         # Gmail de demostración no debe permitir autosuscribir roles privilegiados en producción.
