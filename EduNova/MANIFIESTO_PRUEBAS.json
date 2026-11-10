@@ -1,0 +1,132 @@
+{
+  "app_files": [
+    {
+      "origen": "usuarios/tests.py",
+      "destino": null,
+      "sha_origen": "9ab6c6191360e63c1b4c9b5659aef348a743c9e078be68190917369e4e9563e8",
+      "sha_destino": null
+    },
+    {
+      "origen": "usuarios/test_curso.py",
+      "destino": "tests/usuarios/test_curso.py",
+      "sha_origen": "cdf2b9d576f064c3072ad9f1f637e006e09bcd59cb8f46a5f68d2731fe5f0982",
+      "sha_destino": "8b2ed136e2b97389b1cd6cf4bd903278c8016d1333bc1ad272a9ed3df86e0181"
+    },
+    {
+      "origen": "usuarios/test_probar_correo.py",
+      "destino": "tests/usuarios/test_probar_correo.py",
+      "sha_origen": "52ed86686fe0b5d004b01bff586fdeeddf2bd7e58a0e09bedcea02d0de010105",
+      "sha_destino": "52ed86686fe0b5d004b01bff586fdeeddf2bd7e58a0e09bedcea02d0de010105"
+    },
+    {
+      "origen": "usuarios/test_registro_guiado.py",
+      "destino": "tests/usuarios/test_registro_guiado.py",
+      "sha_origen": "ebd4eff20877f7479e22838d101eee5d25ac758596cabb3da7410f6dd769ceac",
+      "sha_destino": "4fa36ca87b0aa22b0496578b000fffb7f0f35bac9b8fcab2914cc562a6fb67a8"
+    },
+    {
+      "origen": "usuarios/test_verificacion_estudiante.py",
+      "destino": "tests/usuarios/test_verificacion_estudiante.py",
+      "sha_origen": "07f264ee2dd279ee04f28981d1509d9cb61c9f03afc580e14a88ccc3460d9f30",
+      "sha_destino": "28b34f3dfcfc63946d11ea6a0066aa76f22dcb192c41a5b725dd8a5e17b83bc6"
+    },
+    {
+      "origen": "usuarios/test_verificacion_prueba.py",
+      "destino": "tests/usuarios/test_verificacion_prueba.py",
+      "sha_origen": "66c95b9801116db0bf433707f47fa9f843525b031c3de8727bec410f203e2f90",
+      "sha_destino": "5e009cd1b75bd458dc874bd922a890f18da281cd662340ce92a007223c468a3e"
+    },
+    {
+      "origen": "usuarios/test_verificacion_roles.py",
+      "destino": "tests/usuarios/test_verificacion_roles.py",
+      "sha_origen": "e85de4bdf04db6ffc52aab7989ba5f40051acd870193a990acbaab606e0fe903",
+      "sha_destino": "dae550f1335a8dabf483670f26f54aca9e9d1277b4c91cfe40982914e9afe8ce"
+    },
+    {
+      "origen": "academico/tests.py",
+      "destino": "tests/academico/test_asistencia_historica.py",
+      "sha_origen": "290176e373c17c603af3a76b650b787d255ef678cfdfce331500ee2e6c6af0a7",
+      "sha_destino": "0c1384582e8e8cb2d0cb5fb3e32600ff759a0bf11f750d60786c35b6f271a420"
+    },
+    {
+      "origen": "academico/test_carreras_universitarias.py",
+      "destino": "tests/academico/test_carreras_universitarias.py",
+      "sha_origen": "e36019ab6ad96471a2bf0fe6454713670520cc55eab4ce17e6fa26bfc0f10b5c",
+      "sha_destino": "e36019ab6ad96471a2bf0fe6454713670520cc55eab4ce17e6fa26bfc0f10b5c"
+    },
+    {
+      "origen": "academico/test_creacion_calendario_roles.py",
+      "destino": "tests/academico/test_creacion_calendario_roles.py",
+      "sha_origen": "5f9c99c43fa595e4298c735a6878feeffc362e7348af6cdb4a22b9fc0ab37b28",
+      "sha_destino": "cc0a8c8a980bf0a6ec6edcf7c2edb0db4ddc1c76f03c071ce22c68308f104bf1"
+    },
+    {
+      "origen": "academico/test_csv.py",
+      "destino": "tests/academico/test_csv.py",
+      "sha_origen": "1fb092b77069af0562dc0a9ade3b972db39bb65bbe9991f2f524309071c0703a",
+      "sha_destino": "1fb092b77069af0562dc0a9ade3b972db39bb65bbe9991f2f524309071c0703a"
+    },
+    {
+      "origen": "academico/test_cursos.py",
+      "destino": "tests/academico/test_cursos.py",
+      "sha_origen": "45432fca55a80965ccf9ec4b8cca52e428cf1552e2955f6534f58b50fbb534c7",
+      "sha_destino": "149302039e39d7444e33661a6c3154ff421baada9a2db8846ee92ce667c1e105"
+    },
+    {
+      "origen": "academico/test_importacion_academica.py",
+      "destino": "tests/academico/test_importacion_academica.py",
+      "sha_origen": "9989f86fa38890cf7b77972618f644730297db1a1eab3915241dfadc2b68d864",
+      "sha_destino": "476fd7dc8606038cd85a70cf260732bb6595df542eb81ce62c453721a53a5805"
+    },
+    {
+      "origen": "academico/test_menciones_registro.py",
+      "destino": "tests/academico/test_menciones_registro.py",
+      "sha_origen": "0c6e488e198bf20ae439631769f5a0e17dde2bace65654d48d9d69c1b28767aa",
+      "sha_destino": "fff1839ac5d1ed843a4ec2a50594bae9ec46257fe8789f12b5a154d72404fac0"
+    },
+    {
+      "origen": "academico/test_migracion_cursos.py",
+      "destino": "tests/academico/test_migracion_cursos.py",
+      "sha_origen": "f570954d5c9ab1b167a1180bca53c83623aa1a43dccd76091100d3b3bb24a281",
+      "sha_destino": "f570954d5c9ab1b167a1180bca53c83623aa1a43dccd76091100d3b3bb24a281"
+    },
+    {
+      "origen": "academico/test_modalidad_registro.py",
+      "destino": "tests/academico/test_modalidad_registro.py",
+      "sha_origen": "f420d2c31bd13e8d24642e53d9901a07162fa59a1eb0f2a4f3e0984376c960c2",
+      "sha_destino": "f420d2c31bd13e8d24642e53d9901a07162fa59a1eb0f2a4f3e0984376c960c2"
+    },
+    {
+      "origen": "academico/test_sincronizacion_estudiante.py",
+      "destino": "tests/academico/test_sincronizacion_estudiante.py",
+      "sha_origen": "e82412fcfa5629cc892aff6d2ecab88f74240bc5b5c8c9106b3603de94ccf191",
+      "sha_destino": "6ea41000ab454700b8a0eec4516b530991f1c4bfb6c1b4355497d5d383a7e816"
+    },
+    {
+      "origen": "academico/test_student_calendar.py",
+      "destino": "tests/academico/test_student_calendar.py",
+      "sha_origen": "3ce221a8dee65acda082ded78842fb6ef37a6ce6218c8a2854482524b30999d9",
+      "sha_destino": "3ce221a8dee65acda082ded78842fb6ef37a6ce6218c8a2854482524b30999d9"
+    },
+    {
+      "origen": "comunicacion/tests.py",
+      "destino": null,
+      "sha_origen": "9ab6c6191360e63c1b4c9b5659aef348a743c9e078be68190917369e4e9563e8",
+      "sha_destino": null
+    },
+    {
+      "origen": "comunicacion/test_comunicados_desactivados.py",
+      "destino": "tests/comunicacion/test_comunicados_desactivados.py",
+      "sha_origen": "d63a0d03e2fd6c814b32b36b58aa9fcdfa0b7861963e5105f486fa2a87b72bbb",
+      "sha_destino": "d63a0d03e2fd6c814b32b36b58aa9fcdfa0b7861963e5105f486fa2a87b72bbb"
+    },
+    {
+      "origen": "usuarios/test_validaciones_registro.py",
+      "destino": "tests/usuarios/test_validaciones_registro.py",
+      "sha_origen": "1366c9f66377e4f001ed4d6cdee191a0dad5374da05adc73236230f513c59dab",
+      "sha_destino": "35ed793f3644da3532ccc84aa34c18bf17dc9bd5a264ee876dc489436921379e"
+    }
+  ],
+  "js_old": "tests/test-registro-validacion.cjs",
+  "js_new": "tests/javascript/test-registro-validacion.cjs"
+}

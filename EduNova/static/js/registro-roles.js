@@ -5,6 +5,9 @@
   if (!root) return;
   const readJSON = id => JSON.parse(document.getElementById(id).textContent);
   const previous = readJSON('registro-previo');
+  const domains = readJSON('registro-dominios');
+  const validator = window.EduNovaRegistroValidacion;
+  if (!validator) { console.error('Falta registro-validacion.js'); return; }
   const catalogs = readJSON('catalogo-onboarding');
   const careers = readJSON('carreras-onboarding');
   const mentions = readJSON('menciones-onboarding');
@@ -20,6 +23,73 @@
   let step = 1;
   const sequence = () => role === 'administrativo' ? [1, 2, 4, 5] : [1, 2, 3, 4, 5];
   const error = message => { $('error-registro').textContent = message || ''; };
+  // Estado de los campos sin alterar los valores del formulario ni enviar contraseñas al servidor.
+  const liveMessage = (id, input, state, message) => {
+    const target = $(id);
+    if (!target) return;
+    target.textContent = message;
+    target.dataset.status = state;
+    if (input) {
+      if (message && state === 'error') input.setAttribute('aria-invalid', 'true');
+      else input.removeAttribute('aria-invalid');
+      const current = (input.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+      if (!current.includes(id)) input.setAttribute('aria-describedby', [...current, id].join(' '));
+    }
+  };
+  function accountStatus() {
+    const rut = $('id_rut');
+    const email = $('id_email');
+    const password = $('id_password1');
+    const confirm = $('id_password2');
+    const first = $('id_first_name');
+    const last = $('id_apellidos');
+    if (![rut, email, password, confirm, first, last].every(Boolean)) return false;
+
+    const rutValue = rut.value.trim();
+    const rutOK = validator.rut(rutValue);
+    liveMessage('feedback-rut', rut, rutValue ? (rutOK ? 'ok' : 'error') : '',
+      !rutValue ? '' : rutOK ? '✓ RUT válido (dígito verificador correcto).' :
+      'RUT inválido: utiliza un formato como 12.345.678-5 con dígito verificador correcto.');
+
+    const emailValue = email.value.trim();
+    const emailOK = validator.correo(emailValue, role, domains);
+    const expected = domains[role] || '';
+    liveMessage('feedback-email', email, emailValue ? (emailOK ? 'ok' : 'error') : '',
+      !emailValue ? '' : emailOK ? `✓ Correo válido para este perfil (@${expected}).` :
+      `Correo inválido: este perfil requiere una dirección @${expected || 'dominio autorizado'}.`);
+
+    const level = validator.clave(password.value);
+    const meter = $('seguridad-clave-nivel');
+    const caption = $('seguridad-clave');
+    if (meter) {
+      meter.dataset.level = level.level;
+      meter.style.width = !password.value ? '0%' : level.level === 'fuerte' ? '100%' : level.level === 'media' ? '65%' : '25%';
+    }
+    if (caption) caption.textContent = !password.value ?
+      'Escribe al menos 8 caracteres combinando dos tipos: minúsculas, mayúsculas, números o símbolos.' :
+      level.level === 'debil' ? 'Contraseña débil: mínimo 8 caracteres y combina dos tipos (letras, números o símbolos).' :
+      level.level === 'fuerte' ? '✓ Contraseña fuerte. Cumple los requisitos visibles.' :
+      '✓ Contraseña de seguridad media. Cumple los requisitos mínimos.';
+    if (password.value && !level.accepted) password.setAttribute('aria-invalid', 'true');
+    else password.removeAttribute('aria-invalid');
+
+    // No advertir que difieren durante la escritura parcial de confirmación.
+    const confirmComplete = Boolean(password.value && confirm.value && confirm.value.length >= password.value.length);
+    const matches = confirm.value === password.value && Boolean(password.value);
+    liveMessage('feedback-password2', confirm,
+      !confirmComplete ? '' : matches ? 'ok' : 'error',
+      !confirmComplete ? '' : matches ? '✓ Las contraseñas coinciden.' : 'Las contraseñas no coinciden.');
+
+    return Boolean(role && first.value.trim() && last.value.trim() && rutOK && emailOK &&
+      level.accepted && matches && [...[rut, email, password, confirm, first, last]].every(field => field.checkValidity()));
+  }
+  function updateContinueState() {
+    const btn = $('paso-continuar');
+    if (!btn) return;
+    const valid = !validateStep({silent: true});
+    btn.disabled = !valid;
+    if (step === 5) $('confirmar-registro').disabled = !accountStatus();
+  }
   const label = (text, className = '') => {
     const el = document.createElement('span'); el.textContent = text; el.className = className; return el;
   };
@@ -55,6 +125,7 @@
     if (step === 5) renderSummary();
     const heading = root.querySelector(`[data-step="${step}"] h2`);
     if (heading) heading.setAttribute('tabindex', '-1');
+    updateContinueState();
   }
   function selectRole(nextRole, preserve = false) {
     if (!preserve && nextRole !== role) {
@@ -230,7 +301,7 @@
       holder.append(panel);
     }
   }
-  function validateStep() {
+  function validateStep({silent = false} = {}) {
     if (step === 1) return role ? '' : 'Selecciona primero si eres estudiante, docente o director de carrera.';
     if (step === 2) {
       if (role === 'estudiante') {
@@ -266,10 +337,10 @@
       return '';
     }
     if (step === 4) {
+      if (!accountStatus()) return 'Completa todos los campos obligatorios y corrige los avisos de RUT, correo o contraseña.';
       for (const input of root.querySelectorAll('[data-step="4"] input')) {
-        if (!input.checkValidity()) { input.reportValidity(); return 'Completa los datos requeridos.'; }
+        if (!input.checkValidity()) { if (!silent) input.reportValidity(); return 'Completa los datos requeridos.'; }
       }
-      if ($('id_password1')?.value !== $('id_password2')?.value) return 'Las contraseñas no coinciden.';
     }
     return '';
   }
@@ -320,6 +391,12 @@
   $('personalizar-asignaturas').addEventListener('change', () => {
     selectedSections.clear(); renderSubjects();
   });
+  root.addEventListener('input', () => {
+    updateContinueState();
+  });
+  root.addEventListener('change', () => {
+    updateContinueState();
+  });
   $('paso-volver').addEventListener('click', () => {
     const flow = sequence(); showStep(flow[flow.indexOf(step) - 1]);
   });
@@ -337,7 +414,10 @@
   });
   root.querySelector('form').addEventListener('submit', event => {
     if (step !== 5) { event.preventDefault(); error('Revisa tu información antes de crear la cuenta.'); return; }
-    if (!role) { event.preventDefault(); error('Selecciona tu tipo de cuenta.'); }
+    if (!role || !accountStatus()) {
+      event.preventDefault();
+      error('Completa los datos obligatorios y corrige los avisos antes de confirmar.');
+    }
   });
   const initialRole = ['estudiante','docente','administrativo'].includes(role) ? role : '';
   role = '';

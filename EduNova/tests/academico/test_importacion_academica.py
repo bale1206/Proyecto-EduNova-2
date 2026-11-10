@@ -10,8 +10,8 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from usuarios.models import Usuario
-from .importacion_archivos import leer_malla, leer_oferta
-from .models import (Carrera, Curso, HorarioSeccion, ImportacionAcademica,
+from academico.importacion_archivos import leer_malla, leer_oferta
+from academico.models import (Carrera, Curso, HorarioSeccion, ImportacionAcademica,
                      PlanEstudio, PlanAsignatura)
 
 MALLA = (b'codigo_asignatura;nombre_asignatura;anio_curricular;semestre_curricular\n'

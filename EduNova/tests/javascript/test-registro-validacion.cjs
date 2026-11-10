@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+const v = require('../../static/js/registro-validacion.js');
+assert.equal(v.rut('12.345.678-5'), true);
+assert.equal(v.rut('12345678-5'), true);
+assert.equal(v.rut('22.222.222-2'), true);
+assert.equal(v.rut('12.345.678-9'), false);
+assert.equal(v.rut('12.222.222-2'), false);
+assert.equal(v.correo('alumno@duocuc.cl', 'estudiante', {estudiante:'duocuc.cl', docente:'gmail.com'}), true);
+assert.equal(v.correo('alumno@gmail.com', 'estudiante', {estudiante:'duocuc.cl', docente:'gmail.com'}), false);
+assert.equal(v.correo('profe@GMAIL.COM', 'docente', {docente:'gmail.com'}), true);
+assert.equal(v.correo('profe@gmail.com.evil.org', 'docente', {docente:'gmail.com'}), false);
+assert.equal(v.clave('corta').accepted, false);
+assert.equal(v.clave('abcdefgh').accepted, false);
+assert.equal(v.clave('Abcd1234').accepted, true);
+assert.equal(v.clave('Abcd1234!Xyz').level, 'fuerte');
+console.log('OK: validador JavaScript de registro');

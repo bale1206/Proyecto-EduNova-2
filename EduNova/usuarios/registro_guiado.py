@@ -1,5 +1,6 @@
 """Registro guiado por rol. Estudiantes verifican su correo antes de activar la cuenta."""
 from django.contrib import messages
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import redirect, render
@@ -233,8 +234,14 @@ def registro_guiado(request):
         for err in errores:
             form.add_error(None, err)
 
+    dominios_registro = {
+        'estudiante': 'duocuc.cl',
+        'docente': 'profesor.duoc.cl',
+        'administrativo': 'duoc.cl',
+        **getattr(settings, 'EDUNOVA_ROLE_EMAIL_DOMAINS', {}),
+    }
     return render(request, 'usuarios/registro.html', {
-        'form': form, 'carreras': carreras,
+        'form': form, 'carreras': carreras, 'dominios_registro': dominios_registro,
         'menciones_json': [
             {'id': m.pk, 'carrera_id': m.carrera_id, 'nombre': m.nombre}
             for m in menciones

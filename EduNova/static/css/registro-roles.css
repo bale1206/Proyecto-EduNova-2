@@ -31,7 +31,7 @@
 .registro-seccion:last-child {border-bottom:none}
 .registro-seccion:hover, .registro-opcion:hover {background:var(--fondo-input)}
 .registro-resumen-item {border:1px solid var(--linea);border-radius:.75rem;padding:1rem;color:var(--tinta);background:var(--fondo-input)}
-.registro-aviso {border:1px solid var(--linea);border-left:4px solid var(--rio);background:var(--fondo-input);color:var(--tinta);border-radius:.7rem;padding:1rem;margin-bottom:1.2rem}
+.registro-aviso {border:1px solid #dc2626;border-left:5px solid #dc2626;background:rgba(220,38,38,.10);color:var(--tinta);border-radius:.7rem;padding:1rem;margin-bottom:1.2rem}
 #error-registro {color:var(--tinta);font-weight:600}
 .registro-carga {position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
   background:rgba(15,20,25,.52);backdrop-filter:blur(6px)}
@@ -45,3 +45,19 @@ html.a11y-reducir-movimiento .registro-reloj {animation:none}
 .registro-mencion-grupo {border:1px solid var(--linea);border-radius:.8rem;padding:.85rem 1rem;background:var(--superficie);color:var(--tinta)}
 .registro-mencion-grupo legend {padding:0 .35rem;color:var(--tinta)}
 .registro-select:disabled {opacity:.75;cursor:not-allowed}
+
+/* Retroalimentación en tiempo real de la cuenta. Compatible con los temas existentes. */
+#registro-unificado .registro-feedback {min-height:1.3rem;font-size:.83rem;margin-top:.35rem;line-height:1.4}
+#registro-unificado .registro-feedback[data-status="error"],
+#registro-unificado .registro-error-campo {color:#f87171;font-weight:600}
+#registro-unificado .registro-feedback[data-status="ok"] {color:#34d399}
+#registro-unificado [aria-invalid="true"] {border-color:#dc2626!important;outline-color:#dc2626}
+#registro-unificado #paso-continuar:disabled,
+#registro-unificado #confirmar-registro:disabled {opacity:.45;cursor:not-allowed;filter:grayscale(.25)}
+.registro-clave-pista {font-size:.83rem;line-height:1.35;color:var(--tinta-muted);margin-bottom:.45rem}
+.registro-clave-barra {height:7px;border-radius:10px;background:var(--linea);overflow:hidden}
+.registro-clave-progreso {height:100%;width:0;transition:width .18s ease,background-color .18s ease;background:#ef4444}
+.registro-clave-progreso[data-level="debil"] {background:#ef4444}
+.registro-clave-progreso[data-level="media"] {background:#f59e0b}
+.registro-clave-progreso[data-level="fuerte"] {background:#10b981}
+@media (prefers-reduced-motion:reduce) {.registro-clave-progreso {transition:none}}

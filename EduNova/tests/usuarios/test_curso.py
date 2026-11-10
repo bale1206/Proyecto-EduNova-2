@@ -5,8 +5,8 @@ from django.db.models.deletion import ProtectedError
 
 from academico.models import Curso, Estudiante, Evento
 from comunicacion.services import cursos_relacionados
-from .forms import RegistroForm
-from .models import Usuario
+from usuarios.forms import RegistroForm
+from usuarios.models import Usuario
 
 
 class UsuarioCursoTests(TestCase):

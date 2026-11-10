@@ -115,7 +115,20 @@
           <div>
             <label for="{{ field.id_for_label }}" class="registro-etiqueta">{{ field.label }}</label>
             {{ field }}
-            {% if field.errors %}<p class="text-sm" role="alert" style="color:var(--tinta)">{{ field.errors|join:', ' }}</p>{% endif %}
+            {% if field.name == 'rut' %}
+              <p class="registro-feedback" id="feedback-rut" aria-live="polite"></p>
+              <p class="text-xs text-muted mt-1">Escribe un RUT con guion y dígito verificador correcto; se aceptan RUT generados matemáticamente válidos.</p>
+            {% elif field.name == 'email' %}
+              <p class="registro-feedback" id="feedback-email" aria-live="polite"></p>
+            {% elif field.name == 'password1' %}
+              <div class="registro-clave-metro mt-2" aria-label="Seguridad de la contraseña" role="group">
+                <div class="registro-clave-pista" id="seguridad-clave" aria-live="polite">Escribe al menos 8 caracteres combinando dos tipos: letras minúsculas, mayúsculas, números o símbolos.</div>
+                <div class="registro-clave-barra" aria-hidden="true"><div id="seguridad-clave-nivel" class="registro-clave-progreso"></div></div>
+              </div>
+            {% elif field.name == 'password2' %}
+              <p class="registro-feedback" id="feedback-password2" aria-live="polite"></p>
+            {% endif %}
+            {% if field.errors %}<p class="registro-error-campo text-sm" role="alert">{{ field.errors|join:', ' }}</p>{% endif %}
           </div>
         {% endif %}{% endfor %}
       </div>
@@ -131,7 +144,7 @@
     <p id="error-registro" class="text-sm mt-4" role="alert" aria-live="polite"></p>
     <div class="flex flex-wrap justify-between gap-3 mt-7">
       <button type="button" id="paso-volver" class="btn-secondary px-5 py-2.5" hidden>← Volver</button>
-      <button type="button" id="paso-continuar" class="btn-primary px-6 py-2.5 ml-auto">Continuar →</button>
+      <button type="button" id="paso-continuar" class="btn-primary px-6 py-2.5 ml-auto" disabled>Continuar →</button>
       <button type="submit" id="confirmar-registro" class="btn-primary px-6 py-2.5 ml-auto" hidden>Confirmar y continuar</button>
     </div>
   </form>
@@ -145,11 +158,13 @@
   </div>
 </div>
 {{ preseleccion|json_script:'registro-previo' }}
+{{ dominios_registro|json_script:'registro-dominios' }}
 {{ catalogos|json_script:'catalogo-onboarding' }}
 {{ semestre_actual|json_script:'semestre-onboarding' }}
 {{ anio_actual|json_script:'anio-onboarding' }}
 {{ carreras_json|json_script:'carreras-onboarding' }}
 {{ menciones_json|json_script:'menciones-onboarding' }}
 <link rel="stylesheet" href="{% static 'css/registro-roles.css' %}">
+<script src="{% static 'js/registro-validacion.js' %}" defer></script>
 <script src="{% static 'js/registro-roles.js' %}" defer></script>
 {% endblock %}

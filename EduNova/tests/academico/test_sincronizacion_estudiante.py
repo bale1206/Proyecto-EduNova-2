@@ -1,15 +1,15 @@
 """Regresiones: matrícula real, código institucional y clases en calendario.
 
 Ejecutar con PostgreSQL de pruebas separado:
-python manage.py test academico.test_sincronizacion_estudiante --keepdb -v 2
+python manage.py test tests.academico.test_sincronizacion_estudiante --keepdb -v 2
 """
 from datetime import time, date
 from django.test import TestCase
 from django.urls import reverse
 
 from usuarios.models import Usuario
-from .calendario_clases import fecha_en_periodo
-from .models import (Asignatura, Carrera, CarreraAsignatura, Curso,
+from academico.calendario_clases import fecha_en_periodo
+from academico.models import (Asignatura, Carrera, CarreraAsignatura, Curso,
                      HorarioSeccion, PeriodoAcademico, Estudiante)
 
 

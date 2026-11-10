@@ -1,6 +1,6 @@
 from datetime import date
 from django.test import SimpleTestCase
-from .registro_guiado import periodo_actual
+from usuarios.registro_guiado import periodo_actual
 
 
 class PeriodoGuiadoTests(SimpleTestCase):

@@ -10,8 +10,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from academico.models import Asignatura, Carrera, CarreraAsignatura, Curso
-from .models import VerificacionCorreoRol
-from .verificacion_roles import SESSION_KEY_ROLES
+from usuarios.models import VerificacionCorreoRol
+from usuarios.verificacion_roles import SESSION_KEY_ROLES
 
 
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
@@ -75,7 +75,7 @@ class VerificacionPersonalTests(TestCase):
 
     def test_rechaza_otro_dominio_en_ambos_roles(self):
         from django.conf import settings
-        from .forms import RegistroForm
+        from usuarios.forms import RegistroForm
         for rol in ('docente', 'administrativo'):
             with self.subTest(rol=rol):
                 inesperado = ('duoc.cl' if settings.EDUNOVA_ROLE_EMAIL_DOMAINS[rol] == 'gmail.com'
@@ -106,7 +106,7 @@ class VerificacionPersonalTests(TestCase):
         with patch('usuarios.verificacion_roles._enviar_email', side_effect=OSError('smtp caído')):
             # Normalmente _enviar_email traduce excepciones de red a ErrorCorreoRol;
             # simulamos ese tipo esperado para probar el rollback de la transacción.
-            from .verificacion_roles import ErrorCorreoRol
+            from usuarios.verificacion_roles import ErrorCorreoRol
             with patch('usuarios.verificacion_roles._enviar_email', side_effect=ErrorCorreoRol('SMTP falló')):
                 respuesta = self.client.post(reverse('usuarios:registro'), self._datos('docente'))
         self.assertEqual(respuesta.status_code, 200)

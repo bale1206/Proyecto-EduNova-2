@@ -1,6 +1,6 @@
 """Regresiones de menciones por carrera y filtrado del registro universitario.
 
-Ejecutar después de las migraciones: python manage.py test academico.test_menciones_registro
+Ejecutar después de las migraciones: python manage.py test tests.academico.test_menciones_registro
 """
 from django.core.exceptions import ValidationError
 from django.test import TestCase

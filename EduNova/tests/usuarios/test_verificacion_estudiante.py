@@ -10,9 +10,9 @@ from django.urls import reverse
 from django.utils import timezone
 
 from academico.models import Asignatura, Carrera, CarreraAsignatura, Curso, Estudiante
-from .forms import RegistroForm
-from .models import VerificacionCorreoEstudiante
-from .verificacion_registro import SESSION_KEY
+from usuarios.forms import RegistroForm
+from usuarios.models import VerificacionCorreoEstudiante
+from usuarios.verificacion_registro import SESSION_KEY
 
 
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',

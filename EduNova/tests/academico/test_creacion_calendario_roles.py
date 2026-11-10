@@ -1,7 +1,7 @@
 """Regresión del menú + Nuevo y permisos por rol.
 
 Ejecutar únicamente contra una base PostgreSQL de PRUEBAS separada:
-  python manage.py test academico.test_creacion_calendario_roles --keepdb
+  python manage.py test tests.academico.test_creacion_calendario_roles --keepdb
 """
 from datetime import date
 

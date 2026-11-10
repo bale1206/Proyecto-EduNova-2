@@ -4,8 +4,8 @@ from django.test import TestCase
 from django.urls import reverse
 
 from usuarios.models import Usuario
-from .forms import CursoForm
-from .models import Curso, Estudiante, Evento, Carrera, Asignatura
+from academico.forms import CursoForm
+from academico.models import Curso, Estudiante, Evento, Carrera, Asignatura
 
 
 class CursosSeccionesTests(TestCase):
