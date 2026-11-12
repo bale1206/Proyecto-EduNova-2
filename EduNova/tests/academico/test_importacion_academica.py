@@ -2,11 +2,13 @@
 from types import SimpleNamespace
 from unittest import TestCase as PythonTestCase
 
+from django.contrib import admin
 from django.http import Http404
 from django.test import RequestFactory, SimpleTestCase
 from django.urls import NoReverseMatch, resolve, reverse
 
 from academico.importacion_archivos import leer_malla, leer_oferta
+from academico.models import ImportacionAcademica
 
 MALLA = (b'codigo_asignatura;nombre_asignatura;anio_curricular;semestre_curricular\n'
          b'PRO1001;Fundamentos de Programacion;1;1\n')
@@ -30,6 +32,9 @@ class LecturaDocumentosTests(PythonTestCase):
 
 
 class ImportadorAdminEliminadoTests(SimpleTestCase):
+    def test_historial_de_importaciones_no_se_publica_en_admin(self):
+        self.assertNotIn(ImportacionAcademica, admin.site._registry)
+
     def test_rutas_del_importador_no_tienen_nombre_publico(self):
         for nombre, kwargs in (
             ('edunova_importaciones_admin', {}),

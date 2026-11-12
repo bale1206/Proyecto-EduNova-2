@@ -223,7 +223,7 @@ class AvisoAsistenciaAdmin(admin.ModelAdmin):
 
 
 # Conserva el historial de importaciones previas en modo de solo lectura.
-from .models import PeriodoAcademico, PlanEstudio, PlanAsignatura, ImportacionAcademica
+from .models import PeriodoAcademico, PlanEstudio, PlanAsignatura
 
 
 @admin.register(PeriodoAcademico)
@@ -242,20 +242,3 @@ class PlanEstudioAdmin(admin.ModelAdmin):
     list_display = ('carrera', 'mencion', 'anio_ingreso', 'actualizado_en')
     list_filter = ('carrera', 'anio_ingreso')
     inlines = [PlanAsignaturaInline]
-
-
-@admin.register(ImportacionAcademica)
-class ImportacionAcademicaAdmin(admin.ModelAdmin):
-    list_display = ('creado_en', 'tipo', 'estado', 'archivo_nombre', 'usuario')
-    list_filter = ('tipo', 'estado', 'creado_en')
-    readonly_fields = ('creado_en', 'tipo', 'estado', 'archivo_nombre', 'archivo_privado', 'sha256', 'usuario', 'resumen')
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
