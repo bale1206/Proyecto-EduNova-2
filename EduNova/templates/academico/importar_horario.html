@@ -5,8 +5,34 @@
   <a href="{% url 'usuarios:post_login_redirect' %}" class="underline">Volver a mi calendario</a>
   <h1 class="font-display text-3xl font-semibold mt-4">Importar mi horario</h1>
   <p class="mt-3 text-muted">Descarga la plantilla, completa un bloque de clase por fila en la hoja «Horario» y carga el archivo para revisarlo. La hoja «Ejemplo» sirve de guía y no se importa.</p>
-  <p class="text-muted mt-2">Usa días de Lunes a Domingo, horas de 24 horas (08:30) y fechas AAAA-MM-DD. Asignatura, día, horas y fechas son obligatorios. Sala y docente son opcionales. Máximo 300 bloques y 5 MB.</p>
-  <a href="{% url 'academico:plantilla_horario' %}" class="btn-secondary inline-block px-4 py-3 my-5">Descargar plantilla XLSX</a>
+  <p class="text-muted mt-2">Completa la hoja «Horario» siguiendo la guía de abajo. El archivo acepta hasta 300 bloques y 5 MB.</p>
+  <div class="flex flex-wrap gap-3 my-5">
+    <a href="{% url 'academico:plantilla_horario' %}" class="btn-secondary inline-block px-4 py-3">Descargar plantilla XLSX</a>
+    <a href="{% url 'academico:exportar_horario' %}" class="btn-secondary inline-block px-4 py-3">Exportar mi horario XLSX</a>
+  </div>
+  <section id="guia-horario" class="surface-subtle rounded-lg p-5 mb-7" aria-labelledby="titulo-guia">
+    <h2 id="titulo-guia" class="font-display text-2xl font-semibold mb-3">Cómo completar tu horario: paso a paso</h2>
+    <ol class="list-decimal pl-6 space-y-3">
+      <li><strong>Descarga la plantilla</strong> si crearás un horario desde cero. Si ya tienes uno, elige «Exportar mi horario XLSX» para modificarlo sin escribirlo de nuevo.</li>
+      <li><strong>Abre el archivo en Excel o un editor compatible</strong> y selecciona la hoja <strong>Horario</strong>. No cambies su nombre, los ocho encabezados de la primera fila ni su orden. La hoja «Ejemplo» de la plantilla es solamente una referencia.</li>
+      <li><strong>Escribe una clase por fila desde la fila 2.</strong> En «Asignatura» escribe el nombre libremente, por ejemplo, Programación. No es necesario seleccionar carrera, sección ni códigos de catálogo.</li>
+      <li><strong>Indica el día de la semana.</strong> Usa Lunes, Martes, Miércoles, Jueves, Viernes, Sábado o Domingo (también se aceptan números del 1 al 7, donde 1 es Lunes).</li>
+      <li><strong>Escribe las horas</strong> con formato de 24 horas: <strong>08:30</strong> y <strong>09:50</strong>. La hora final debe ser posterior a la inicial y ambas deben corresponder al mismo día.</li>
+      <li><strong>Indica las fechas de vigencia</strong> con formato <strong>AAAA-MM-DD</strong>, por ejemplo <strong>2027-03-01</strong> a <strong>2027-07-15</strong>. El calendario repetirá ese bloque cada semana, solo dentro de ese período.</li>
+      <li><strong>Completa «Sala» y «Docente» si los conoces.</strong> Estos dos campos son opcionales; deja sus celdas vacías cuando no correspondan.</li>
+      <li><strong>Repite una fila por cada bloque semanal.</strong> Si Programación se imparte lunes y miércoles, ingresa dos filas. No añadas columnas, fórmulas, bloques superpuestos ni más de 300 filas de clases.</li>
+      <li><strong>Guarda como archivo .xlsx</strong>, súbelo a continuación y presiona «Revisar horario». Comprueba los bloques antes de confirmar. Si hay errores, el sistema indicará la fila que debes corregir.</li>
+      <li><strong>Confirma la importación solamente cuando esté correcto.</strong> Esto reemplaza todo tu horario personal anterior, pero conserva tus tareas, reuniones y eventos. Puedes exportar el horario actual antes como respaldo.</li>
+    </ol>
+    <div class="overflow-x-auto mt-5">
+      <p class="font-semibold mb-2">Ejemplo: una fila completa</p>
+      <table class="w-full text-sm horario-tabla">
+        <thead><tr><th>Asignatura</th><th>Dia</th><th>Hora inicio</th><th>Hora fin</th><th>Fecha inicio</th><th>Fecha fin</th><th>Sala</th><th>Docente</th></tr></thead>
+        <tbody><tr><td>Programación</td><td>Lunes</td><td>08:30</td><td>09:50</td><td>2027-03-01</td><td>2027-07-15</td><td>Sala 204</td><td>Docente Ejemplo</td></tr></tbody>
+      </table>
+    </div>
+    <p class="text-muted mt-4">Importante: cada bloque admite hasta 370 días de vigencia. No uses fórmulas ni macros. La hoja «Horario» debe tener al menos una clase para importar.</p>
+  </section>
   {% if error %}<div role="alert" class="registro-aviso mb-5" style="white-space:pre-line">{{ error }}</div>{% endif %}
   <form method="post" enctype="multipart/form-data" class="space-y-3 mb-6">
     {% csrf_token %}<input type="hidden" name="accion" value="previsualizar">
