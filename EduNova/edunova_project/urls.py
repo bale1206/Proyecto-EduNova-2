@@ -21,12 +21,8 @@ from django.urls import include, path
 
 from usuarios.views import landing_view
 
-from academico import importacion_vistas
 
 urlpatterns = [
-    path('admin/importaciones-academicas/', importacion_vistas.panel_importaciones, name='edunova_importaciones_admin'),
-    path('admin/importaciones-academicas/plantilla/', importacion_vistas.plantilla_malla, name='edunova_importaciones_plantilla'),
-    path('admin/importaciones-academicas/archivo/<int:pk>/', importacion_vistas.descargar_archivo_importado, name='edunova_importaciones_archivo'),
     path('admin/', admin.site.urls),
     path('', landing_view, name='landing'),
     path('cuentas/', include('usuarios.urls')),
@@ -36,4 +32,5 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
 

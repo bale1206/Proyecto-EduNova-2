@@ -222,7 +222,7 @@ class AvisoAsistenciaAdmin(admin.ModelAdmin):
     readonly_fields = ('destinatario', 'marca', 'texto', 'creado_en')
 
 
-# El importador masivo vive en /admin/importaciones-academicas/.
+# Conserva el historial de importaciones previas en modo de solo lectura.
 from .models import PeriodoAcademico, PlanEstudio, PlanAsignatura, ImportacionAcademica
 
 
@@ -258,3 +258,4 @@ class ImportacionAcademicaAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
