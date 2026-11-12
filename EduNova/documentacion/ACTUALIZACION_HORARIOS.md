@@ -40,6 +40,51 @@
 - Se mantiene la corrección del inicio del admin al sobrescribir el proyecto.
   También se corrige el formulario de contraseña para Django 6.
 
+## Actualización de los puntos 2, 3 y 4: horario XLSX
+
+- Los estudiantes y docentes disponen de **Exportar mi horario XLSX** tanto
+  en su calendario como en la página de importación.
+- El archivo descargado contiene únicamente los bloques semanales de su
+  propia cuenta, ordenados por día y hora. Incluye exactamente las ocho
+  columnas exigidas por el importador, por lo que puede editarse e importarse
+  nuevamente. No exporta el catálogo ni horarios de otras cuentas.
+- Cuando la cuenta está vacía se descarga un XLSX con encabezados, sin filas
+  académicas: sirve como base de trabajo y debe completarse antes de importar.
+- La página de importación incluye **diez pasos explicativos**, un ejemplo
+  completo y un enlace desde el calendario. Se explica cómo introducir días,
+  horas, fechas, asignaturas, sala y docente; cómo añadir bloques en días
+  distintos; y que la confirmación reemplaza únicamente el horario personal.
+- Se eliminan los archivos de la **vista antigua de importación administrativa**
+  (vista, servicio, plantilla y CSS) y el selector académico de la plantilla
+  docente heredada. Se conserva `importacion_archivos.py` porque su lector
+  de XLSX y sus pruebas siguen siendo necesarios.
+- **No se borran registros históricos ni tablas de Supabase**: carreras,
+  asignaturas, secciones y relaciones históricas siguen siendo utilizadas
+  por las estadísticas, la matrícula y las funciones de asistencia. Antes
+  de eliminarlas de la base se requiere inventario de dependencias,
+  respaldo comprobado y una migración específica validada en PostgreSQL
+  de pruebas. No es necesario borrarlas para utilizar el horario personal.
+
+### Guía de llenado
+
+1. Descargar la plantilla XLSX, o exportar el horario actual para editarlo.
+2. Seleccionar la hoja `Horario`, sin modificar su nombre ni los encabezados.
+3. Poner una clase por fila, comenzando en la fila 2.
+4. Escribir el nombre de la asignatura en texto libre.
+5. Indicar día como `Lunes` a `Domingo` o `1` a `7`.
+6. Completar las horas de inicio y fin en formato `HH:MM`.
+7. Completar las fechas de inicio y fin en `AAAA-MM-DD`.
+8. Opcionalmente, añadir sala y docente. Repetir para cada bloque semanal.
+9. Guardar como `.xlsx`, cargarlo y revisar la vista previa.
+10. Confirmar solo si se desea reemplazar el horario personal actual.
+
+Ejemplo: `Programación | Lunes | 08:30 | 09:50 | 2027-03-01 |
+2027-07-15 | Sala 204 | Docente Ejemplo`.
+
+La validación existente rechaza fórmulas, archivos dañados, días inválidos,
+cruces de horas, períodos incorrectos, más de 300 bloques o archivos de más
+de 5 MB.
+
 ## Instalación y Render
 
 1. Sustituir los archivos de `EduNova` en el repositorio. Conservar el `.env`,
