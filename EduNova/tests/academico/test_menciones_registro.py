@@ -46,20 +46,22 @@ class MencionesCarreraTests(TestCase):
         self.assertEqual(CarreraAsignatura.objects.filter(carrera=self.carrera,
                          asignatura=self.especial).count(), 2)
 
-    def test_registro_estudiante_no_acepta_mencion_enviada_manualmente(self):
+    def test_mencion_no_sustituye_datos_basicos_estudiante(self):
         respuesta = self.client.post(reverse('usuarios:registro'), {
             'rol': 'estudiante', 'carrera_id': str(self.carrera.pk),
             'mencion_id': str(self.otra_mencion.pk), 'modalidad': 'diurno', 'anio_ingreso': '2026',
             'secciones': '99999999',
         })
         self.assertEqual(respuesta.status_code, 200)
-        self.assertContains(respuesta, 'La mención ya no se selecciona durante el registro estudiantil.')
+        self.assertIn('rut', respuesta.context['form'].errors)
+        self.assertNotContains(respuesta, 'name="mencion_id"')
 
-    def test_registro_docente_rechaza_mencion_de_carrera_no_seleccionada(self):
+    def test_mencion_no_sustituye_datos_basicos_docente(self):
         respuesta = self.client.post(reverse('usuarios:registro'), {
             'rol': 'docente', 'carreras': str(self.carrera.pk),
             'menciones_docente': str(self.otra_mencion.pk),
             'asignaturas': str(self.base.pk), 'secciones': '99999999',
         })
         self.assertEqual(respuesta.status_code, 200)
-        self.assertContains(respuesta, 'Las menciones deben pertenecer a las carreras seleccionadas.')
+        self.assertIn('email', respuesta.context['form'].errors)
+        self.assertNotContains(respuesta, 'name="menciones_docente"')

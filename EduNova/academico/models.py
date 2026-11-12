@@ -515,6 +515,30 @@ class PlanAsignatura(models.Model):
         constraints = [models.UniqueConstraint(fields=['plan', 'asignatura'], name='uq_asignatura_version_malla')]
 
 
+class BloqueHorarioPersonal(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='bloques_horario')
+    asignatura = models.CharField(max_length=160)
+    dia_semana = models.PositiveSmallIntegerField(choices=[(i, n) for i, n in enumerate(
+        ('Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'), 1)])
+    hora_inicio = models.TimeField()
+    hora_fin = models.TimeField()
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    sala = models.CharField(max_length=100, blank=True)
+    docente = models.CharField(max_length=150, blank=True)
+
+    class Meta:
+        ordering = ['dia_semana', 'hora_inicio', 'asignatura']
+        constraints = [
+            models.CheckConstraint(condition=models.Q(dia_semana__gte=1, dia_semana__lte=7), name='horario_personal_dia_valido'),
+            models.CheckConstraint(condition=models.Q(hora_fin__gt=models.F('hora_inicio')), name='horario_personal_horas_validas'),
+            models.CheckConstraint(condition=models.Q(fecha_fin__gte=models.F('fecha_inicio')), name='horario_personal_fechas_validas'),
+        ]
+
+    def __str__(self):
+        return f'{self.asignatura} · {self.get_dia_semana_display()} · {self.hora_inicio:%H:%M}'
+
+
 class ImportacionAcademica(models.Model):
     """Auditoría y ubicación PRIVADA de los archivos revisados por el equipo."""
     TIPO = [('malla', 'Malla curricular'), ('oferta', 'Oferta semestral')]

@@ -9,35 +9,20 @@
       {% csrf_token %}
       <input type="hidden" name="tipo" value="reunion" data-tipo-input>
       <div class="flex items-start justify-between gap-3">
-        <div><p class="text-sm text-muted">Agenda académica · Publicación compartida</p>
+        <div><p class="text-sm text-muted">Mi agenda personal</p>
           <h3 id="edunova-nuevo-titulo" data-titulo-modal class="font-display text-xl font-semibold">Nueva reunión</h3></div>
         <button type="button" class="btn-secondary px-3 py-1" data-cerrar-nuevo aria-label="Cerrar ventana">✕</button>
       </div>
-      <p class="text-sm text-muted">{% if es_director %}La reunión o evento aparecerá en la agenda de la carrera seleccionada.{% else %}La actividad se compartirá con tu sección.{% endif %}</p>
+      <p class="text-sm text-muted">Esta actividad aparecerá únicamente en tu calendario.</p>
       <label class="block text-sm">Título<input name="titulo" maxlength="150" required class="surface-control border rounded-lg w-full p-2 mt-1"></label>
       <label class="block text-sm">Descripción (opcional)<textarea name="descripcion" rows="2" class="surface-control border rounded-lg w-full p-2 mt-1"></textarea></label>
-      {% if es_director %}
-        <label class="block text-sm">Carrera
-          <select name="carrera" required class="surface-control border rounded-lg w-full p-2 mt-1">
-            <option value="">Selecciona una carrera</option>
-            {% for c in carreras_director %}<option value="{{ c.pk }}" {% if carrera_seleccionada == c.pk|stringformat:'s' %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}
-          </select></label>
-        <input type="hidden" name="alcance" value="carrera">
-        <p class="text-xs text-muted">Se publicará para la carrera seleccionada, no para una sección particular.</p>
-      {% else %}
-        <label class="block text-sm">Asignatura y sección
-          <select name="seccion" required class="surface-control border rounded-lg w-full p-2 mt-1">
-            <option value="">Selecciona la sección</option>
-            {% for s in secciones %}<option value="{{ s.pk }}" {% if seccion_seleccionada == s.pk|stringformat:'s' %}selected{% endif %}>{{ s.asignatura_visible }} — {{ s.codigo_visible }}</option>{% endfor %}
-          </select></label>
-      {% endif %}
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <label class="text-sm">Fecha<input type="date" name="fecha" required class="surface-control border rounded-lg w-full p-2 mt-1"></label>
         <label class="text-sm">Hora de inicio<input type="time" name="hora_inicio" class="surface-control border rounded-lg w-full p-2 mt-1"></label>
         <label class="text-sm">Hora de término<input type="time" name="hora_fin" class="surface-control border rounded-lg w-full p-2 mt-1"></label>
       </div>
       <div class="flex justify-end gap-2 pt-2"><button type="button" data-cerrar-nuevo class="btn-secondary px-4 py-2">Cancelar</button>
-        <button type="submit" class="btn-primary px-4 py-2">Publicar actividad</button></div>
+        <button type="submit" class="btn-primary px-4 py-2">Guardar actividad</button></div>
     </form>
   </dialog>
 </div>

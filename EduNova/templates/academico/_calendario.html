@@ -1,14 +1,14 @@
-<div id="calendario-mensual" class="card p-5">
+<p class="sm:hidden text-sm text-muted mb-2">Desliza el calendario horizontalmente para ver todos los días.</p><div class="calendario-scroll"><div id="calendario-mensual" class="card p-5">
     <div class="flex items-center justify-between mb-4">
         <h3 class="font-display font-semibold">{{ mes_nombre }} {{ anio }}</h3>
         <div class="flex gap-2">
             <button
-                hx-get="?year={{ prev_year }}&month={{ prev_month }}{% if estudiante %}&estudiante={{ estudiante.id }}{% endif %}{% if seccion_seleccionada %}&seccion={{ seccion_seleccionada }}{% endif %}{% if carrera_seleccionada %}&carrera={{ carrera_seleccionada }}{% endif %}"
-                hx-target="#calendario-mensual" hx-swap="outerHTML"
+                hx-get="?year={{ prev_year }}&month={{ prev_month }}{% if estudiante %}&estudiante={{ estudiante.id }}{% endif %}"
+                hx-target="closest .calendario-scroll" hx-select=".calendario-scroll" hx-swap="outerHTML"
                 class="btn-secondary text-sm px-2 py-1" aria-label="Mes anterior">‹</button>
             <button
-                hx-get="?year={{ next_year }}&month={{ next_month }}{% if estudiante %}&estudiante={{ estudiante.id }}{% endif %}{% if seccion_seleccionada %}&seccion={{ seccion_seleccionada }}{% endif %}{% if carrera_seleccionada %}&carrera={{ carrera_seleccionada }}{% endif %}"
-                hx-target="#calendario-mensual" hx-swap="outerHTML"
+                hx-get="?year={{ next_year }}&month={{ next_month }}{% if estudiante %}&estudiante={{ estudiante.id }}{% endif %}"
+                hx-target="closest .calendario-scroll" hx-select=".calendario-scroll" hx-swap="outerHTML"
                 class="btn-secondary text-sm px-2 py-1" aria-label="Mes siguiente">›</button>
         </div>
     </div>
@@ -23,36 +23,35 @@
             <div tabindex="0" class="edunova-zoom-day {% if dia.clases %}edunova-day-has-classes{% endif %} min-h-[4.5rem] rounded-lg p-1 text-xs {% if dia.numero %}surface-subtle{% endif %} {% if dia.es_hoy %}dia-hoy{% endif %}">
                 {% if dia.numero %}
                 <p class="font-medium text-muted mb-1">{{ dia.numero }}</p><div class="edunova-day-detail" aria-hidden="true"><strong>{{ dia.numero }} de {{ mes_nombre|lower }}</strong><span>{% for clase in dia.clases %}<span class="edunova-day-entry">{{ clase.asignatura }} · {{ clase.codigo }}: {% for bloque in clase.bloques %}{{ bloque.inicio|time:"H:i" }}–{{ bloque.fin|time:"H:i" }}{% if not forloop.last %}; {% endif %}{% endfor %}</span>{% endfor %}{% for evento in dia.eventos %}<span class="edunova-day-entry">{% if evento.hora_inicio %}{{ evento.hora_inicio|time:"H:i" }} · {% endif %}{{ evento.titulo }}</span>{% endfor %}{% for tarea in dia.tareas %}<span class="edunova-day-entry">{% if tarea.hora_inicio %}{{ tarea.hora_inicio|time:"H:i" }} · {% endif %}{{ tarea.titulo }}{% if tarea.prioridad == "alta" %} ❗{% endif %}</span>{% endfor %}{% if not dia.clases and not dia.eventos and not dia.tareas %}<span>Sin actividades</span>{% endif %}</span></div>
-                {% for clase in dia.clases|slice:":2" %}
+                {% for clase in dia.clases %}
                 <div class="edunova-calendar-class edunova-class-slot">
                     <button type="button" class="edunova-class-trigger"
-                            aria-label="{{ clase.asignatura }}, sección {{ clase.codigo }}. Ver horarios"
+                            aria-label="{{ clase.asignatura }}, {{ clase.codigo }}. Ver horarios"
                             aria-describedby="horario-{{ anio }}-{{ mes }}-{{ dia.numero }}-{{ clase.seccion_id }}"
                             title="{{ clase.asignatura }} · {{ clase.codigo }}: {% for bloque in clase.bloques %}{{ bloque.inicio|time:'H:i' }}–{{ bloque.fin|time:'H:i' }}{% if not forloop.last %}; {% endif %}{% endfor %}">
                         <span class="edunova-class-subject">{{ clase.asignatura }}</span>
-                        <span class="edunova-class-code">{{ clase.codigo }}</span>
+                        <span class="edunova-class-code">{{ clase.inicio|time:"H:i" }}–{{ clase.fin|time:"H:i" }}{% if clase.sala %} · {{ clase.sala }}{% endif %}</span>
                     </button>
                     <div class="edunova-class-hours" role="tooltip"
                          id="horario-{{ anio }}-{{ mes }}-{{ dia.numero }}-{{ clase.seccion_id }}">
                         <strong>{{ clase.asignatura }}</strong>
-                        <span class="edunova-class-hours-section">Sección {{ clase.codigo }}</span>
-                        <span class="edunova-class-hours-caption">Horario de clases:</span>
+                        <span class="edunova-class-hours-section">{{ clase.codigo }}</span>
+                        {% if clase.docente %}<span class="block">Docente: {{ clase.docente }}</span>{% endif %}<span class="edunova-class-hours-caption">Horario de clases:</span>
                         {% for bloque in clase.bloques %}
                         <span class="edunova-class-time-range">{{ bloque.inicio|time:'H:i' }} – {{ bloque.fin|time:'H:i' }}</span>
                         {% endfor %}
                     </div>
                 </div>
                 {% endfor %}
-                {% if dia.clases|length > 2 %}<span class="edunova-calendar-more">+{{ dia.clases|length|add:'-2' }} clases · ver detalle</span>{% endif %}
                 {% for evento in dia.eventos %}
-                <div class="chip chip-{{ evento.tipo }} block truncate mb-0.5" title="{{ evento.titulo }}">
-                    {{ evento.titulo }}
+                <div class="chip chip-{{ evento.tipo }} block mb-0.5" title="{{ evento.titulo }}">
+                    {% if evento.hora_inicio %}{{ evento.hora_inicio|time:"H:i" }}{% if evento.hora_fin %}–{{ evento.hora_fin|time:"H:i" }}{% endif %} · {% endif %}{{ evento.titulo }}
                 </div>
                 {% endfor %}
                 {% for tarea in dia.tareas %}
                 <div class="edunova-calendar-task" style="--task-color:{{ tarea.color }}" title="{{ tarea.get_tipo_actividad_display }} · {{ tarea.titulo }}{% if tarea.hora_inicio %} · {{ tarea.hora_inicio|time:'H:i' }}{% endif %}">
                   {% if tarea.prioridad == 'alta' %}<span class="edunova-calendar-urgent" aria-label="Alta prioridad">❗</span>{% endif %}
-                  {% if tarea.tipo_actividad != "tarea" %}{{ tarea.get_tipo_actividad_display }}: {% endif %}{{ tarea.titulo }}
+                  {% if tarea.hora_inicio %}{{ tarea.hora_inicio|time:'H:i' }} · {% endif %}{% if tarea.tipo_actividad != "tarea" %}{{ tarea.get_tipo_actividad_display }}: {% endif %}{{ tarea.titulo }}
                 </div>
                 {% endfor %}
                 {% endif %}
@@ -60,4 +59,6 @@
             {% endfor %}
         {% endfor %}
     </div>
+</div>
+
 </div>

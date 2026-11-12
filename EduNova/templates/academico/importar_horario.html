@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Importar mi horario · EduNova{% endblock %}
+{% block content %}
+<section class="card p-5 md:p-8 max-w-6xl mx-auto">
+  <a href="{% url 'usuarios:post_login_redirect' %}" class="underline">Volver a mi calendario</a>
+  <h1 class="font-display text-3xl font-semibold mt-4">Importar mi horario</h1>
+  <p class="mt-3 text-muted">Descarga la plantilla, completa un bloque de clase por fila en la hoja «Horario» y carga el archivo para revisarlo. La hoja «Ejemplo» sirve de guía y no se importa.</p>
+  <p class="text-muted mt-2">Usa días de Lunes a Domingo, horas de 24 horas (08:30) y fechas AAAA-MM-DD. Asignatura, día, horas y fechas son obligatorios. Sala y docente son opcionales. Máximo 300 bloques y 5 MB.</p>
+  <a href="{% url 'academico:plantilla_horario' %}" class="btn-secondary inline-block px-4 py-3 my-5">Descargar plantilla XLSX</a>
+  {% if error %}<div role="alert" class="registro-aviso mb-5" style="white-space:pre-line">{{ error }}</div>{% endif %}
+  <form method="post" enctype="multipart/form-data" class="space-y-3 mb-6">
+    {% csrf_token %}<input type="hidden" name="accion" value="previsualizar">
+    <label class="block font-semibold" for="archivo-horario">Archivo de horario</label>
+    <input id="archivo-horario" name="archivo" type="file" accept=".xlsx" required class="surface-control border rounded-lg w-full p-3">
+    <button class="btn-primary px-4 py-3">Revisar horario</button>
+  </form>
+  {% if previo %}
+  <h2 class="text-xl font-semibold">Revisa tu horario antes de importar ({{ previo|length }} bloque{{ previo|length|pluralize }})</h2>
+  <div class="overflow-x-auto my-4"><table class="w-full text-sm horario-tabla"><thead><tr><th>Asignatura</th><th>Día (1=Lun)</th><th>Inicio</th><th>Fin</th><th>Desde</th><th>Hasta</th><th>Sala</th><th>Docente</th></tr></thead><tbody>
+    {% for b in previo %}<tr><td>{{ b.asignatura }}</td><td>{{ b.dia_semana }}</td><td>{{ b.hora_inicio }}</td><td>{{ b.hora_fin }}</td><td>{{ b.fecha_inicio }}</td><td>{{ b.fecha_fin }}</td><td>{{ b.sala }}</td><td>{{ b.docente }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  <form method="post" class="space-y-4">{% csrf_token %}<input type="hidden" name="accion" value="aplicar">
+    <label class="block"><input type="checkbox" name="confirmar" value="si" required> Reemplazar mi horario personal actual por estos bloques. Mis tareas y actividades se conservarán.</label>
+    <button class="btn-primary px-4 py-3">Confirmar e importar</button>
+  </form>
+  <form method="post" class="mt-3">{% csrf_token %}<input type="hidden" name="accion" value="cancelar"><button class="btn-secondary px-4 py-2">Cancelar revisión</button></form>
+  {% endif %}
+  <h2 class="text-xl font-semibold mt-8 mb-4">Mi horario actual</h2>
+  <div class="overflow-x-auto"><table class="w-full horario-tabla"><thead><tr><th>Asignatura</th><th>Día</th><th>Horas</th><th>Período</th><th>Sala</th><th>Docente</th></tr></thead><tbody>
+    {% for b in bloques_actuales %}<tr><td>{{ b.asignatura }}</td><td>{{ b.get_dia_semana_display }}</td><td>{{ b.hora_inicio|time:'H:i' }}–{{ b.hora_fin|time:'H:i' }}</td><td>{{ b.fecha_inicio|date:'d/m/Y' }}–{{ b.fecha_fin|date:'d/m/Y' }}</td><td>{{ b.sala }}</td><td>{{ b.docente }}</td></tr>
+    {% empty %}<tr><td colspan="6">Todavía no has importado un horario.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

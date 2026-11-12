@@ -1,4 +1,4 @@
-"""Validaciones del nuevo selector Diurno/Vespertino del registro estudiantil."""
+"""Conservación del catálogo histórico y retirada de sus campos del registro."""
 from django.test import TestCase
 from django.urls import reverse
 from academico.models import Carrera, Asignatura, CarreraAsignatura, Curso, Estudiante
@@ -20,27 +20,28 @@ class ModalidadRegistroTests(TestCase):
         self.assertEqual(secciones[self.diurna.pk], 'diurno')
         self.assertEqual(secciones[self.vespertina.pk], 'vespertino')
 
-    def test_muestra_modalidad_y_no_solicita_mencion_estudiante(self):
+    def test_no_solicita_modalidad_ni_menciones(self):
         respuesta = self.client.get(reverse('usuarios:registro'))
         self.assertEqual(respuesta.status_code, 200)
-        self.assertContains(respuesta, 'name="modalidad"')
+        self.assertNotContains(respuesta, 'name="modalidad"')
         self.assertNotContains(respuesta, 'name="mencion_id"')
-        self.assertContains(respuesta, 'menciones_docente')
+        self.assertNotContains(respuesta, 'menciones_docente')
 
-    def test_rechaza_modalidad_invalida(self):
+    def test_datos_academicos_no_sustituyen_datos_basicos(self):
         respuesta = self.client.post(reverse('usuarios:registro'), {
             'rol': 'estudiante', 'carrera_id': str(self.carrera.pk),
             'anio_ingreso': '2026', 'modalidad': 'nocturno',
             'secciones': str(self.diurna.pk),
         })
         self.assertEqual(respuesta.status_code, 200)
-        self.assertContains(respuesta, 'Selecciona una modalidad válida: Diurno o Vespertino.')
+        self.assertIn('rut', respuesta.context['form'].errors)
 
-    def test_rechaza_seccion_de_modalidad_distinta(self):
+    def test_parametros_antiguos_no_matriculan_sin_cuenta(self):
         respuesta = self.client.post(reverse('usuarios:registro'), {
             'rol': 'estudiante', 'carrera_id': str(self.carrera.pk),
             'anio_ingreso': '2026', 'modalidad': 'diurno',
             'secciones': str(self.vespertina.pk),
         })
         self.assertEqual(respuesta.status_code, 200)
-        self.assertContains(respuesta, 'Las secciones deben corresponder a tu carrera y modalidad seleccionadas.')
+        self.assertIn('email', respuesta.context['form'].errors)
+        self.assertFalse(Estudiante.objects.exists())

@@ -477,3 +477,27 @@ html.dark .edunova-prioridad-alta {background:#4C2424;color:#FFE4E4;border-color
 .edunova-nuevo-acciones button { min-height: 2.75rem; white-space:nowrap; }
 .edunova-nuevo-acciones button:focus-visible { outline: 3px solid var(--amanecer); outline-offset: 3px; }
 @media(max-width:640px) { .edunova-nuevo-acciones { justify-content:flex-start; } }
+
+/* Tipografía y calendario legibles para proyección. */
+:root { --tamano-base: 20px; }
+html { font-size: var(--tamano-base); }
+html.a11y-texto-grande { --tamano-base: 22px; }
+html.a11y-texto-xl { --tamano-base: 24px; }
+body { line-height: 1.6; }
+.text-xs { font-size: .85rem !important; line-height: 1.5; }
+.text-sm { font-size: .95rem !important; line-height: 1.55; }
+input, select, textarea { max-width: 100%; font-size: 1rem; }
+select#id_rol { width: 100%; padding: .65rem; border: 1px solid var(--linea); border-radius: .6rem; background: var(--fondo-input); color: var(--tinta); }
+.calendario-scroll { overflow-x: auto; padding-bottom: .7rem; }
+#calendario-mensual { min-width: 850px; }
+.edunova-class-subject { max-height: none; overflow: visible; font-size: .85rem; }
+.edunova-class-code { font-size: .8rem; overflow: visible; white-space: normal; }
+.edunova-calendar-task, .edunova-calendar-class { font-size: .85rem; }
+#calendario-mensual .chip { white-space: normal; font-size: .85rem; }
+.horario-tabla th, .horario-tabla td { padding: .7rem .8rem; text-align: left; border-bottom: 1px solid var(--linea); vertical-align: top; }
+.horario-tabla th { background: var(--lino-2); }
+@media (min-width: 1024px) { #portal-estudiante-grid { grid-template-columns: minmax(0, 1fr); } #portal-estudiante-grid > .lg\:col-span-2 { grid-column: auto; } #portal-estudiante-grid > aside { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; } }
+
+#portal-estudiante-grid { grid-template-columns: minmax(0, 1fr); }
+#portal-estudiante-grid > div, #seccion-calendario { min-width: 0; }
+.calendario-scroll { min-width: 0; max-width: 100%; }

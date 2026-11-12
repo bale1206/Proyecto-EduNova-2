@@ -11,6 +11,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import login
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.core.mail import EmailMessage
@@ -162,9 +163,11 @@ def verificar_registro_rol(request):
                     # no se habilita la cuenta si el desafío no fue confirmado.
                     # La verificación del dominio no garantiza un cargo institucional.
                     Usuario.objects.filter(pk=usuario.pk, is_active=False).update(is_active=True)
+                    usuario.is_active = True
+                    login(request, usuario)
                     messages.success(request,
-                        '¡Correo confirmado! Tu cuenta está activa. Ya puedes iniciar sesión.')
-                    return redirect('usuarios:login')
+                        'Tu correo fue verificado. ¡Bienvenido a EduNova!')
+                    return redirect('usuarios:post_login_redirect')
                 else:
                     desafio.intentos_restantes -= 1
                     desafio.save(update_fields=['intentos_restantes'])

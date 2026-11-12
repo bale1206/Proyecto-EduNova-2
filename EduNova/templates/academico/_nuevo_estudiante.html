@@ -22,11 +22,6 @@
         <input name="titulo" required maxlength="160" placeholder="Ej. Preparar evaluación de inglés" class="surface-control border rounded-lg w-full p-2 mt-1"></label>
       <label class="block text-sm">Descripción (opcional)
         <textarea name="descripcion" rows="2" class="surface-control border rounded-lg w-full p-2 mt-1" placeholder="Información para recordar o preparar"></textarea></label>
-      <label class="block text-sm">Asignatura y sección
-        <select name="seccion" required class="surface-control border rounded-lg w-full p-2 mt-1">
-          <option value="">Selecciona una asignatura</option>
-          {% for sec in secciones %}<option value="{{ sec.pk }}" {% if seccion_seleccionada == sec.pk|stringformat:'s' %}selected{% endif %}>{{ sec.codigo_asignatura_visible }} · {{ sec.asignatura_visible }} — {{ sec.codigo_visible }}</option>{% endfor %}
-        </select></label>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label class="text-sm">Fecha
           <input type="date" name="fecha_limite" required class="surface-control border rounded-lg w-full p-2 mt-1"></label>

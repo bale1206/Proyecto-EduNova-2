@@ -19,18 +19,17 @@ class RegistroForm(UserCreationForm):
     solo se crea mediante manage.py createsuperuser.
     """
     rol = forms.ChoiceField(
-        choices=[(r.value, r.label) for r in Usuario.ROLES_ACTIVOS],
-        widget=forms.RadioSelect,
-        label='Soy...',
+        choices=[('estudiante', 'Estudiante'), ('docente', 'Docente'), ('administrativo', 'Director de carrera')],
+        label='Tipo de cuenta',
     )
 
     class Meta:
         model = Usuario
-        fields = ['rut', 'first_name', 'apellidos', 'email', 'telefono', 'rol']
+        fields = ['rol', 'rut', 'first_name', 'apellidos', 'telefono', 'email']
         labels = {
             'first_name': 'Nombre',
             'apellidos': 'Apellido',
-            'email': 'Correo electrónico',
+            'email': 'Correo electrónico institucional',
             'telefono': 'Teléfono (opcional)',
         }
 
@@ -76,7 +75,8 @@ class RegistroForm(UserCreationForm):
         return rut
 
     def clean_password2(self):
-        password = super().clean_password2()
+        # Django 6 valida la coincidencia en clean(), no en clean_password2().
+        password = self.cleaned_data.get('password2')
         if password and not password_minimo_registro(password):
             raise ValidationError('Utiliza al menos 8 caracteres y combina dos tipos: minúsculas, mayúsculas, números o símbolos.')
         return password

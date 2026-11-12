@@ -31,7 +31,7 @@ class VerificacionPersonalTests(TestCase):
         from django.conf import settings
         correo = f'validacion@{settings.EDUNOVA_ROLE_EMAIL_DOMAINS[rol]}'
         datos = {
-            'rol': rol, 'rut': '12456789-6', 'first_name': 'Prueba', 'apellidos': 'Personal',
+            'rol': rol, 'rut': '12345678-5', 'first_name': 'Prueba', 'apellidos': 'Personal',
             'email': correo, 'telefono': '', 'password1': 'ClaveCompleja_2026!',
             'password2': 'ClaveCompleja_2026!', 'carreras': [str(self.carrera.pk)],
         }
@@ -45,14 +45,14 @@ class VerificacionPersonalTests(TestCase):
     def test_docente_codigo_correcto_activa_cuenta(self, _codigo):
         respuesta = self.client.post(reverse('usuarios:registro'), self._datos('docente'))
         self.assertRedirects(respuesta, reverse('usuarios:verificar_registro_rol'))
-        usuario = get_user_model().objects.get(rut='12456789-6')
+        usuario = get_user_model().objects.get(rut='12345678-5')
         self.assertFalse(usuario.is_active)
         self.assertEqual(self.client.session[SESSION_KEY_ROLES], usuario.pk)
         self.assertIn('000042', mail.outbox[0].body)
         self.assertNotEqual(usuario.verificacion_correo_rol.codigo_hash, '000042')
         verificar = self.client.post(reverse('usuarios:verificar_registro_rol'),
                                     {'accion': 'verificar', 'codigo': '000042'})
-        self.assertRedirects(verificar, reverse('usuarios:login'))
+        self.assertRedirects(verificar, reverse('usuarios:post_login_redirect'), fetch_redirect_response=False)
         usuario.refresh_from_db()
         self.assertTrue(usuario.is_active)  # se activa tras confirmar el código
         self.assertIsNotNone(usuario.verificacion_correo_rol.confirmado_en)
@@ -65,7 +65,7 @@ class VerificacionPersonalTests(TestCase):
     def test_director_verificado_activa_cuenta(self, _codigo):
         respuesta = self.client.post(reverse('usuarios:registro'), self._datos('administrativo'))
         self.assertRedirects(respuesta, reverse('usuarios:verificar_registro_rol'))
-        usuario = get_user_model().objects.get(rut='12456789-6')
+        usuario = get_user_model().objects.get(rut='12345678-5')
         self.assertFalse(usuario.is_active)
         self.client.post(reverse('usuarios:verificar_registro_rol'),
                          {'accion': 'verificar', 'codigo': '000042'})
@@ -90,7 +90,7 @@ class VerificacionPersonalTests(TestCase):
         url = reverse('usuarios:verificar_registro_rol')
         for _ in range(5):
             self.client.post(url, {'accion': 'verificar', 'codigo': '111111'})
-        usuario = get_user_model().objects.get(rut='12456789-6')
+        usuario = get_user_model().objects.get(rut='12345678-5')
         self.assertEqual(usuario.verificacion_correo_rol.intentos_restantes, 0)
         self.client.post(url, {'accion': 'verificar', 'codigo': '000042'})
         usuario.verificacion_correo_rol.refresh_from_db()
@@ -110,4 +110,4 @@ class VerificacionPersonalTests(TestCase):
             with patch('usuarios.verificacion_roles._enviar_email', side_effect=ErrorCorreoRol('SMTP falló')):
                 respuesta = self.client.post(reverse('usuarios:registro'), self._datos('docente'))
         self.assertEqual(respuesta.status_code, 200)
-        self.assertFalse(get_user_model().objects.filter(rut='12456789-6').exists())
+        self.assertFalse(get_user_model().objects.filter(rut='12345678-5').exists())

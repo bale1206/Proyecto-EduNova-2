@@ -204,10 +204,8 @@ EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '20'))
 # Verificación de correo de nuevos docentes y directores. Configuración por variante.
 # El dominio se valida en el SERVIDOR antes de guardar la cuenta.
 EDUNOVA_ROLE_EMAIL_DOMAINS = {
-    'docente': 'gmail.com',
-    'administrativo': 'gmail.com',
+    'docente': 'profesor.duoc.cl',
+    'administrativo': 'duoc.cl',
 }
 
-# Etapas: en el ZIP A primero comprobar la entrega de correo SMTP.
-# El equipo habilita los registros docentes/directores DESPUÉS de comprobar recepción.
-EDUNOVA_ROLE_OTP_READY = os.getenv('EDUNOVA_ROLE_OTP_READY', 'false').lower() in ('1', 'true', 'yes', 'on')
+# Los tres perfiles requieren verificación de correo antes de iniciar sesión.

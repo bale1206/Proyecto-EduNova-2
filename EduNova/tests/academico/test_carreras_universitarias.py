@@ -13,4 +13,5 @@ class PortalUniversitarioTests(TestCase):
         self.client.force_login(docente)
         response = self.client.get(reverse('academico:home_docente'), {'seccion': otra.pk})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['seccion_seleccionada'], '')
+        self.assertNotContains(response, 'name="seccion"')
+        self.assertNotContains(response, 'Matemática')

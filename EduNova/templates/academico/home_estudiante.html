@@ -36,31 +36,7 @@
  <div class="space-y-6 lg:col-span-2">
   <section id="seccion-calendario" class="card p-5" aria-labelledby="calendario-titulo">
    <div class="flex items-center justify-between gap-2 mb-4 flex-wrap"><h2 id="calendario-titulo" class="font-display text-xl font-semibold">Calendario académico</h2><div class="flex items-center gap-2">{% include 'academico/_nuevo_estudiante.html' %}<button type="button" id="calendario-expandir" aria-expanded="false" aria-controls="seccion-calendario" class="btn-secondary text-sm px-3 py-2">⛶ Ampliar calendario</button></div></div>
-   <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
-     <p class="text-sm text-muted">Secciones matriculadas: {{ secciones.count }}</p>
-     <a href="{% url 'academico:ajustar_secciones_estudiante' %}" class="btn-secondary px-3 py-2 text-sm">Revisar o corregir mis secciones</a>
-   </div>
-   {% if secciones %}
-   <label for="seccion-estudiante" class="block text-sm font-medium mb-2">Mostrar actividades de</label>
-   <select id="seccion-estudiante" class="surface-control w-full rounded-lg border p-2 mb-4" style="border-color:var(--linea)" onchange="location.href='?seccion='+encodeURIComponent(this.value)">
-      <option value="">Todas mis asignaturas</option>
-      {% for sec in secciones %}<option value="{{ sec.pk }}" {% if seccion_seleccionada == sec.pk|stringformat:'s' %}selected{% endif %}>{{ sec.codigo_asignatura_visible }} · {{ sec.asignatura_visible }} — {{ sec.codigo_visible }}</option>{% endfor %}
-   </select>
-   <details class="mb-3 rounded-lg border" style="border-color:var(--linea)">
-     <summary class="cursor-pointer font-medium text-sm p-3">Ver mis secciones y horarios inscritos</summary>
-     <div class="px-3 pb-3 space-y-2 text-sm">
-       {% for sec in secciones %}
-       <div class="rounded-lg p-2 surface-subtle">
-         <strong>{{ sec.codigo_asignatura_visible }} · {{ sec.asignatura_visible }} — {{ sec.codigo_visible }}</strong>
-         <span class="block text-muted mt-1">{% for horario in sec.horarios.all %}{{ horario }}{% if not forloop.last %}; {% endif %}{% empty %}Horario pendiente de publicación{% endfor %}</span>
-       </div>
-       {% endfor %}
-     </div>
-   </details>
-   {% if horarios_sin_cargar %}
-     <p class="text-sm text-muted mb-3">{{ horarios_sin_cargar }} sección(es) todavía sin horario cargado. Sus clases aparecerán al importar la oferta con horarios.</p>
-   {% endif %}
-   {% else %}<p class="text-sm text-muted mb-3">No aparecen secciones matriculadas. Usa «Revisar o corregir mis secciones» para seleccionar las del semestre actual.</p>{% endif %}
+   {% include 'academico/_acceso_horario.html' %}
    {% include 'academico/_calendario.html' %}
   </section>
   <section class="card p-5" aria-labelledby="tareas-titulo">
@@ -93,12 +69,10 @@
   </section>
  </div>
  <aside class="space-y-6">
-  <div class="card p-5"><h2 class="font-display font-semibold mb-3">Mi información académica</h2>
+  <div class="card p-5"><h2 class="font-display font-semibold mb-3">Mi cuenta</h2>
    <p class="text-sm"><strong>Nombre:</strong> {{ user.nombre_completo }}</p>
    <p class="text-sm mt-2"><strong>Código EduNova:</strong> {{ user.codigo_edunova }}</p>
-   {% if perfil %}<p class="text-sm mt-2"><strong>Registro:</strong> {{ perfil.codigo_edunova }}</p>{% endif %}
-   <p class="text-sm mt-2"><strong>Carrera:</strong> {{ perfil.carrera.nombre|default:"Sin asignar" }}</p>
-   <p class="text-sm mt-2"><strong>Asignaturas inscritas:</strong> {{ secciones.count }}</p>
+   <p class="mt-2"><strong>Bloques de horario:</strong> {{ bloques_horario.count }}</p>
    <p class="text-xs text-muted mt-4">Las calificaciones y créditos se incorporarán en una etapa posterior.</p>
   </div>
   <div class="card p-5"><h2 class="font-display font-semibold mb-3">Próximas actividades</h2>

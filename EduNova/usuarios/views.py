@@ -28,14 +28,14 @@ def login_view(request):
         password = form.cleaned_data['password']
         user = authenticate(request, username=rut, password=password)
         if user is not None:
-            # Las cuentas de personal creadas con OTP no pueden saltarse
-            # la verificación aunque alguien active is_active accidentalmente.
-            if user.rol in (Usuario.Rol.DOCENTE, Usuario.Rol.ADMINISTRATIVO):
-                from .models import VerificacionCorreoRol
-                desafio = VerificacionCorreoRol.objects.filter(usuario=user).first()
-                if desafio is not None and desafio.confirmado_en is None:
-                    messages.error(request, 'Primero debes verificar tu correo electrónico.')
-                    return render(request, 'usuarios/login.html', {'form': form})
+            # También protege cuentas pendientes activadas por error desde administración.
+            from .models import VerificacionCorreoEstudiante, VerificacionCorreoRol
+            modelo = (VerificacionCorreoEstudiante if user.rol == Usuario.Rol.ESTUDIANTE
+                      else VerificacionCorreoRol)
+            desafio = modelo.objects.filter(usuario=user).first()
+            if desafio is not None and desafio.confirmado_en is None:
+                messages.error(request, 'Primero debes verificar tu correo electrónico.')
+                return render(request, 'usuarios/login.html', {'form': form})
             login(request, user)
             return redirect('usuarios:post_login_redirect')
         messages.error(request, 'RUT o contraseña incorrectos.')
