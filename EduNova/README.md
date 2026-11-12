@@ -28,6 +28,8 @@ comandos usando directamente el intérprete del entorno:
 
 ```powershell
 .\venv\Scripts\python.exe -m pip install -r requirements.txt
+$secret = & .\venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(50))"
+[System.IO.File]::AppendAllText((Join-Path (Get-Location) ".env"), "`r`nDJANGO_SECRET_KEY=$secret`r`n", [System.Text.UTF8Encoding]::new($false))
 .\venv\Scripts\python.exe manage.py check
 pip install python-dotenv "psycopg[binary]"    
 .\venv\Scripts\python.exe manage.py makemigrations
@@ -35,6 +37,10 @@ pip install python-dotenv "psycopg[binary]"
 .\venv\Scripts\python.exe manage.py seed_demo
 .\venv\Scripts\python.exe manage.py runserver
 ```
+
+El comando anterior agrega una clave secreta aleatoria al archivo local
+`.env` (ignorado por Git). Ejecútalo una sola vez; si ya tienes una clave,
+consérvala y no la compartas ni la subas al repositorio.
 
 **Símbolo del sistema (Windows):**
 
