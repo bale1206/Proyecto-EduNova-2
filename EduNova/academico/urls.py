@@ -9,6 +9,7 @@ app_name = 'academico'
 urlpatterns = [
     path('horario/', horario_vistas.importar_horario, name='importar_horario'),
     path('horario/plantilla/', horario_vistas.plantilla_horario, name='plantilla_horario'),
+    path('horario/exportar/', horario_vistas.exportar_horario, name='exportar_horario'),
     path('administrativo/secciones/opciones/', views.opciones_seccion, name='opciones_seccion'),
     path('csv/', csv_views.panel_csv, name='panel_csv'),
     path('csv/<str:tipo>/exportar/', csv_views.exportar_csv, name='exportar_csv'),
