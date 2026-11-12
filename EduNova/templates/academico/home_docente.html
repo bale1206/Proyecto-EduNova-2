@@ -54,13 +54,6 @@
     </div>
 
     <div class="lg:col-span-2">
-        <div class="card p-4 mb-4">
-            <label for="seccion-docente" class="block text-sm font-medium mb-2">Filtrar calendario por asignatura y sección</label>
-            <select id="seccion-docente" class="surface-control w-full rounded-lg border p-2" style="border-color:var(--linea)" onchange="location.href='?seccion='+encodeURIComponent(this.value)">
-                <option value="">Todas mis asignaturas</option>
-                {% for curso in cursos %}<option value="{{ curso.pk }}" {% if seccion_seleccionada == curso.pk|stringformat:'s' %}selected{% endif %}>{{ curso.asignatura }} · {{ curso.seccion }}</option>{% endfor %}
-            </select>
-        </div>
         {% include "academico/_calendario.html" %}
     </div>
 
