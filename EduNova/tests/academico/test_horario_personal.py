@@ -11,6 +11,7 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from academico.horario_personal import COLUMNAS, leer_horario, clases_personales_por_dia
+from academico.exportacion_horario import generar_horario_xlsx
 from academico.models import BloqueHorarioPersonal, Carrera, TareaEstudio, Evento
 from usuarios.models import Usuario
 
@@ -194,6 +195,59 @@ class ImportarHorarioTests(TestCase):
             self.assertIsNone(ev.curso_id)
         self.client.force_login(self.alumno)
         self.assertNotContains(self.client.get(reverse('academico:home_estudiante'), {'year':2026, 'month':11}), 'Reunión privada')
+
+    def test_exportacion_es_privada_y_reimportable(self):
+        self.client.force_login(self.alumno)
+        self.cargar()
+        self.aplicar()
+        self.client.force_login(self.docente)
+        otra = FILA.copy()
+        otra[0] = 'Asignatura secreta docente'
+        self.cargar([otra])
+        self.aplicar()
+        self.client.force_login(self.alumno)
+        respuesta = self.client.get(reverse('academico:exportar_horario'))
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta['Cache-Control'], 'private, no-store')
+        self.assertIn('mi-horario-edunova.xlsx', respuesta['Content-Disposition'])
+        datos = respuesta.content
+        self.assertTrue(datos.startswith(b'PK'))
+        self.assertNotIn(b'Asignatura secreta docente', datos)
+        bloques = leer_horario(datos, 'mi-horario-edunova.xlsx')
+        self.assertEqual(len(bloques), 1)
+        self.assertEqual(bloques[0]['asignatura'], 'Programación')
+        self.assertEqual(bloques[0]['dia_semana'], 1)
+        self.assertEqual(bloques[0]['hora_inicio'], '08:30:00')
+        self.assertContains(self.client.get(reverse('academico:importar_horario')),
+                            'Cómo completar tu horario: paso a paso')
+        self.assertContains(self.client.get(reverse('academico:home_estudiante')),
+                            'Exportar mi horario XLSX')
+        # El archivo exportado funciona como entrada del flujo de importación.
+        revisado = self.client.post(reverse('academico:importar_horario'), {
+            'archivo': SimpleUploadedFile('mi-horario-edunova.xlsx', datos),
+            'accion': 'previsualizar',
+        })
+        self.assertContains(revisado, 'Programación')
+        self.assertRedirects(self.aplicar(),
+                             reverse('academico:home_estudiante') + '?year=2026&month=11')
+
+    def test_exportacion_permisos_y_horario_vacio(self):
+        ruta = reverse('academico:exportar_horario')
+        self.assertEqual(self.client.get(ruta).status_code, 302)
+        self.client.force_login(self.director)
+        self.assertEqual(self.client.get(ruta).status_code, 403)
+        for usuario in (self.alumno, self.docente):
+            self.client.force_login(usuario)
+            respuesta = self.client.get(ruta)
+            self.assertEqual(respuesta.status_code, 200)
+            self.assertTrue(respuesta.content.startswith(b'PK'))
+            with self.assertRaisesMessage(ValueError, 'Completa entre'):
+                leer_horario(respuesta.content, 'mi-horario-edunova.xlsx')
+            self.assertContains(self.client.get(reverse('academico:importar_horario')),
+                                'Fecha inicio')
+            self.assertContains(self.client.get(reverse('academico:home_docente'
+                if usuario.rol == 'docente' else 'academico:home_estudiante')),
+                'Exportar mi horario XLSX')
 
     def test_querystring_antigua_no_filtra_ni_consulta_catalogos(self):
         Carrera.objects.create(nombre='Carrera histórica', escuela='Escuela')
