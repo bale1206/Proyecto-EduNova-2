@@ -1,8 +1,11 @@
 <div class="surface-subtle rounded-lg p-4 mb-4">
-  <p class="mb-3">Carga tus clases desde la plantilla XLSX. Cada bloque aparecerá en su día y horario, dentro del período indicado.</p>
+  <h3 class="font-semibold mb-2">Gestiona tu horario con Excel</h3>
+  <p class="mb-3">Descarga la plantilla para crear un horario, o exporta las clases que ya tienes para editarlas. Ambos archivos son compatibles con la importación.</p>
   <div class="flex flex-wrap gap-3">
-    <a class="btn-primary px-4 py-2" href="{% url 'academico:importar_horario' %}">Importar o reemplazar mi horario</a>
+    <a class="btn-primary px-4 py-2" href="{% url 'academico:importar_horario' %}">Importar o reemplazar horario</a>
     <a class="btn-secondary px-4 py-2" href="{% url 'academico:plantilla_horario' %}">Descargar plantilla XLSX</a>
+    <a class="btn-secondary px-4 py-2" href="{% url 'academico:exportar_horario' %}">Exportar mi horario XLSX</a>
   </div>
-  {% if not bloques_horario %}<p class="text-muted mt-3">Tu horario está vacío. Descarga y completa la plantilla para comenzar.</p>{% endif %}
+  <p class="text-muted mt-3">¿Es tu primera vez? <a class="underline" href="{% url 'academico:importar_horario' %}#guia-horario">Aprende a completar la planilla paso a paso</a>.</p>
+  {% if not bloques_horario %}<p class="text-muted mt-2">Tu horario está vacío. Descarga y completa la plantilla para comenzar.</p>{% endif %}
 </div>
