@@ -1,15 +1,15 @@
-<p class="sm:hidden text-sm text-muted mb-2">Desliza el calendario horizontalmente para ver todos los días.</p><div class="calendario-scroll"><div id="calendario-mensual" class="card p-5">
+<p class="sm:hidden text-sm text-muted mb-2">Desliza el calendario horizontalmente para ver todos los días.</p><div class="calendario-scroll"><div id="calendario-mensual" class="card p-5" aria-label="Calendario de {{ mes_nombre }} de {{ anio }}">
     <div class="flex items-center justify-between mb-4">
         <h3 class="font-display font-semibold">{{ mes_nombre }} {{ anio }}</h3>
         <div class="flex gap-2">
             <button
                 hx-get="?year={{ prev_year }}&month={{ prev_month }}"
                 hx-target="closest .calendario-scroll" hx-select=".calendario-scroll" hx-swap="outerHTML"
-                class="btn-secondary text-sm px-2 py-1" aria-label="Mes anterior">‹</button>
+                class="btn-secondary text-sm px-2 py-1" aria-label="Ver mes anterior">‹</button>
             <button
                 hx-get="?year={{ next_year }}&month={{ next_month }}"
                 hx-target="closest .calendario-scroll" hx-select=".calendario-scroll" hx-swap="outerHTML"
-                class="btn-secondary text-sm px-2 py-1" aria-label="Mes siguiente">›</button>
+                class="btn-secondary text-sm px-2 py-1" aria-label="Ver mes siguiente">›</button>
         </div>
     </div>
 
@@ -17,7 +17,7 @@
         <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
     </div>
 
-    <div class="grid grid-cols-7 gap-1">
+    <div class="grid grid-cols-7 gap-1" role="group" aria-label="Días del mes">
         {% for semana in semanas %}
             {% for dia in semana %}
             <div tabindex="0" class="edunova-zoom-day {% if dia.clases %}edunova-day-has-classes{% endif %} min-h-[4.5rem] rounded-lg p-1 text-xs {% if dia.numero %}surface-subtle{% endif %} {% if dia.es_hoy %}dia-hoy{% endif %}">
@@ -26,16 +26,16 @@
                 {% for clase in dia.clases %}
                 <div class="edunova-calendar-class edunova-class-slot">
                     <button type="button" class="edunova-class-trigger"
-                            aria-label="{{ clase.asignatura }}, {{ clase.codigo }}. Ver horarios"
+                            aria-label="{{ clase.asignatura }}: {{ clase.inicio|time:'H:i' }} a {{ clase.fin|time:'H:i' }}. Ver detalles"
                             aria-describedby="horario-{{ anio }}-{{ mes }}-{{ dia.numero }}-{{ clase.seccion_id }}"
                             title="{{ clase.asignatura }} · {{ clase.codigo }}: {% for bloque in clase.bloques %}{{ bloque.inicio|time:'H:i' }}–{{ bloque.fin|time:'H:i' }}{% if not forloop.last %}; {% endif %}{% endfor %}">
                         <span class="edunova-class-subject">{{ clase.asignatura }}</span>
-                        <span class="edunova-class-code">{{ clase.inicio|time:"H:i" }}–{{ clase.fin|time:"H:i" }}{% if clase.sala %} · {{ clase.sala }}{% endif %}</span>
+                        <span class="edunova-class-code"><strong>{{ clase.inicio|time:"H:i" }}–{{ clase.fin|time:"H:i" }}</strong>{% if clase.sala %} · {{ clase.sala }}{% endif %}</span>
                     </button>
                     <div class="edunova-class-hours" role="tooltip"
                          id="horario-{{ anio }}-{{ mes }}-{{ dia.numero }}-{{ clase.seccion_id }}">
                         <strong>{{ clase.asignatura }}</strong>
-                        <span class="edunova-class-hours-section">{{ clase.codigo }}</span>
+                        {% if clase.sala %}<span class="edunova-class-hours-section">Sala: {{ clase.sala }}</span>{% else %}<span class="edunova-class-hours-section">Horario personal</span>{% endif %}
                         {% if clase.docente %}<span class="block">Docente: {{ clase.docente }}</span>{% endif %}<span class="edunova-class-hours-caption">Horario de clases:</span>
                         {% for bloque in clase.bloques %}
                         <span class="edunova-class-time-range">{{ bloque.inicio|time:'H:i' }} – {{ bloque.fin|time:'H:i' }}</span>
