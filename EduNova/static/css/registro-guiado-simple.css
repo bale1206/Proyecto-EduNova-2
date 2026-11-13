@@ -1,0 +1,16 @@
+#registro-unificado [hidden]{display:none!important}
+#registro-unificado .registro-perfil[aria-pressed="true"]{outline:3px solid var(--rio);outline-offset:2px;background:var(--superficie)}
+#registro-unificado .registro-feedback{min-height:1.35rem;font-size:.92rem;line-height:1.45;margin-top:.3rem}
+#registro-unificado .registro-feedback[data-status="ok"]{color:#16744b;font-weight:600}
+#registro-unificado .registro-feedback[data-status="error"],#registro-unificado .registro-error-campo{color:#b91c1c;font-weight:600}
+html.dark #registro-unificado .registro-feedback[data-status="ok"]{color:#86efac}
+html.dark #registro-unificado .registro-feedback[data-status="error"],html.dark #registro-unificado .registro-error-campo{color:#fca5a5}
+#registro-unificado [aria-invalid="true"]{border:2px solid #dc2626!important}
+#registro-unificado button:disabled{opacity:.48;cursor:not-allowed}
+#registro-unificado #error-registro{color:#b91c1c}
+html.dark #registro-unificado #error-registro{color:#fca5a5}
+#registro-unificado .registro-clave-barra{height:8px;background:var(--linea);border-radius:8px;overflow:hidden;margin-top:.4rem}
+#registro-unificado .registro-clave-progreso{height:100%;background:#ef4444;transition:width .2s}
+#registro-unificado .registro-clave-progreso[data-level="media"]{background:#f59e0b}
+#registro-unificado .registro-clave-progreso[data-level="fuerte"]{background:#10b981}
+@media(prefers-reduced-motion:reduce){#registro-unificado .registro-clave-progreso{transition:none}}

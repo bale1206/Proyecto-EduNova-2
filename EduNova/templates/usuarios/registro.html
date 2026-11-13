@@ -1,25 +1,59 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Crear cuenta · EduNova{% endblock %}
 {% block content %}
-<section class="card p-5 md:p-8 max-w-3xl mx-auto">
-  <h1 class="font-display text-3xl font-semibold">Crea tu cuenta</h1>
-  <p class="text-muted mt-3 mb-6">Completa tus datos y confirma tu correo con el código que te enviaremos. Después podrás organizar tu calendario.</p>
-  <form method="post" class="space-y-4">
+<section class="card p-5 md:p-8 max-w-3xl mx-auto" id="registro-unificado" data-dominios='{"estudiante":"duocuc.cl","docente":"gmail.com","administrativo":"gmail.com"}' data-error-servidor="{% if form.errors %}si{% else %}no{% endif %}">
+  <p class="text-sm text-muted mb-1">EduNova · Registro de cuenta</p>
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-3"><h1 class="font-display text-3xl font-semibold">Crea tu cuenta</h1><span id="paso-indicador" aria-live="polite" class="font-semibold">Paso 1 de 3</span></div>
+  <div class="rounded-full h-2 mb-6" style="background:var(--linea);overflow:hidden"><div id="progreso-registro" class="h-full" style="background:var(--rio);width:33.33%;transition:width .2s"></div></div>
+  <p class="text-muted mb-5">La información se revisa antes de permitirte avanzar. Estudiantes usan @duocuc.cl; docentes y directores de carrera usan @gmail.com. El correo se valida antes de continuar.</p>
+  {% if form.errors %}<div class="registro-aviso" role="alert" id="errores-servidor"><strong>Corrige estos campos:</strong> {{ form.non_field_errors }} {% for campo in form %}{% if campo.errors %}<p>{{ campo.label }}: {{ campo.errors|join:', ' }}</p>{% endif %}{% endfor %}</div>{% endif %}
+  <form method="post" id="form-registro-unificado" novalidate>
     {% csrf_token %}
-    {% if form.non_field_errors %}<div role="alert">{{ form.non_field_errors }}</div>{% endif %}
-    <div class="grid gap-5 sm:grid-cols-2">
-    {% for campo in form %}
-      <div{% if campo.name == 'rol' or campo.name == 'email' %} class="sm:col-span-2"{% endif %}>
-        <label for="{{ campo.id_for_label }}" class="block font-medium mb-2">{{ campo.label }}</label>
-        {{ campo }}
-        {% if campo.errors %}<div role="alert" class="registro-aviso mt-2">{{ campo.errors }}</div>{% endif %}
-        {% if campo.help_text %}<div class="text-sm text-muted mt-2">{{ campo.help_text|safe }}</div>{% endif %}
+    <input type="hidden" name="rol" id="rol-registro" value="{{ request.POST.rol|default:'' }}">
+    <section data-step="1" aria-labelledby="titulo-rol">
+      <h2 id="titulo-rol" class="text-xl font-semibold mb-3">1. ¿Qué tipo de cuenta necesitas?</h2>
+      <div class="grid sm:grid-cols-3 gap-3" role="group" aria-label="Selecciona tu perfil">
+        <button type="button" class="registro-perfil" data-role="estudiante" aria-pressed="false"><span class="registro-perfil-icono" aria-hidden="true">🎓</span><strong>Estudiante</strong><small>Mi calendario y mis tareas</small></button>
+        <button type="button" class="registro-perfil" data-role="docente" aria-pressed="false"><span class="registro-perfil-icono" aria-hidden="true">📚</span><strong>Docente</strong><small>Mi horario y actividades</small></button>
+        <button type="button" class="registro-perfil" data-role="administrativo" aria-pressed="false"><span class="registro-perfil-icono" aria-hidden="true">🏛️</span><strong>Director de carrera</strong><small>Mi agenda y reuniones</small></button>
       </div>
-    {% endfor %}
+      <p id="rol-ayuda" class="text-muted text-sm mt-4">No necesitas seleccionar carreras ni asignaturas.</p>
+    </section>
+    <section data-step="2" hidden aria-labelledby="titulo-datos">
+      <h2 id="titulo-datos" class="text-xl font-semibold mb-2">2. Datos de tu cuenta</h2>
+      <p class="text-muted mb-5">Todos los campos son obligatorios salvo el teléfono. Comprueba tu correo antes de continuar.</p>
+      <div class="grid sm:grid-cols-2 gap-4">
+        {% for field in form %}{% if field.name != 'rol' %}
+          <div {% if field.name == 'email' %}class="sm:col-span-2"{% endif %}>
+            <label for="{{ field.id_for_label }}" class="block font-semibold mb-2">{{ field.label }}</label>
+            {{ field }}
+            {% if field.name == 'rut' %}<p id="feedback-rut" class="registro-feedback" aria-live="polite"></p>{% endif %}
+            {% if field.name == 'email' %}<p id="feedback-email" class="registro-feedback" aria-live="polite"></p>{% endif %}
+            {% if field.name == 'password1' %}<p id="seguridad-clave" class="text-muted text-sm mt-2">Mínimo 8 caracteres y dos tipos de caracteres.</p><div class="registro-clave-barra" aria-hidden="true"><div id="seguridad-clave-nivel" class="registro-clave-progreso"></div></div>{% endif %}
+            {% if field.name == 'password2' %}<p id="feedback-password2" class="registro-feedback" aria-live="polite"></p>{% endif %}
+            {% if field.errors %}<p role="alert" class="registro-error-campo">{{ field.errors|join:', ' }}</p>{% endif %}
+          </div>
+        {% endif %}{% endfor %}
+      </div>
+      <p id="dominio-ayuda" class="text-muted text-sm mt-4" aria-live="polite"></p>
+    </section>
+    <section data-step="3" hidden aria-labelledby="titulo-revisar">
+      <h2 id="titulo-revisar" class="text-xl font-semibold mb-3">3. Revisa tus datos</h2>
+      <p class="text-muted mb-4">Una vez creada la cuenta, recibirás un código de seis dígitos en tu correo electrónico. No activaremos la cuenta hasta verificarlo.</p>
+      <dl id="resumen-registro" class="space-y-3" aria-live="polite"></dl>
+    </section>
+    <p id="error-registro" role="alert" aria-live="polite" class="font-semibold mt-4" hidden></p>
+    <div class="flex items-center justify-between gap-3 mt-7">
+      <button type="button" id="paso-volver" class="btn-secondary px-5 py-3" hidden>← Volver</button>
+      <button type="button" id="paso-continuar" class="btn-primary px-6 py-3 ml-auto" disabled>Continuar →</button>
+      <button type="submit" id="confirmar-registro" class="btn-primary px-6 py-3 ml-auto" hidden disabled>Crear cuenta y verificar correo</button>
     </div>
-    <p class="text-sm text-muted">Estudiantes: @duocuc.cl. Docentes: @profesor.duoc.cl. Directores: @duoc.cl.</p>
-    <button class="btn-primary px-5 py-3" type="submit">Crear cuenta y verificar correo</button>
   </form>
-  <p class="mt-5">¿Ya tienes cuenta? <a href="{% url 'usuarios:login' %}" class="underline">Inicia sesión</a></p>
+  <p class="text-muted mt-6">¿Ya tienes cuenta? <a href="{% url 'usuarios:login' %}" class="underline">Inicia sesión</a></p>
 </section>
+<link rel="stylesheet" href="{% static 'css/registro-roles.css' %}">
+<link rel="stylesheet" href="{% static 'css/registro-guiado-simple.css' %}">
+<script src="{% static 'js/registro-validacion.js' %}" defer></script>
+<script src="{% static 'js/registro-guiado-simple.js' %}" defer></script>
 {% endblock %}

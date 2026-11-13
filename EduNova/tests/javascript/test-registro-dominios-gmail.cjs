@@ -1,0 +1,11 @@
+const assert = require('node:assert/strict');
+const v = require('../../static/js/registro-validacion.js');
+const dominios = {estudiante:'duocuc.cl', docente:'gmail.com', administrativo:'gmail.com'};
+assert.equal(v.correo('alumno@duocuc.cl','estudiante',dominios), true);
+assert.equal(v.correo('alumno@gmail.com','estudiante',dominios), false);
+assert.equal(v.correo('profe@gmail.com','docente',dominios), true);
+assert.equal(v.correo('profe@profesor.duoc.cl','docente',dominios), false);
+assert.equal(v.correo('director@gmail.com','administrativo',dominios), true);
+assert.equal(v.correo('director@duoc.cl','administrativo',dominios), false);
+assert.equal(v.correo('director@gmail.com.evil.org','administrativo',dominios), false);
+console.log('OK: dominios por rol 10/11, correo Gmail docente/director');

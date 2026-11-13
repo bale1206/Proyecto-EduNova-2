@@ -29,7 +29,7 @@ class RegistroForm(UserCreationForm):
         labels = {
             'first_name': 'Nombre',
             'apellidos': 'Apellido',
-            'email': 'Correo electrónico institucional',
+            'email': 'Correo electrónico',
             'telefono': 'Teléfono (opcional)',
         }
 
@@ -55,8 +55,8 @@ class RegistroForm(UserCreationForm):
         dominios = {
             Usuario.Rol.ESTUDIANTE: 'duocuc.cl',
             **getattr(settings, 'EDUNOVA_ROLE_EMAIL_DOMAINS', {
-                Usuario.Rol.DOCENTE: 'profesor.duoc.cl',
-                Usuario.Rol.ADMINISTRATIVO: 'duoc.cl',
+                Usuario.Rol.DOCENTE: 'gmail.com',
+                Usuario.Rol.ADMINISTRATIVO: 'gmail.com',
             }),
         }
         esperado = dominios.get(rol)
@@ -102,4 +102,3 @@ class UsuarioAdminChangeForm(UserChangeForm):
     class Meta:
         model = Usuario
         fields = '__all__'
-

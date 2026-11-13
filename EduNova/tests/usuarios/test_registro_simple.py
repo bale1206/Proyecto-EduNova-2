@@ -14,7 +14,7 @@ class RegistroSimpleTests(TestCase):
         cache.clear()
 
     def datos(self, rol='estudiante', rut='12345678-5'):
-        dominio = {'estudiante':'duocuc.cl', 'docente':'profesor.duoc.cl', 'administrativo':'duoc.cl'}[rol]
+        dominio = {'estudiante':'duocuc.cl', 'docente':'gmail.com', 'administrativo':'gmail.com'}[rol]
         return {'rol':rol, 'rut':rut, 'first_name':'Nombre', 'apellidos':'Apellido',
                 'telefono':'', 'email':f'persona@{dominio}',
                 'password1':'ClaveSegura123!', 'password2':'ClaveSegura123!'}
@@ -52,12 +52,18 @@ class RegistroSimpleTests(TestCase):
                 self.assertTrue(usuario.is_active)
 
     def test_rechaza_dominios_ajenos_para_tres_roles(self):
-        for rol in ('estudiante','docente','administrativo'):
-            datos = self.datos(rol)
-            datos['email'] = 'persona@gmail.com'
-            response = self.client.post(reverse('usuarios:registro'), datos)
-            self.assertEqual(response.status_code, 200)
-            self.assertIn('email', response.context['form'].errors)
+        dominios_invalidos = {
+            'estudiante': 'persona@gmail.com',
+            'docente': 'persona@profesor.duoc.cl',
+            'administrativo': 'persona@duoc.cl',
+        }
+        for rol, email_invalido in dominios_invalidos.items():
+            with self.subTest(rol=rol):
+                datos = self.datos(rol)
+                datos['email'] = email_invalido
+                response = self.client.post(reverse('usuarios:registro'), datos)
+                self.assertEqual(response.status_code, 200)
+                self.assertIn('email', response.context['form'].errors)
         self.assertFalse(Usuario.objects.exists())
 
     def test_no_permite_autoregistro_admin(self):
