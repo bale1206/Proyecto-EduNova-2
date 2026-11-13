@@ -1,64 +1,106 @@
-<p class="sm:hidden text-sm text-muted mb-2">Desliza el calendario horizontalmente para ver todos los días.</p><div class="calendario-scroll"><div id="calendario-mensual" class="card p-5" aria-label="Calendario de {{ mes_nombre }} de {{ anio }}">
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="font-display font-semibold">{{ mes_nombre }} {{ anio }}</h3>
-        <div class="flex gap-2">
-            <button
+{% load static %}
+{# Calendario personal: vista compacta con puntos + panel de detalle en la vista ampliada. #}
+<link rel="stylesheet" href="{% static 'css/calendario-redisenado.css' %}">
+<script src="{% static 'js/calendario-redisenado.js' %}" defer></script>
+<p class="edn-calendar-mobile-hint">Selecciona una fecha para consultar sus actividades al ampliar el calendario.</p>
+<div class="calendario-scroll edn-calendar-scroll">
+  <div id="calendario-mensual" class="card edn-calendar p-4 sm:p-5"
+       data-edn-calendar data-year="{{ anio }}" data-month="{{ mes }}"
+       aria-label="Calendario de {{ mes_nombre }} de {{ anio }}">
+    <header class="edn-calendar-header">
+      <div>
+        <p class="edn-calendar-eyebrow">Mi calendario personal</p>
+        <h3 class="edn-calendar-month">{{ mes_nombre }} {{ anio }}</h3>
+        <p class="edn-calendar-subtitle">Clases y actividades de tu cuenta</p>
+      </div>
+      <div class="edn-calendar-navigation" role="group" aria-label="Navegar entre meses">
+        <button type="button" class="edn-calendar-nav-btn"
                 hx-get="?year={{ prev_year }}&month={{ prev_month }}"
                 hx-target="closest .calendario-scroll" hx-select=".calendario-scroll" hx-swap="outerHTML"
-                class="btn-secondary text-sm px-2 py-1" aria-label="Ver mes anterior">‹</button>
-            <button
+                aria-label="Mes anterior">‹</button>
+        <button type="button" class="edn-calendar-nav-btn"
                 hx-get="?year={{ next_year }}&month={{ next_month }}"
                 hx-target="closest .calendario-scroll" hx-select=".calendario-scroll" hx-swap="outerHTML"
-                class="btn-secondary text-sm px-2 py-1" aria-label="Ver mes siguiente">›</button>
+                aria-label="Mes siguiente">›</button>
+      </div>
+    </header>
+
+    <div class="edn-calendar-layout">
+      <div class="edn-calendar-month-panel">
+        <div class="edn-calendar-weekdays" aria-hidden="true">
+          <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
         </div>
-    </div>
-
-    <div class="grid grid-cols-7 gap-1 text-center text-xs font-medium text-faint mb-1">
-        <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
-    </div>
-
-    <div class="grid grid-cols-7 gap-1" role="group" aria-label="Días del mes">
-        {% for semana in semanas %}
+        <div class="edn-calendar-days" role="group" aria-label="Elegir una fecha del mes">
+          {% for semana in semanas %}
             {% for dia in semana %}
-            <div tabindex="0" class="edunova-zoom-day {% if dia.clases %}edunova-day-has-classes{% endif %} min-h-[4.5rem] rounded-lg p-1 text-xs {% if dia.numero %}surface-subtle{% endif %} {% if dia.es_hoy %}dia-hoy{% endif %}">
-                {% if dia.numero %}
-                <p class="font-medium text-muted mb-1">{{ dia.numero }}</p><div class="edunova-day-detail" aria-hidden="true"><strong>{{ dia.numero }} de {{ mes_nombre|lower }}</strong><span>{% for clase in dia.clases %}<span class="edunova-day-entry">{{ clase.asignatura }} · {{ clase.codigo }}: {% for bloque in clase.bloques %}{{ bloque.inicio|time:"H:i" }}–{{ bloque.fin|time:"H:i" }}{% if not forloop.last %}; {% endif %}{% endfor %}</span>{% endfor %}{% for evento in dia.eventos %}<span class="edunova-day-entry">{% if evento.hora_inicio %}{{ evento.hora_inicio|time:"H:i" }} · {% endif %}{{ evento.titulo }}</span>{% endfor %}{% for tarea in dia.tareas %}<span class="edunova-day-entry">{% if tarea.hora_inicio %}{{ tarea.hora_inicio|time:"H:i" }} · {% endif %}{{ tarea.titulo }}{% if tarea.prioridad == "alta" %} ❗{% endif %}</span>{% endfor %}{% if not dia.clases and not dia.eventos and not dia.tareas %}<span>Sin actividades</span>{% endif %}</span></div>
-                {% for clase in dia.clases %}
-                <div class="edunova-calendar-class edunova-class-slot">
-                    <button type="button" class="edunova-class-trigger"
-                            aria-label="{{ clase.asignatura }}: {{ clase.inicio|time:'H:i' }} a {{ clase.fin|time:'H:i' }}. Ver detalles"
-                            aria-describedby="horario-{{ anio }}-{{ mes }}-{{ dia.numero }}-{{ clase.seccion_id }}"
-                            title="{{ clase.asignatura }} · {{ clase.codigo }}: {% for bloque in clase.bloques %}{{ bloque.inicio|time:'H:i' }}–{{ bloque.fin|time:'H:i' }}{% if not forloop.last %}; {% endif %}{% endfor %}">
-                        <span class="edunova-class-subject">{{ clase.asignatura }}</span>
-                        <span class="edunova-class-code"><strong>{{ clase.inicio|time:"H:i" }}–{{ clase.fin|time:"H:i" }}</strong>{% if clase.sala %} · {{ clase.sala }}{% endif %}</span>
-                    </button>
-                    <div class="edunova-class-hours" role="tooltip"
-                         id="horario-{{ anio }}-{{ mes }}-{{ dia.numero }}-{{ clase.seccion_id }}">
-                        <strong>{{ clase.asignatura }}</strong>
-                        {% if clase.sala %}<span class="edunova-class-hours-section">Sala: {{ clase.sala }}</span>{% else %}<span class="edunova-class-hours-section">Horario personal</span>{% endif %}
-                        {% if clase.docente %}<span class="block">Docente: {{ clase.docente }}</span>{% endif %}<span class="edunova-class-hours-caption">Horario de clases:</span>
-                        {% for bloque in clase.bloques %}
-                        <span class="edunova-class-time-range">{{ bloque.inicio|time:'H:i' }} – {{ bloque.fin|time:'H:i' }}</span>
-                        {% endfor %}
-                    </div>
+              {% if dia.numero %}
+              <div class="edn-calendar-date">
+                <button type="button" class="edn-day-button{% if dia.es_hoy %} edn-is-today{% endif %}"
+                        data-edn-day="{{ anio }}-{{ mes|stringformat:'02d' }}-{{ dia.numero|stringformat:'02d' }}"
+                        aria-label="Seleccionar {{ dia.numero }} de {{ mes_nombre }} de {{ anio }}"
+                        aria-pressed="false" aria-controls="edn-calendar-detail">
+                  <span class="edn-day-top"><span class="edn-day-number">{{ dia.numero }}</span>
+                    {% if dia.es_hoy %}<span class="edn-today-label">Hoy</span>{% endif %}
+                  </span>
+                  <span class="edn-day-dots" aria-hidden="true">
+                    {% if dia.clases %}<span class="edn-dot edn-dot-clase"></span>{% endif %}
+                    {% if dia.eventos %}<span class="edn-dot edn-dot-reunion"></span>{% endif %}
+                    {% if dia.tareas %}<span class="edn-dot edn-dot-tarea"></span>{% endif %}
+                  </span>
+                  <span class="edn-day-minis" aria-hidden="true"></span>
+                </button>
+                {# La fuente oculta contiene exclusivamente las actividades privadas del día. #}
+                <div class="edn-day-source" hidden>
+                  {% for clase in dia.clases %}
+                  <div class="edn-calendar-entry" data-kind="clase" data-time="{{ clase.inicio|time:'H:i' }}"
+                       data-range="{{ clase.inicio|time:'H:i' }}–{{ clase.fin|time:'H:i' }}">
+                    <span class="edn-entry-title">{{ clase.asignatura }}</span>
+                    <span class="edn-entry-description">Clase del horario personal</span>
+                    <span class="edn-entry-meta">{% if clase.sala %}Sala: {{ clase.sala }}{% else %}Horario personal{% endif %}{% if clase.docente %} · Docente: {{ clase.docente }}{% endif %}</span>
+                  </div>
+                  {% endfor %}
+                  {% for evento in dia.eventos %}
+                  <div class="edn-calendar-entry" data-kind="{{ evento.tipo }}"
+                       data-time="{% if evento.hora_inicio %}{{ evento.hora_inicio|time:'H:i' }}{% endif %}"
+                       data-range="{% if evento.hora_inicio %}{{ evento.hora_inicio|time:'H:i' }}{% if evento.hora_fin %}–{{ evento.hora_fin|time:'H:i' }}{% endif %}{% else %}Todo el día{% endif %}">
+                    <span class="edn-entry-title">{{ evento.titulo }}</span>
+                    <span class="edn-entry-description">{{ evento.descripcion }}</span>
+                    <span class="edn-entry-meta">{{ evento.get_tipo_display }}</span>
+                  </div>
+                  {% endfor %}
+                  {% for tarea in dia.tareas %}
+                  <div class="edn-calendar-entry" data-kind="{{ tarea.tipo_actividad }}"
+                       data-time="{% if tarea.hora_inicio %}{{ tarea.hora_inicio|time:'H:i' }}{% endif %}"
+                       data-range="{% if tarea.hora_inicio %}{{ tarea.hora_inicio|time:'H:i' }}{% else %}Sin hora asignada{% endif %}">
+                    <span class="edn-entry-title">{{ tarea.titulo }}</span>
+                    <span class="edn-entry-description">{{ tarea.descripcion }}</span>
+                    <span class="edn-entry-meta">{{ tarea.get_tipo_actividad_display }}{% if tarea.prioridad == 'alta' %} · Prioridad alta{% endif %}{% if tarea.completada %} · Completada{% endif %}</span>
+                  </div>
+                  {% endfor %}
                 </div>
-                {% endfor %}
-                {% for evento in dia.eventos %}
-                <div class="chip chip-{{ evento.tipo }} block mb-0.5" title="{{ evento.titulo }}">
-                    {% if evento.hora_inicio %}{{ evento.hora_inicio|time:"H:i" }}{% if evento.hora_fin %}–{{ evento.hora_fin|time:"H:i" }}{% endif %} · {% endif %}{{ evento.titulo }}
-                </div>
-                {% endfor %}
-                {% for tarea in dia.tareas %}
-                <div class="edunova-calendar-task" style="--task-color:{{ tarea.color }}" title="{{ tarea.get_tipo_actividad_display }} · {{ tarea.titulo }}{% if tarea.hora_inicio %} · {{ tarea.hora_inicio|time:'H:i' }}{% endif %}">
-                  {% if tarea.prioridad == 'alta' %}<span class="edunova-calendar-urgent" aria-label="Alta prioridad">❗</span>{% endif %}
-                  {% if tarea.hora_inicio %}{{ tarea.hora_inicio|time:'H:i' }} · {% endif %}{% if tarea.tipo_actividad != "tarea" %}{{ tarea.get_tipo_actividad_display }}: {% endif %}{{ tarea.titulo }}
-                </div>
-                {% endfor %}
-                {% endif %}
-            </div>
+              </div>
+              {% else %}
+              <div class="edn-calendar-blank" aria-hidden="true"></div>
+              {% endif %}
             {% endfor %}
-        {% endfor %}
+          {% endfor %}
+        </div>
+        <div class="edn-calendar-legend" aria-label="Colores por actividad">
+          <span><i class="edn-dot edn-dot-clase" aria-hidden="true"></i>Clase</span>
+          <span><i class="edn-dot edn-dot-tarea" aria-hidden="true"></i>Tarea</span>
+          <span><i class="edn-dot edn-dot-reunion" aria-hidden="true"></i>Reunión</span>
+          <span><i class="edn-dot edn-dot-evento" aria-hidden="true"></i>Evento</span>
+          <span><i class="edn-dot edn-dot-evaluacion" aria-hidden="true"></i>Evaluación</span>
+        </div>
+        <p class="edn-calendar-help">Los puntos muestran los tipos de actividades. Pulsa «Ampliar calendario» para ver los detalles al seleccionar un día.</p>
+      </div>
+      <aside id="edn-calendar-detail" class="edn-calendar-detail" aria-live="polite"
+             aria-label="Actividades de la fecha seleccionada" hidden>
+        <p class="edn-detail-eyebrow">Agenda del día</p>
+        <h4 class="edn-detail-date" data-edn-detail-title>Selecciona una fecha</h4>
+        <p class="edn-detail-count" data-edn-detail-count></p>
+        <div class="edn-detail-items" data-edn-detail-items></div>
+      </aside>
     </div>
-</div>
-
+  </div>
 </div>

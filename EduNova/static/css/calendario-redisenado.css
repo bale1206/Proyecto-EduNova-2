@@ -1,0 +1,105 @@
+/* EduNova: calendario compacto por puntos y detalle por fecha en modo ampliado.
+   Alcance limitado a .edn-calendar para no modificar otras páginas. */
+.edn-calendar {
+  --edn-ink: var(--tinta, #273247);
+  --edn-muted: var(--tinta-muted, #667a8f);
+  --edn-surface: var(--superficie, #fff);
+  --edn-cell: var(--lino-2, #f3f5f7);
+  --edn-border: var(--linea, #d5dae0);
+  --edn-class: #329d81;
+  --edn-task: #4788dd;
+  --edn-meeting: #9a69d5;
+  --edn-event: #cf8b38;
+  --edn-exam: #d96783;
+  color:var(--edn-ink); background:var(--edn-surface); min-width:0;
+  border:1px solid var(--edn-border); border-radius:17px;
+}
+html.dark .edn-calendar {
+  --edn-surface:#192635; --edn-cell:#233448; --edn-border:#374b60;
+  --edn-ink:#ecf3fc; --edn-muted:#bacbdb;
+  --edn-class:#6cdbc0; --edn-task:#98c4ff; --edn-meeting:#d7b7ff;
+  --edn-event:#ffd194; --edn-exam:#ffb1c4;
+}
+#calendario-mensual.edn-calendar {min-width:0; width:100%;}
+.edn-calendar-scroll { width:100%; overflow-x:visible; min-width:0; }
+.edn-calendar-mobile-hint {display:none; font-size:.78rem; color:var(--tinta-muted); margin-bottom:.5rem}
+.edn-calendar-header {display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:19px}
+.edn-calendar-eyebrow,.edn-detail-eyebrow {margin:0 0 4px; font-size:.72rem; font-weight:750; letter-spacing:.075em; text-transform:uppercase; color:var(--edn-muted)}
+.edn-calendar-month {margin:0; font-weight:750; font-size:clamp(1.15rem,2vw,1.55rem); line-height:1.3}
+.edn-calendar-subtitle {font-size:.76rem; color:var(--edn-muted); margin:.2rem 0 0}
+.edn-calendar-navigation {display:flex; gap:7px}
+.edn-calendar-nav-btn {display:grid; place-items:center; width:39px; height:39px; border:1px solid var(--edn-border); color:var(--edn-ink); background:var(--edn-cell); font-size:1.35rem; border-radius:10px; cursor:pointer}
+.edn-calendar-nav-btn:hover {filter:brightness(1.09)}
+.edn-calendar-layout {display:grid; grid-template-columns:minmax(0,1fr); gap:20px; align-items:start; min-width:0}
+.edn-calendar-month-panel {min-width:0}
+.edn-calendar-weekdays,.edn-calendar-days {display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px}
+.edn-calendar-weekdays {margin-bottom:7px}
+.edn-calendar-weekdays>span {text-align:center; padding:5px 0; color:var(--edn-muted); font-weight:700; font-size:.77rem}
+.edn-calendar-date {min-width:0}
+.edn-calendar-blank {min-height:60px}
+.edn-day-button {width:100%; min-height:70px; display:flex; flex-direction:column; align-items:stretch; gap:6px; text-align:left; padding:8px 9px; border:1px solid transparent; border-radius:9px; background:var(--edn-cell); color:var(--edn-ink); cursor:pointer; font:inherit; transition:background .15s,border-color .15s; overflow:hidden}
+.edn-day-button:hover {border-color:var(--edn-border); filter:brightness(1.06)}
+.edn-day-button:focus-visible,.edn-calendar-nav-btn:focus-visible {outline:3px solid var(--edn-task); outline-offset:2px}
+.edn-day-button[aria-pressed="true"] {border-color:var(--edn-task); box-shadow:inset 0 0 0 1px var(--edn-task)}
+.edn-day-top {display:flex; align-items:center; justify-content:space-between; gap:3px; min-width:0}
+.edn-day-number {font-size:.91rem; font-weight:750; line-height:1.3}
+.edn-is-today .edn-day-number {border-radius:6px; background:var(--edn-task); color:#102030; padding:1px 5px; margin:-1px -5px}
+.edn-today-label {font-size:.62rem; font-weight:750; color:var(--edn-muted)}
+.edn-day-dots {display:flex; gap:4px; align-items:center; min-height:9px; flex-wrap:wrap}
+.edn-dot {width:7px; height:7px; display:inline-block; flex:none; border-radius:50%; background:var(--edn-dot-color, var(--edn-task))}
+.edn-dot-clase {--edn-dot-color:var(--edn-class)}
+.edn-dot-tarea {--edn-dot-color:var(--edn-task)}
+.edn-dot-reunion {--edn-dot-color:var(--edn-meeting)}
+.edn-dot-evento,.edn-dot-otro {--edn-dot-color:var(--edn-event)}
+.edn-dot-evaluacion {--edn-dot-color:var(--edn-exam)}
+.edn-dot-count {font-size:.65rem; font-weight:750; color:var(--edn-muted)}
+.edn-day-minis {display:none; min-width:0; width:100%; flex-direction:column; gap:5px}
+.edn-mini {display:flex; flex-direction:column; gap:2px; background:color-mix(in srgb,var(--edn-mini-color) 13%,var(--edn-cell)); border-left:3px solid var(--edn-mini-color); border-radius:6px; padding:5px 7px; min-width:0}
+.edn-mini-time {color:var(--edn-mini-color); font-size:.67rem; font-weight:800}
+.edn-mini-name {font-size:.71rem; line-height:1.26; font-weight:700; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.edn-mini-more {color:var(--edn-task); font-size:.69rem; font-weight:750}
+.edn-calendar-legend {display:flex; flex-wrap:wrap; gap:7px 15px; padding-top:14px; margin-top:17px; border-top:1px solid var(--edn-border)}
+.edn-calendar-legend>span {display:inline-flex; align-items:center; gap:6px; color:var(--edn-muted); font-size:.75rem}
+.edn-calendar-help {margin:12px 0 0; color:var(--edn-muted); font-size:.75rem; line-height:1.5}
+.edn-calendar-detail {min-width:0; padding:19px; border:1px solid var(--edn-border); border-radius:14px; background:var(--edn-cell)}
+.edn-calendar-detail[hidden] {display:none!important}
+.edn-detail-date {font-size:1.24rem; line-height:1.3; font-weight:750; margin:0}
+.edn-detail-count {color:var(--edn-muted); font-size:.83rem; margin:6px 0 16px}
+.edn-detail-items {display:flex; flex-direction:column; gap:10px; max-height:65vh; overflow-y:auto; padding-right:2px}
+.edn-detail-card {border:1px solid var(--edn-border); border-left:4px solid var(--edn-item-color); border-radius:10px; padding:12px; background:var(--edn-surface); overflow-wrap:anywhere}
+.edn-detail-type {font-size:.71rem; font-weight:800; color:var(--edn-item-color); margin:0 0 5px}
+.edn-detail-card h5 {font-size:.94rem; font-weight:750; line-height:1.35; margin:0 0 5px}
+.edn-detail-meta,.edn-detail-description {color:var(--edn-muted); font-size:.78rem; line-height:1.5; margin:0}
+.edn-detail-description {margin-top:8px}
+.edn-detail-empty {border:1px dashed var(--edn-border); padding:20px 13px; border-radius:10px; color:var(--edn-muted); font-size:.86rem; line-height:1.5}
+#portal-estudiante-grid.edunova-calendar-expanded .edn-calendar-layout {grid-template-columns:minmax(0,1fr) minmax(265px,325px)}
+#portal-estudiante-grid.edunova-calendar-expanded .edn-day-button {min-height:130px; padding:10px; gap:8px; border-radius:12px}
+#portal-estudiante-grid.edunova-calendar-expanded .edn-day-number {font-size:1.02rem}
+#portal-estudiante-grid.edunova-calendar-expanded .edn-day-minis {display:flex}
+#portal-estudiante-grid.edunova-calendar-expanded .edn-day-dots {display:none}
+#portal-estudiante-grid.edunova-calendar-expanded .edn-calendar-detail:not([hidden]) {display:block}
+@media(max-width:1120px) {
+  #portal-estudiante-grid.edunova-calendar-expanded .edn-calendar-layout {grid-template-columns:1fr}
+  .edn-detail-items {max-height:none}
+}
+@media(max-width:640px) {
+  .edn-calendar-scroll {overflow-x:visible!important}
+  .edn-calendar-mobile-hint {display:block}
+  .edn-calendar {padding:13px!important}
+  .edn-calendar-header {margin-bottom:12px}
+  .edn-calendar-weekdays,.edn-calendar-days {gap:4px}
+  .edn-calendar-weekdays>span {font-size:.68rem}
+  .edn-day-button {min-height:56px; padding:5px 4px; gap:4px; border-radius:7px}
+  .edn-day-number {font-size:.75rem}
+  .edn-today-label {display:none}
+  .edn-day-dots {gap:2px}
+  .edn-dot {width:6px;height:6px}
+  .edn-dot-count {font-size:.57rem}
+  #portal-estudiante-grid.edunova-calendar-expanded .edn-day-button {min-height:70px; padding:6px 5px; gap:5px}
+  #portal-estudiante-grid.edunova-calendar-expanded .edn-day-minis {display:none}
+  #portal-estudiante-grid.edunova-calendar-expanded .edn-day-dots {display:flex}
+  #portal-estudiante-grid.edunova-calendar-expanded .edn-day-number {font-size:.86rem}
+  .edn-calendar-blank {min-height:45px}
+  .edn-calendar-detail {padding:14px}
+}
+@media (prefers-reduced-motion:reduce) {.edn-day-button {transition:none}}
