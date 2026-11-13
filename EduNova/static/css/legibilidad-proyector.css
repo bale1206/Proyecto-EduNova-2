@@ -1,0 +1,27 @@
+/* Lectura a distancia sin alterar la estructura ni los colores del tema. */
+:root { --edunova-texto-proyector: 1; }
+html { text-size-adjust:100%; }
+body { line-height:1.6; }
+.text-xs { font-size:.92rem!important;line-height:1.45!important; }
+.text-sm { font-size:1.03rem!important;line-height:1.5!important; }
+label,button,input,select,textarea,summary { line-height:1.5; }
+button,.btn-primary,.btn-secondary { min-height:2.45rem; }
+#calendario-mensual .text-xs,.edunova-class-code,.edunova-class-subject,
+.edunova-calendar-task,.chip { font-size:max(.86rem,16px);line-height:1.4; }
+#calendario-mensual .edunova-class-trigger { min-height:3rem; }
+#calendario-mensual .edunova-day-detail { line-height:1.55; }
+@media(min-width:900px) {
+  body {font-size:max(1rem,20px)}
+  h1 {line-height:1.2}
+  .text-xs {font-size:.95rem!important}
+  .text-sm {font-size:1.06rem!important}
+  #calendario-mensual .edunova-class-subject {font-size:1rem}
+}
+@media(max-width:640px) {
+  .text-xs {font-size:.84rem!important}
+  .text-sm {font-size:.96rem!important}
+  #calendario-mensual .edunova-day-detail {max-width:92vw}
+}
+/* Los modos de accesibilidad existentes conservan la prioridad del usuario. */
+html.a11y-texto-grande .text-sm,html.a11y-texto-xl .text-sm {font-size:1.12rem!important}
+html.a11y-texto-grande .text-xs,html.a11y-texto-xl .text-xs {font-size:1rem!important}
