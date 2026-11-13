@@ -49,6 +49,28 @@
         first.value.trim() && last.value.trim() &&
         [rut,mail,pass,confirm,first,last,phone].filter(Boolean).every(e=>e.checkValidity()));
   }
+  // Al retroceder se descartan datos personales, incluso si luego se elige otro rol.
+  // No usamos form.reset(): un formulario devuelto por Django con errores puede
+  // traer valores iniciales y reset() los volvería a restaurar.
+  function descartarDatos() {
+    for (const name of ['rut','first_name','apellidos','telefono','email','password1','password2']) {
+      const input=$('id_'+name);
+      if (!input) continue;
+      input.value='';
+      input.removeAttribute('aria-invalid');
+    }
+    for (const id of ['feedback-rut','feedback-email','feedback-password2','dominio-ayuda']) {
+      const message=$(id);
+      if (message) { message.textContent=''; message.removeAttribute('data-status'); }
+    }
+    const meter=$('seguridad-clave-nivel');
+    if (meter) { meter.style.width='0%'; meter.removeAttribute('data-level'); }
+    const tip=$('seguridad-clave');
+    if (tip) tip.textContent='Mínimo 8 caracteres y dos tipos de caracteres.';
+    const resumen=$('resumen-registro');
+    if (resumen) resumen.replaceChildren();
+    if (alert) { alert.hidden=true; alert.textContent=''; }
+  }
   function summary() {
     const data = [
       ['Tipo de cuenta', ({estudiante:'Estudiante',docente:'Docente',administrativo:'Director de carrera'})[roleInput.value]||''],
@@ -75,6 +97,7 @@
   }
   function fail(message) {alert.hidden=false;alert.textContent=message;}
   root.querySelectorAll('[data-role]').forEach(button=>button.addEventListener('click',()=>{
+    if (roleInput.value !== button.dataset.role) descartarDatos();
     roleInput.value=button.dataset.role;
     refresh();
   }));
@@ -83,7 +106,14 @@
     if (step===2 && !validAccount(true)) return fail('Revisa los campos marcados antes de continuar.');
     if (step<3)step+=1;refresh();
   });
-  back.addEventListener('click',()=>{ if(step>1) step-=1;refresh(); });
+  back.addEventListener('click',()=>{
+    if (step>1) {
+      descartarDatos();
+      step-=1;
+      if (step===1) roleInput.value='';
+    }
+    refresh();
+  });
   form.addEventListener('input',refresh);
   form.addEventListener('change',refresh);
   form.addEventListener('submit',event=>{

@@ -172,12 +172,10 @@ class EventoAdmin(admin.ModelAdmin):
 
 @admin.register(RegistroAsistencia)
 class RegistroAsistenciaAdmin(admin.ModelAdmin):
-    def add_view(self, request, form_url='', extra_context=None):
-        from django.shortcuts import redirect
-        if not self.has_add_permission(request):
-            from django.core.exceptions import PermissionDenied
-            raise PermissionDenied
-        return redirect('academico:tomar_asistencia')
+    def has_add_permission(self, request):
+        # Mantener el historial de la base para consulta administrativa, sin
+        # reactivar el flujo de asistencia eliminado de los portales.
+        return False
 
     @admin.display(description='RUT')
     def rut(self, obj):
@@ -222,7 +220,7 @@ class AvisoAsistenciaAdmin(admin.ModelAdmin):
     readonly_fields = ('destinatario', 'marca', 'texto', 'creado_en')
 
 
-# Conserva el historial de importaciones previas en modo de solo lectura.
+# El importador masivo vive en /admin/importaciones-academicas/.
 from .models import PeriodoAcademico, PlanEstudio, PlanAsignatura, ImportacionAcademica
 
 
@@ -258,4 +256,3 @@ class ImportacionAcademicaAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
-

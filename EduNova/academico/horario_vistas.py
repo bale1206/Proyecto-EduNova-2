@@ -26,10 +26,22 @@ def _autorizar(usuario):
 @login_required
 @require_http_methods(['GET'])
 def plantilla_horario(request):
+    """Entrega la plantilla que corresponde al rol autenticado.
+
+    Estudiantes: 8 columnas (incluye Docente).
+    Docentes: 7 columnas (sin Docente).
+    """
     _autorizar(request.user)
-    return FileResponse(open(Path(settings.BASE_DIR) / 'plantillas/horario-edunova.xlsx', 'rb'),
-                        as_attachment=True, filename='horario-edunova.xlsx',
-                        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    nombre = ('horario-edunova.xlsx' if request.user.rol == Usuario.Rol.ESTUDIANTE
+              else 'horario-edunova-docente.xlsx')
+    respuesta = FileResponse(
+        open(Path(settings.BASE_DIR) / 'plantillas' / nombre, 'rb'),
+        as_attachment=True, filename=nombre,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    respuesta['Cache-Control'] = 'private, no-store'
+    respuesta['X-Content-Type-Options'] = 'nosniff'
+    return respuesta
 
 
 @login_required
@@ -39,7 +51,8 @@ def exportar_horario(request):
     _autorizar(request.user)
     bloques = BloqueHorarioPersonal.objects.filter(usuario=request.user).order_by(
         'dia_semana', 'hora_inicio', 'asignatura', 'fecha_inicio')
-    contenido = generar_horario_xlsx(bloques)
+    contenido = generar_horario_xlsx(
+        bloques, incluir_docente=(request.user.rol == Usuario.Rol.ESTUDIANTE))
     response = HttpResponse(
         contenido,
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -76,7 +89,8 @@ def importar_horario(request):
                 request.session.pop(PENDIENTE, None)
                 messages.success(request, 'Horario importado. Tus clases ya aparecen en el calendario.')
                 fecha = min(b['fecha_inicio'] for b in previo['bloques'])
-                destino = 'academico:home_estudiante' if request.user.rol == Usuario.Rol.ESTUDIANTE else 'academico:home_docente'
+                destino = ('academico:home_estudiante' if request.user.rol == Usuario.Rol.ESTUDIANTE
+                           else 'academico:home_docente')
                 return redirect(f'{reverse(destino)}?year={fecha[:4]}&month={int(fecha[5:7])}')
         elif accion == 'previsualizar':
             request.session.pop(PENDIENTE, None)
@@ -92,6 +106,8 @@ def importar_horario(request):
             error = 'Acción no reconocida.'
     previo = request.session.get(PENDIENTE, {})
     return render(request, 'academico/importar_horario.html', {
-        'error': error, 'previo': previo.get('bloques') if previo.get('usuario') == request.user.pk else None,
+        'error': error,
+        'previo': previo.get('bloques') if previo.get('usuario') == request.user.pk else None,
         'bloques_actuales': BloqueHorarioPersonal.objects.filter(usuario=request.user),
+        'mostrar_docente': request.user.rol == Usuario.Rol.ESTUDIANTE,
     })

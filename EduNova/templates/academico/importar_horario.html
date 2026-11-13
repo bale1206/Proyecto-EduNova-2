@@ -6,27 +6,27 @@
   <h1 class="font-display text-3xl font-semibold mt-4">Importar mi horario</h1>
   <p class="mt-3 text-muted">Puedes descargar una plantilla vacía o exportar tu horario actual y editarlo. EduNova acepta ambos archivos si conservas el formato.</p>
   <div class="flex flex-wrap gap-3 my-5">
-    <a href="{% url 'academico:plantilla_horario' %}" class="btn-secondary inline-block px-4 py-3">Descargar plantilla XLSX</a>
-    <a href="{% url 'academico:exportar_horario' %}" class="btn-secondary inline-block px-4 py-3">Exportar mi horario XLSX</a>
+    <a href="{% url 'academico:plantilla_horario' %}" download="{% if mostrar_docente %}horario-edunova.xlsx{% else %}horario-edunova-docente.xlsx{% endif %}" class="btn-secondary inline-block px-4 py-3">Descargar plantilla XLSX</a>
+    <a href="{% url 'academico:exportar_horario' %}" download="mi-horario-edunova.xlsx" class="btn-secondary inline-block px-4 py-3">Exportar mi horario XLSX</a>
   </div>
   <section id="guia-horario" class="surface-subtle rounded-lg p-5 mb-7" aria-labelledby="titulo-guia">
     <h2 id="titulo-guia" class="font-display text-2xl font-semibold mb-3">Cómo completar tu horario: paso a paso</h2>
     <ol class="list-decimal pl-6 space-y-3">
       <li><strong>Descarga el archivo:</strong> elige «Descargar plantilla XLSX» para comenzar desde cero. Si ya tienes clases registradas, selecciona «Exportar mi horario XLSX» para editarlas.</li>
-      <li><strong>Abre la hoja Horario:</strong> utiliza Excel o una aplicación que guarde archivos .xlsx. No cambies el nombre de la hoja «Horario», ni los ocho encabezados de la primera fila, ni el orden de las columnas. La hoja «Ejemplo» de la plantilla no se importa.</li>
+      <li><strong>Abre la hoja Horario:</strong> utiliza Excel o una aplicación que guarde archivos .xlsx. No cambies el nombre de la hoja «Horario», ni los {% if mostrar_docente %}ocho{% else %}siete{% endif %} encabezados de la primera fila, ni el orden de las columnas. La hoja «Ejemplo» de la plantilla no se importa.</li>
       <li><strong>Escribe una clase por fila:</strong> comienza en la fila 2. En la columna «Asignatura», escribe el nombre de la clase, por ejemplo «Programación». No necesitas seleccionar carrera, código o sección.</li>
       <li><strong>Selecciona el día:</strong> escribe «Lunes», «Martes», «Miércoles», «Jueves», «Viernes», «Sábado» o «Domingo». También puedes usar los números del 1 al 7, empezando por Lunes.</li>
       <li><strong>Completa las horas:</strong> usa formato de 24 horas, por ejemplo «08:30» para el inicio y «09:50» para el término. El término debe ser posterior al inicio y las dos horas deben pertenecer al mismo día.</li>
       <li><strong>Define las fechas:</strong> usa «AAAA-MM-DD» para «Fecha inicio» y «Fecha fin», por ejemplo «2027-03-01» y «2027-07-15». La clase se repetirá semanalmente en el día seleccionado, exclusivamente en ese período.</li>
-      <li><strong>Agrega los detalles opcionales:</strong> escribe «Sala» y «Docente» si conoces esos datos. Puedes dejarlos vacíos.</li>
+      <li><strong>Agrega los detalles opcionales:</strong> escribe la «Sala» si la conoces.{% if mostrar_docente %} También puedes anotar el nombre del profesor o profesora en «Docente». Ambos datos son opcionales.{% else %} No necesitas una columna «Docente»: tu archivo tiene siete columnas.{% endif %}</li>
       <li><strong>Repite para otros bloques:</strong> si una asignatura ocurre lunes y miércoles, crea una fila para cada día. Evita horarios superpuestos. No agregues columnas, fórmulas, macros ni más de 300 bloques; cada bloque puede abarcar hasta 370 días.</li>
       <li><strong>Guarda y revisa:</strong> guarda el archivo en formato .xlsx (máximo 5 MB), selecciónalo a continuación y presiona «Revisar horario». Si hay errores, EduNova indicará qué fila debes corregir.</li>
       <li><strong>Confirma cuando esté correcto:</strong> la confirmación reemplaza tu horario personal anterior, pero mantiene las tareas, reuniones y eventos. Antes puedes exportar el horario actual como respaldo.</li>
     </ol>
     <div class="overflow-x-auto mt-5">
       <p class="font-semibold mb-2">Ejemplo de una fila correcta</p>
-      <table class="w-full text-sm horario-tabla"><thead><tr><th>Asignatura</th><th>Dia</th><th>Hora inicio</th><th>Hora fin</th><th>Fecha inicio</th><th>Fecha fin</th><th>Sala</th><th>Docente</th></tr></thead>
-      <tbody><tr><td>Programación</td><td>Lunes</td><td>08:30</td><td>09:50</td><td>2027-03-01</td><td>2027-07-15</td><td>Sala 204</td><td>Docente Ejemplo</td></tr></tbody></table>
+      <table class="w-full text-sm horario-tabla"><thead><tr><th>Asignatura</th><th>Dia</th><th>Hora inicio</th><th>Hora fin</th><th>Fecha inicio</th><th>Fecha fin</th><th>Sala</th>{% if mostrar_docente %}<th>Docente</th>{% endif %}</tr></thead>
+      <tbody><tr><td>Programación</td><td>Lunes</td><td>08:30</td><td>09:50</td><td>2027-03-01</td><td>2027-07-15</td><td>Sala 204</td>{% if mostrar_docente %}<td>Profesora Ejemplo</td>{% endif %}</tr></tbody></table>
     </div>
   </section>
   {% if error %}<div role="alert" class="registro-aviso mb-5" style="white-space:pre-line">{{ error }}</div>{% endif %}
@@ -38,8 +38,8 @@
   </form>
   {% if previo %}
   <h2 class="text-xl font-semibold">Revisa tu horario antes de importar ({{ previo|length }} bloque{{ previo|length|pluralize }})</h2>
-  <div class="overflow-x-auto my-4"><table class="w-full text-sm horario-tabla"><thead><tr><th>Asignatura</th><th>Día (1=Lun)</th><th>Inicio</th><th>Fin</th><th>Desde</th><th>Hasta</th><th>Sala</th><th>Docente</th></tr></thead><tbody>
-    {% for b in previo %}<tr><td>{{ b.asignatura }}</td><td>{{ b.dia_semana }}</td><td>{{ b.hora_inicio }}</td><td>{{ b.hora_fin }}</td><td>{{ b.fecha_inicio }}</td><td>{{ b.fecha_fin }}</td><td>{{ b.sala }}</td><td>{{ b.docente }}</td></tr>{% endfor %}
+  <div class="overflow-x-auto my-4"><table class="w-full text-sm horario-tabla"><thead><tr><th>Asignatura</th><th>Día (1=Lun)</th><th>Inicio</th><th>Fin</th><th>Desde</th><th>Hasta</th><th>Sala</th>{% if mostrar_docente %}<th>Docente</th>{% endif %}</tr></thead><tbody>
+    {% for b in previo %}<tr><td>{{ b.asignatura }}</td><td>{{ b.dia_semana }}</td><td>{{ b.hora_inicio }}</td><td>{{ b.hora_fin }}</td><td>{{ b.fecha_inicio }}</td><td>{{ b.fecha_fin }}</td><td>{{ b.sala }}</td>{% if mostrar_docente %}<td>{{ b.docente }}</td>{% endif %}</tr>{% endfor %}
   </tbody></table></div>
   <form method="post" class="space-y-4">{% csrf_token %}<input type="hidden" name="accion" value="aplicar">
     <label class="block"><input type="checkbox" name="confirmar" value="si" required> Reemplazar mi horario personal actual por estos bloques. Mis tareas y actividades se conservarán.</label>
@@ -48,9 +48,9 @@
   <form method="post" class="mt-3">{% csrf_token %}<input type="hidden" name="accion" value="cancelar"><button class="btn-secondary px-4 py-2">Cancelar revisión</button></form>
   {% endif %}
   <h2 class="text-xl font-semibold mt-8 mb-4">Mi horario actual</h2>
-  <div class="overflow-x-auto"><table class="w-full horario-tabla"><thead><tr><th>Asignatura</th><th>Día</th><th>Horas</th><th>Período</th><th>Sala</th><th>Docente</th></tr></thead><tbody>
-    {% for b in bloques_actuales %}<tr><td>{{ b.asignatura }}</td><td>{{ b.get_dia_semana_display }}</td><td>{{ b.hora_inicio|time:'H:i' }}–{{ b.hora_fin|time:'H:i' }}</td><td>{{ b.fecha_inicio|date:'d/m/Y' }}–{{ b.fecha_fin|date:'d/m/Y' }}</td><td>{{ b.sala }}</td><td>{{ b.docente }}</td></tr>
-    {% empty %}<tr><td colspan="6">Todavía no has importado un horario.</td></tr>{% endfor %}
+  <div class="overflow-x-auto"><table class="w-full horario-tabla"><thead><tr><th>Asignatura</th><th>Día</th><th>Horas</th><th>Período</th><th>Sala</th>{% if mostrar_docente %}<th>Docente</th>{% endif %}</tr></thead><tbody>
+    {% for b in bloques_actuales %}<tr><td>{{ b.asignatura }}</td><td>{{ b.get_dia_semana_display }}</td><td>{{ b.hora_inicio|time:'H:i' }}–{{ b.hora_fin|time:'H:i' }}</td><td>{{ b.fecha_inicio|date:'d/m/Y' }}–{{ b.fecha_fin|date:'d/m/Y' }}</td><td>{{ b.sala }}</td>{% if mostrar_docente %}<td>{{ b.docente }}</td>{% endif %}</tr>
+    {% empty %}<tr><td colspan="{% if mostrar_docente %}6{% else %}5{% endif %}">Todavía no has importado un horario.</td></tr>{% endfor %}
   </tbody></table></div>
 </section>
 {% endblock %}

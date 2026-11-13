@@ -7,7 +7,7 @@ from io import BytesIO
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from .horario_personal import COLUMNAS
+from .horario_personal import COLUMNAS, COLUMNAS_ESTUDIANTE
 
 MAIN = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
 DOC_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
@@ -22,17 +22,22 @@ def _texto_xml(value):
                           0x10000 <= ord(ch) <= 0x10FFFF))
 
 
-def generar_horario_xlsx(bloques):
-    """Un bloque por fila, sin relaciones con carreras ni secciones."""
+def generar_horario_xlsx(bloques, *, incluir_docente=False):
+    """Exporta 8 columnas para estudiantes o 7 para docentes.
+
+    El rol se decide en la vista, a partir del usuario autenticado.
+    """
     dias = ('', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo')
-    filas = [COLUMNAS]
+    columnas = COLUMNAS_ESTUDIANTE if incluir_docente else COLUMNAS
+    ultima = "H" if incluir_docente else "G"
+    filas = [columnas]
     for b in bloques:
         filas.append((
             b.asignatura, dias[b.dia_semana],
             b.hora_inicio.strftime('%H:%M'), b.hora_fin.strftime('%H:%M'),
             b.fecha_inicio.isoformat(), b.fecha_fin.isoformat(),
-            b.sala, b.docente,
-        ))
+            b.sala,
+        ) + ((b.docente or '',) if incluir_docente else ()))
     rows = []
     for numero, fila in enumerate(filas, 1):
         cells = ''.join(
@@ -43,7 +48,7 @@ def generar_horario_xlsx(bloques):
         rows.append(f'<row r="{numero}">{cells}</row>')
     hoja = (
         f'<?xml version="1.0" encoding="UTF-8"?>'
-        f'<worksheet xmlns="{MAIN}"><dimension ref="A1:H{len(filas)}"/>'
+        f'<worksheet xmlns="{MAIN}"><dimension ref="A1:{ultima}{len(filas)}"/>'
         '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" '
         'topLeftCell="A2" activePane="bottomLeft" state="frozen"/>'
         '</sheetView></sheetViews>'
@@ -52,9 +57,10 @@ def generar_horario_xlsx(bloques):
         '<col min="3" max="4" width="16" customWidth="1"/>'
         '<col min="5" max="6" width="20" customWidth="1"/>'
         '<col min="7" max="7" width="18" customWidth="1"/>'
-        '<col min="8" max="8" width="28" customWidth="1"/></cols>'
+        + ('<col min="8" max="8" width="28" customWidth="1"/>' if incluir_docente else '')
+        + '</cols>'
         '<sheetData>' + ''.join(rows) + '</sheetData>'
-        f'<autoFilter ref="A1:H{len(filas)}"/></worksheet>'
+        f'<autoFilter ref="A1:{ultima}{len(filas)}"/></worksheet>'
     )
     contenido = (
         '<?xml version="1.0" encoding="UTF-8"?>'

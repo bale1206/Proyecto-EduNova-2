@@ -1,52 +1,94 @@
 {% extends 'base.html' %}
-{% block title %}EduNova · Tu agenda académica personal{% endblock %}
+{% load static %}
+{% block title %}EduNova · Organiza tu semestre con claridad{% endblock %}
 {% block main_clases %}w-full{% endblock %}
 {% block mensajes_clases %}max-w-6xl mx-auto px-4 sm:px-6 pt-6{% endblock %}
 {% block nav_publica %}
-<nav class="hidden md:flex items-center gap-5 text-sm"><a class="hover:underline" href="#funcionalidades">Herramientas</a><a class="hover:underline" href="#perfiles">Perfiles</a><a class="hover:underline" href="#comenzar">Cómo comenzar</a></nav>
+<nav class="hidden md:flex items-center gap-5 text-sm" aria-label="Navegación de la página principal">
+  <a class="hover:underline" href="#herramientas">Herramientas</a>
+  <a class="hover:underline" href="#perfiles">Perfiles</a>
+  <a class="hover:underline" href="#primeros-pasos">Primeros pasos</a>
+</nav>
 {% endblock %}
 {% block content %}
-<section class="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20 grid lg:grid-cols-2 gap-10 items-center">
-  <div>
-    <p class="font-semibold tracking-wide text-sm mb-4" style="color:var(--rio)">EDUNOVA · PLANIFICACIÓN ACADÉMICA</p>
-    <h1 class="font-display text-4xl sm:text-5xl font-semibold leading-tight" style="color:var(--tinta)">Organiza tu semestre.<span class="block" style="color:var(--rio)">Aprovecha mejor tu tiempo.</span></h1>
-    <p class="text-lg leading-relaxed text-muted mt-6 max-w-xl">Consulta tus clases y actividades en un calendario privado. Prepara, importa y exporta tu horario en Excel con una plantilla sencilla y una guía paso a paso.</p>
-    <div class="flex flex-wrap gap-3 mt-8"><a class="btn-primary px-6 py-3" href="{% url 'usuarios:registro' %}">Crear mi cuenta</a><a class="btn-secondary px-6 py-3" href="{% url 'usuarios:login' %}">Iniciar sesión</a></div>
-    <p class="text-sm text-muted mt-5">Para estudiantes, docentes y directores de carrera.</p>
-  </div>
-  <div class="card p-6" aria-label="Ejemplo ilustrativo de calendario EduNova">
-    <p class="text-xs text-muted mb-2">VISTA DE EJEMPLO · NO SON DATOS REALES</p>
-    <h2 class="font-display text-2xl font-semibold mb-4">Mi semana</h2>
-    <div class="grid grid-cols-7 gap-2 text-center mb-5">
-      <span class="text-sm">Lun</span><span class="text-sm">Mar</span><span class="text-sm">Mié</span><span class="text-sm">Jue</span><span class="text-sm">Vie</span><span class="text-sm">Sáb</span><span class="text-sm">Dom</span>
-      <span class="surface-subtle rounded-lg py-3">12</span><span class="surface-subtle rounded-lg py-3">13</span><span class="surface-subtle rounded-lg py-3 font-semibold" style="outline:2px solid var(--rio)">14</span><span class="surface-subtle rounded-lg py-3">15</span><span class="surface-subtle rounded-lg py-3">16</span><span class="surface-subtle rounded-lg py-3">17</span><span class="surface-subtle rounded-lg py-3">18</span>
+<link rel="stylesheet" href="{% static 'css/landing-distribucion.css' %}">
+<div class="edn-landing">
+  <section class="edn-hero" aria-labelledby="edn-titulo-principal">
+    <div class="edn-contenedor edn-hero-texto">
+      <p class="edn-kicker">EDUNOVA · ORGANIZACIÓN ACADÉMICA</p>
+      <h1 id="edn-titulo-principal" class="font-display edn-titulo">Tu semestre, <span>mejor organizado.</span></h1>
+      <p class="edn-intro">Consulta tus clases y actividades en un calendario personal. Prepara, importa y exporta tu horario con Excel y mantén tus tareas, evaluaciones y reuniones en un solo lugar.</p>
+      <div class="edn-acciones">
+        <a href="{% url 'usuarios:registro' %}" class="btn-primary px-6 py-3">Crear mi cuenta</a>
+        <a href="{% url 'usuarios:login' %}" class="btn-secondary px-6 py-3">Iniciar sesión</a>
+      </div>
+      <p class="edn-nota">Para estudiantes, docentes y directores de carrera.</p>
     </div>
-    <div class="space-y-3">
-      <div class="surface-subtle rounded-xl p-4" style="border-left:4px solid var(--rio)"><strong>08:30–09:50 · Desarrollo Web</strong><p class="text-sm text-muted mt-1">Horario personal importado · Sala 301</p></div>
-      <div class="surface-subtle rounded-xl p-4" style="border-left:4px solid var(--amanecer)"><strong>12:00 · Entrega de proyecto</strong><p class="text-sm text-muted mt-1">Tarea personal con recordatorio</p></div>
-      <div class="surface-subtle rounded-xl p-4" style="border-left:4px solid var(--rio)"><strong>16:30 · Reunión académica</strong><p class="text-sm text-muted mt-1">Evento en el calendario</p></div>
+  </section>
+
+  <section class="edn-demo-seccion" aria-labelledby="edn-demo-titulo">
+    <div class="edn-contenedor">
+      <div class="edn-intro-seccion">
+        <p class="edn-kicker">ASÍ SE VE TU PLANIFICACIÓN</p>
+        <h2 id="edn-demo-titulo" class="font-display edn-subtitulo">Una vista clara de lo que tienes por delante</h2>
+        <p class="edn-descripcion">Encuentra tus clases por día y hora. En la misma agenda podrás revisar entregas y reuniones, sin mezclar los horarios de otras personas.</p>
+      </div>
+      <div class="edn-demo-card card">
+        <div class="edn-demo-calendario">
+          <p class="edn-micro">VISTA ILUSTRATIVA · DATOS FICTICIOS</p>
+          <h3 class="font-display edn-demo-heading">Mi semana académica</h3>
+          <div class="edn-semana" aria-label="Semana de ejemplo">
+            <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+            <strong>12</strong><strong>13</strong><strong class="edn-hoy">14</strong><strong>15</strong><strong>16</strong><strong>17</strong><strong>18</strong>
+          </div>
+          <p class="edn-nota">Las clases aparecen solamente en las fechas de vigencia de tu horario.</p>
+        </div>
+        <div class="edn-demo-lista" aria-label="Actividades de ejemplo">
+          <h3 class="font-display edn-demo-heading">Actividades del día</h3>
+          <article class="edn-evento edn-clase"><strong>08:30–09:50 · Desarrollo Web</strong><p>Clase del horario importado · Sala 301</p></article>
+          <article class="edn-evento edn-tarea"><strong>12:00 · Entrega de proyecto</strong><p>Tarea personal con recordatorio</p></article>
+          <article class="edn-evento edn-reunion"><strong>16:30 · Reunión académica</strong><p>Evento agregado al calendario</p></article>
+        </div>
+      </div>
     </div>
-  </div>
-</section>
-<section id="funcionalidades" class="py-16 sm:py-20" style="background:var(--superficie);border-top:1px solid var(--linea);border-bottom:1px solid var(--linea)">
- <div class="max-w-6xl mx-auto px-4 sm:px-6"><h2 class="font-display text-3xl font-semibold">Todo lo que necesitas para planificar</h2><p class="text-muted mt-3">Funciones disponibles en EduNova.</p>
- <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
-  <article class="card p-5"><h3 class="font-semibold text-xl">Calendario personal</h3><p class="text-muted mt-2">Clases recurrentes por fecha, día y hora, sin depender de catálogos de carreras o asignaturas.</p></article>
-  <article class="card p-5"><h3 class="font-semibold text-xl">Plantilla Excel XLSX</h3><p class="text-muted mt-2">Completa un bloque por fila y sigue las instrucciones paso a paso antes de subirlo.</p></article>
-  <article class="card p-5"><h3 class="font-semibold text-xl">Importar y exportar</h3><p class="text-muted mt-2">Estudiantes y docentes pueden descargar su horario, editarlo y volver a importarlo.</p></article>
-  <article class="card p-5"><h3 class="font-semibold text-xl">Tareas y evaluaciones</h3><p class="text-muted mt-2">Mantén tus actividades personales y organiza sus prioridades.</p></article>
-  <article class="card p-5"><h3 class="font-semibold text-xl">Reuniones y eventos</h3><p class="text-muted mt-2">Agenda actividades propias y consulta los próximos compromisos.</p></article>
-  <article class="card p-5"><h3 class="font-semibold text-xl">Accesibilidad</h3><p class="text-muted mt-2">Ajusta colores, contraste y tamaño de texto para leer desde distintas pantallas.</p></article>
- </div></div>
-</section>
-<section id="perfiles" class="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
- <h2 class="font-display text-3xl font-semibold">Tres perfiles, una planificación más clara</h2>
- <div class="grid md:grid-cols-3 gap-5 mt-8">
-  <article class="card p-6"><p class="text-sm font-semibold" style="color:var(--rio)">ESTUDIANTE</p><h3 class="font-semibold text-xl mt-2">Mi vida académica</h3><p class="text-muted mt-2">Clases, evaluaciones, tareas y recordatorios en un calendario privado.</p></article>
-  <article class="card p-6"><p class="text-sm font-semibold" style="color:var(--rio)">DOCENTE</p><h3 class="font-semibold text-xl mt-2">Mi planificación docente</h3><p class="text-muted mt-2">Horario personal, reuniones y actividades de docencia en un mismo lugar.</p></article>
-  <article class="card p-6"><p class="text-sm font-semibold" style="color:var(--rio)">DIRECTOR DE CARRERA</p><h3 class="font-semibold text-xl mt-2">Mi agenda de dirección</h3><p class="text-muted mt-2">Reuniones y eventos personales sin configurar asignaturas en el registro.</p></article>
- </div>
-</section>
-<section id="comenzar" class="py-16" style="background:var(--superficie);border-top:1px solid var(--linea)"><div class="max-w-6xl mx-auto px-4 sm:px-6"><h2 class="font-display text-3xl font-semibold">Empieza en tres pasos</h2><ol class="grid md:grid-cols-3 gap-5 mt-8"><li class="card p-5"><strong>1. Crea y verifica tu cuenta</strong><p class="text-muted mt-2">Regístrate con tu correo institucional. Completa el código recibido para activar tu perfil.</p></li><li class="card p-5"><strong>2. Configura tu horario</strong><p class="text-muted mt-2">Si eres estudiante o docente, descarga la plantilla o exporta tu horario, edítalo y revisa los datos antes de importar.</p></li><li class="card p-5"><strong>3. Consulta tu calendario</strong><p class="text-muted mt-2">Revisa tus clases, tareas, evaluaciones y reuniones organizadas por día.</p></li></ol></div></section>
-<footer class="py-7 border-t" style="border-color:var(--linea)"><div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-wrap justify-between gap-3 text-sm text-muted"><span>EduNova · Planificación académica</span><span>Tu horario, tu tiempo.</span></div></footer>
+  </section>
+
+  <section id="herramientas" class="edn-seccion edn-fondo" aria-labelledby="edn-herramientas-titulo">
+    <div class="edn-contenedor">
+      <div class="edn-intro-seccion"><p class="edn-kicker">HERRAMIENTAS</p><h2 id="edn-herramientas-titulo" class="font-display edn-subtitulo">Planificar sin complicaciones</h2><p class="edn-descripcion">Cada función tiene su lugar para que puedas concentrarte en lo importante.</p></div>
+      <div class="edn-tarjetas">
+        <article class="card edn-tarjeta"><span class="edn-numero">01</span><h3>Calendario personal</h3><p>Consulta las clases por fecha, día y hora, sin seleccionar carreras o secciones del antiguo catálogo.</p></article>
+        <article class="card edn-tarjeta"><span class="edn-numero">02</span><h3>Plantilla XLSX con instrucciones</h3><p>Descarga un archivo con ejemplo, completa una fila por bloque y sigue la guía de llenado paso a paso.</p></article>
+        <article class="card edn-tarjeta"><span class="edn-numero">03</span><h3>Importación y exportación</h3><p>Estudiantes y docentes pueden editar su horario Excel y revisar los datos antes de reemplazar sus clases.</p></article>
+        <article class="card edn-tarjeta"><span class="edn-numero">04</span><h3>Tareas y evaluaciones</h3><p>Organiza tus pendientes, establece prioridades y consulta próximas fechas en un mismo calendario.</p></article>
+        <article class="card edn-tarjeta"><span class="edn-numero">05</span><h3>Reuniones y eventos</h3><p>Agenda actividades personales con su fecha y horario, sin vincularlas obligatoriamente a asignaturas.</p></article>
+        <article class="card edn-tarjeta"><span class="edn-numero">06</span><h3>Legibilidad y accesibilidad</h3><p>Ajusta la tipografía, la paleta y el contraste según la pantalla o la presentación que utilices.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="perfiles" class="edn-seccion" aria-labelledby="edn-perfiles-titulo">
+    <div class="edn-contenedor">
+      <div class="edn-intro-seccion"><p class="edn-kicker">PARA CADA PERFIL</p><h2 id="edn-perfiles-titulo" class="font-display edn-subtitulo">Tres formas de aprovechar EduNova</h2><p class="edn-descripcion">Cada persona tiene su propio espacio y solamente ve sus actividades.</p></div>
+      <div class="edn-perfiles">
+        <article class="card edn-perfil"><p class="edn-kicker">ESTUDIANTE</p><h3>Organiza tu aprendizaje</h3><p>Visualiza tus clases, gestiona tareas y evaluaciones y recibe recordatorios personales.</p></article>
+        <article class="card edn-perfil"><p class="edn-kicker">DOCENTE</p><h3>Planifica tus clases</h3><p>Importa o exporta horarios, prepara evaluaciones y crea reuniones en tu agenda.</p></article>
+        <article class="card edn-perfil"><p class="edn-kicker">DIRECTOR DE CARRERA</p><h3>Coordina tus reuniones</h3><p>Mantén una agenda personal de hitos, reuniones y eventos de dirección.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="primeros-pasos" class="edn-seccion edn-fondo" aria-labelledby="edn-pasos-titulo">
+    <div class="edn-contenedor">
+      <div class="edn-intro-seccion"><p class="edn-kicker">PRIMEROS PASOS</p><h2 id="edn-pasos-titulo" class="font-display edn-subtitulo">Comienza a tu ritmo</h2><p class="edn-descripcion">No necesitas configurar mallas ni elegir secciones para utilizar tu calendario.</p></div>
+      <ol class="edn-pasos">
+        <li class="card edn-paso"><span class="edn-paso-numero">1</span><div><h3>Crea tu cuenta</h3><p>Selecciona tu perfil, completa tus datos y verifica el código enviado a tu correo electrónico.</p></div></li>
+        <li class="card edn-paso"><span class="edn-paso-numero">2</span><div><h3>Prepara tu horario</h3><p>Si eres estudiante o docente, completa la plantilla XLSX o exporta tus clases para editarlas. Revisa antes de importar.</p></div></li>
+        <li class="card edn-paso"><span class="edn-paso-numero">3</span><div><h3>Consulta tu planificación</h3><p>Revisa tus clases y añade tareas, evaluaciones, reuniones o eventos en las fechas correspondientes.</p></div></li>
+      </ol>
+      <div class="edn-acciones edn-acciones-final"><a href="{% url 'usuarios:registro' %}" class="btn-primary px-6 py-3">Crear una cuenta</a><a href="{% url 'usuarios:login' %}" class="btn-secondary px-6 py-3">Ya tengo cuenta</a></div>
+    </div>
+  </section>
+  <footer class="edn-pie"><div class="edn-contenedor"><span>EduNova · Planificación académica personal</span><span>Más orden. Menos distracciones.</span></div></footer>
+</div>
 {% endblock %}

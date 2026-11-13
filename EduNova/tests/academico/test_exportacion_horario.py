@@ -4,7 +4,8 @@ from datetime import date, time
 from django.test import TestCase
 from django.urls import reverse
 
-from academico.horario_personal import leer_horario
+from academico.horario_personal import leer_horario, COLUMNAS, COLUMNAS_ESTUDIANTE
+from academico.importacion_archivos import leer_xlsx
 from academico.models import BloqueHorarioPersonal
 from usuarios.models import Usuario
 
@@ -45,6 +46,8 @@ class ExportacionHorarioTests(TestCase):
         self.assertIn('mi-horario-edunova.xlsx', respuesta['Content-Disposition'])
         bloques = leer_horario(respuesta.content, 'mi-horario-edunova.xlsx')
         self.assertEqual(len(bloques), 1)
+        self.assertEqual(tuple(leer_xlsx(respuesta.content, 'Horario')[0]), COLUMNAS_ESTUDIANTE)
+        self.assertEqual(bloques[0]['docente'], 'Ejemplo')
         self.assertEqual(bloques[0]['asignatura'], 'Programación')
         self.assertEqual(bloques[0]['hora_inicio'], '08:30:00')
         self.assertEqual(bloques[0]['fecha_fin'], '2027-07-15')
@@ -58,5 +61,6 @@ class ExportacionHorarioTests(TestCase):
         self.assertEqual(respuesta.status_code, 200)
         nombres = [b['asignatura'] for b in leer_horario(respuesta.content, 'horario.xlsx')]
         self.assertEqual(nombres, ['Asignatura privada de docente'])
+        self.assertEqual(tuple(leer_xlsx(respuesta.content, 'Horario')[0]), COLUMNAS)
         self.assertContains(self.client.get(reverse('academico:home_docente')),
                             'Exportar mi horario XLSX')

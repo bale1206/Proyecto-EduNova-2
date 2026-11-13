@@ -1,4 +1,8 @@
-"""Horario privado, independiente del catálogo de carreras y asignaturas."""
+"""Horario privado, independiente del catálogo de carreras y asignaturas.
+
+La plantilla para docentes tiene siete columnas, mientras que la de
+estudiantes incluye una octava columna Docente. Ambos formatos son importables.
+"""
 import calendar
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
@@ -9,7 +13,10 @@ from zipfile import BadZipFile, ZipFile
 
 from .importacion_archivos import leer_xlsx, normalizar, NS
 
-COLUMNAS = ('Asignatura', 'Dia', 'Hora inicio', 'Hora fin', 'Fecha inicio', 'Fecha fin', 'Sala', 'Docente')
+COLUMNAS = ('Asignatura', 'Dia', 'Hora inicio', 'Hora fin', 'Fecha inicio', 'Fecha fin', 'Sala')
+COLUMNAS_ESTUDIANTE = COLUMNAS + ('Docente',)
+# Alias para archivos históricos y pruebas existentes.
+COLUMNAS_ANTIGUAS = COLUMNAS_ESTUDIANTE
 MAX_BYTES = 5 * 1024 * 1024
 MAX_BLOQUES = 300
 DIAS = {normalizar(n): i for i, n in enumerate(
@@ -46,7 +53,11 @@ def _primera_fecha(bloque, inicio=None):
 
 
 def leer_horario(datos, nombre):
-    """Valida el libro completo antes de permitir cualquier escritura."""
+    """Valida todo el archivo antes de permitir escribir el horario.
+
+    Las plantillas vigentes tienen 7 columnas (docentes) u 8 (estudiantes).
+    También admite los archivos antiguos sin perder los datos del docente.
+    """
     if not nombre.lower().endswith('.xlsx') or len(datos) > MAX_BYTES:
         raise ValueError('Utiliza un archivo .xlsx de hasta 5 MB.')
     try:
@@ -65,24 +76,31 @@ def leer_horario(datos, nombre):
             if not any(s.attrib.get('name') == 'Horario' for s in xml.findall('x:sheets/x:sheet', NS)):
                 raise ValueError('Falta la hoja Horario. Descarga la plantilla de EduNova.')
             propiedades = xml.find('x:workbookPr', NS)
-            epoch = date(1904, 1, 1) if propiedades is not None and propiedades.get('date1904') in ('1', 'true') else date(1899, 12, 30)
+            epoch = (date(1904, 1, 1) if propiedades is not None and
+                     propiedades.get('date1904') in ('1', 'true') else date(1899, 12, 30))
         filas = leer_xlsx(datos, 'Horario')
     except (BadZipFile, ET.ParseError, KeyError, RuntimeError, NotImplementedError) as exc:
         raise ValueError('No se pudo leer el XLSX. Descarga y completa la plantilla.') from exc
-    if not filas or tuple(normalizar(x) for x in filas[0]) != tuple(normalizar(x) for x in COLUMNAS):
-        raise ValueError('Conserva los ocho encabezados originales de la hoja Horario.')
+    if not filas:
+        raise ValueError('Completa entre 1 y 300 bloques en la hoja Horario.')
+    cabeceras = tuple(normalizar(x) for x in filas[0])
+    nuevo = tuple(normalizar(x) for x in COLUMNAS)
+    anterior = tuple(normalizar(x) for x in COLUMNAS_ANTIGUAS)
+    if cabeceras not in (nuevo, anterior):
+        raise ValueError('Conserva los encabezados de la hoja Horario: siete columnas para docentes u ocho para estudiantes.')
     if not 1 <= len(filas) - 1 <= MAX_BLOQUES:
         raise ValueError('Completa entre 1 y 300 bloques en la hoja Horario.')
     bloques, errores = [], []
     for numero, fila in enumerate(filas[1:], 2):
         try:
-            if len(fila) > len(COLUMNAS) and any(str(x).strip() for x in fila[8:]):
+            # La octava columna corresponde al docente para estudiantes y libros antiguos.
+            if len(fila) > 8 and any(str(x).strip() for x in fila[8:]):
                 raise ValueError('no agregues columnas adicionales')
             valores = [str(x).strip() for x in fila[:8]]
             valores += [''] * (8 - len(valores))
             asignatura, dia, inicio, fin, desde, hasta, sala, docente = valores
             if not asignatura or len(asignatura) > 160 or len(sala) > 100 or len(docente) > 150:
-                raise ValueError('completa la asignatura (máximo 160 letras), sala (100) y docente (150)')
+                raise ValueError('completa una asignatura válida (máximo 160 caracteres); sala hasta 100 y docente hasta 150')
             dia = int(dia) if dia in tuple(str(i) for i in range(1, 8)) else DIAS.get(normalizar(dia))
             if dia is None:
                 raise ValueError('el día debe ser Lunes a Domingo, o un número de 1 a 7')

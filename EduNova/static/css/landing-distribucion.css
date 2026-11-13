@@ -1,0 +1,46 @@
+/* Distribución independiente de las utilidades Tailwind: no requiere recompilar CSS. */
+.edn-landing { color:var(--tinta); }
+.edn-landing * { box-sizing:border-box; }
+.edn-contenedor { width:min(calc(100% - 2.5rem), 1110px); margin-inline:auto; }
+.edn-hero { padding:clamp(4.8rem,9vw,8.5rem) 0 clamp(4rem,8vw,7rem); text-align:center; }
+.edn-hero-texto { max-width:910px; }
+.edn-kicker { font-size:.83rem; font-weight:750; letter-spacing:.095em; line-height:1.6; color:var(--rio); margin:0 0 1.2rem; }
+.edn-titulo { font-size:clamp(2.7rem,5.7vw,5rem); line-height:1.13; font-weight:750; letter-spacing:-.034em; margin:0 auto; max-width:920px; }
+.edn-titulo span { display:block; color:var(--rio); }
+.edn-intro { max-width:760px; margin:2.1rem auto 0; font-size:clamp(1.08rem,2vw,1.32rem); line-height:1.75; color:var(--tinta-muted); }
+.edn-acciones { display:flex; justify-content:center; flex-wrap:wrap; align-items:center; gap:1rem; margin-top:2.4rem; }
+.edn-acciones a { text-align:center; min-width:170px; }
+.edn-nota { color:var(--tinta-muted); font-size:.94rem; line-height:1.65; margin-top:1.5rem; }
+.edn-seccion, .edn-demo-seccion { padding:clamp(4.6rem,8vw,7rem) 0; }
+.edn-demo-seccion { padding-top:1rem; }
+.edn-fondo { background:var(--superficie); border-block:1px solid var(--linea); }
+.edn-intro-seccion { max-width:790px; margin:0 auto 2.8rem; text-align:center; }
+.edn-subtitulo { font-size:clamp(2rem,4vw,3rem); font-weight:700; line-height:1.22; letter-spacing:-.02em; margin:0; }
+.edn-descripcion { color:var(--tinta-muted); font-size:1.08rem; line-height:1.75; margin:1.2rem auto 0; max-width:690px; }
+.edn-demo-card { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); padding:clamp(1.6rem,3.8vw,3rem); gap:clamp(2rem,4vw,4rem); align-items:start; }
+.edn-demo-heading { font-size:1.4rem; font-weight:650; margin:0 0 1.3rem; }
+.edn-micro { color:var(--tinta-faint); font-size:.77rem; font-weight:650; letter-spacing:.07em; margin-bottom:.8rem; }
+.edn-semana { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.45rem; text-align:center; font-size:.8rem; }
+.edn-semana span { color:var(--tinta-muted); }
+.edn-semana strong { padding:.8rem 0; border-radius:.5rem; font-size:.97rem; font-weight:550; background:var(--lino-2); }
+.edn-semana .edn-hoy { outline:2px solid var(--rio); outline-offset:-2px; font-weight:750; }
+.edn-demo-lista { display:grid; gap:1rem; }
+.edn-demo-lista h3 { margin-bottom:.25rem; }
+.edn-evento { border-radius:.9rem; background:var(--lino-2); padding:1.15rem 1.3rem; border-left:4px solid var(--rio); }
+.edn-evento.edn-tarea { border-color:var(--amanecer); }
+.edn-evento p { color:var(--tinta-muted); font-size:.92rem; line-height:1.55; margin:.4rem 0 0; }
+.edn-tarjetas { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.4rem; }
+.edn-tarjeta { padding:clamp(1.65rem,3vw,2.2rem); min-height:210px; }
+.edn-tarjeta h3, .edn-perfil h3, .edn-paso h3 { font-size:1.35rem; font-weight:700; line-height:1.35; margin:0; }
+.edn-tarjeta p, .edn-perfil p:not(.edn-kicker), .edn-paso p { color:var(--tinta-muted); line-height:1.7; margin:.9rem 0 0; }
+.edn-numero { display:block; font-weight:750; color:var(--rio); margin-bottom:1rem; }
+.edn-perfiles { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1.35rem; }
+.edn-perfil { padding:2rem; min-height:245px; }
+.edn-pasos { list-style:none; padding:0; margin:0 auto; max-width:880px; display:grid; gap:1.1rem; }
+.edn-paso { display:flex; gap:1.4rem; align-items:flex-start; padding:1.7rem 2rem; }
+.edn-paso-numero { flex:0 0 3.1rem; width:3.1rem; height:3.1rem; border-radius:50%; display:grid; place-items:center; background:var(--lino-2); color:var(--rio); font-size:1.4rem; font-weight:750; }
+.edn-acciones-final { margin-top:3rem; }
+.edn-pie { border-top:1px solid var(--linea); padding:2rem 0; font-size:.9rem; color:var(--tinta-muted); }
+.edn-pie .edn-contenedor { display:flex; flex-wrap:wrap; justify-content:space-between; gap:.8rem; }
+@media(max-width:900px){ .edn-demo-card { grid-template-columns:1fr; } .edn-perfiles { grid-template-columns:1fr; } .edn-perfil { min-height:0; } }
+@media(max-width:620px){ .edn-contenedor{width:min(calc(100% - 2rem),1110px)}.edn-hero{padding:4.5rem 0 4rem}.edn-titulo{font-size:clamp(2.35rem,10vw,3.3rem)}.edn-demo-seccion{padding-top:0}.edn-tarjetas{grid-template-columns:1fr}.edn-tarjeta{min-height:0}.edn-semana{gap:.22rem;font-size:.68rem}.edn-semana strong{padding:.5rem 0;font-size:.78rem}.edn-paso{padding:1.35rem;gap:1rem}.edn-paso-numero{width:2.6rem;height:2.6rem;flex-basis:2.6rem}.edn-acciones a{width:100%} }

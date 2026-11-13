@@ -27,15 +27,14 @@ urlpatterns = [
     path('planificacion/tareas/<int:tarea_id>/<str:accion>/', views.tarea_equipo_accion, name='tarea_equipo_accion'),
     path('planificacion/recordatorios/', views.recordatorios_equipo, name='recordatorios_equipo'),
     path('administrativo/', views.home_administrativo, name='home_administrativo'),
-    path('administrativo/analitica/', views.analitica_carrera, name='analitica_carrera'),
     path('administrativo/carreras/nueva/', views.crear_carrera, name='crear_carrera'),
     path('administrativo/carreras/asignar/', views.asignar_carrera, name='asignar_carrera'),
     path('administrativo/secciones/matricular/', views.matricular_seccion, name='matricular_seccion'),
     path('administrativo/cursos/nuevo/', views.crear_curso, name='crear_curso'),
     path('administrativo/eventos/nuevo/', views.crear_evento, name='crear_evento'),
-    path('crear-observacion/', views.crear_observacion, name='crear_observacion'),
+    # Servicio compartido con las observaciones: no es una pantalla de asistencia.
     path('ajax/cargar-estudiantes/', views.cargar_estudiantes, name='ajax_cargar_estudiantes'),
+    path('crear-observacion/', views.crear_observacion, name='crear_observacion'),
     path('observaciones/panel/', views.lista_observaciones, name='lista_observaciones'),
     path('observaciones/actualizar/<int:pk>/', views.actualizar_observacion, name='actualizar_observacion'),
-    path('asistencia/tomar/', views.tomar_asistencia, name='tomar_asistencia'),
 ]

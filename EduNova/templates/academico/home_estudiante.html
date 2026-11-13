@@ -1,20 +1,5 @@
 {% extends "base.html" %}
 {% block title %}Mi planificación · EduNova{% endblock %}
-{% comment %}<script>
-(function(){
-  const lista=document.getElementById('avisos-asistencia-lista');
-  if(!lista || !window.WebSocket)return;
-  const scheme=location.protocol==='https:'?'wss:':'ws:';
-  const ws=new WebSocket(scheme+'//'+location.host+'/ws/avisos/estudiante/');
-  ws.addEventListener('message',event=>{
-    try {const data=JSON.parse(event.data);if(data.tipo!=='asistencia')return;
-      document.getElementById('sin-avisos')?.remove();
-      const li=document.createElement('li');li.className='rounded-lg p-2';li.style.background='var(--lino-2)';li.textContent=data.texto;lista.prepend(li);
-      while(lista.children.length>5)lista.lastElementChild.remove();
-    }catch(_e){}
-  });
-})();
-</script>{% endcomment %}
 {% block content %}
 <div class="mb-6">
  <p class="text-sm text-muted">Mi espacio académico</p>
@@ -28,10 +13,6 @@
     {% else %}<p class="text-muted text-sm mt-2">No tienes recordatorios pendientes.</p>{% endif %}
   </details>
 </section>
-<section class="card p-4 mb-5" aria-label="Avisos de asistencia" id="avisos-asistencia">
- <h2 class="font-semibold mb-2">Mis avisos de asistencia</h2><ul id="avisos-asistencia-lista" class="space-y-2 text-sm" aria-live="polite" aria-atomic="false">
- {% for aviso in avisos_asistencia %}<li class="rounded-lg p-2" style="background:var(--lino-2)">{{ aviso.texto }}</li>{% empty %}<li class="text-muted" id="sin-avisos">Cuando tu docente pase lista, verás aquí tu aviso.</li>{% endfor %}
- </ul></section>
 <div id="portal-estudiante-grid" class="grid gap-6 lg:grid-cols-3">
  <div class="space-y-6 lg:col-span-2">
   <section id="seccion-calendario" class="card p-5" aria-labelledby="calendario-titulo">
@@ -59,7 +40,7 @@
    {% for tarea in tareas %}<li class="rounded-lg border p-3 flex flex-wrap items-center gap-3" style="border-color:var(--linea)">
     {% if tarea.tipo_actividad == "tarea" %}<form method="post" action="{% url 'academico:alternar_tarea_estudiante' tarea.id %}">{% csrf_token %}<button type="submit" class="btn-secondary px-3 py-1 text-sm" aria-label="Cambiar estado de {{ tarea.titulo }}">{% if tarea.completada %}↩ Pendiente{% else %}✓ Completar{% endif %}</button></form>{% endif %}
     <span class="edunova-task-dot" style="--task-color:{{ tarea.color }}" aria-hidden="true"></span>
-    <span class="flex-1 {% if tarea.completada %}line-through text-muted{% endif %}">{{ tarea.titulo }}<span class="block text-xs text-muted">{{ tarea.get_tipo_actividad_display }} · {% if tarea.seccion %}{{ tarea.seccion.asignatura_visible }} · {{ tarea.seccion.codigo_visible }}{% endif %}</span></span>
+    <span class="flex-1 {% if tarea.completada %}line-through text-muted{% endif %}">{{ tarea.titulo }}<span class="block text-xs text-muted">{{ tarea.get_tipo_actividad_display }}{% if tarea.seccion %} · {{ tarea.seccion.asignatura_visible }} · {{ tarea.seccion.codigo_visible }}{% endif %}</span></span>
     {% if tarea.prioridad == 'alta' %}<span class="edunova-prioridad-alta" aria-label="Alta prioridad">❗ Alta prioridad</span>{% elif tarea.prioridad == 'media' %}<span class="edunova-prioridad-neutra">Prioridad media</span>{% else %}<span class="edunova-prioridad-neutra">Prioridad baja</span>{% endif %}
     {% if tarea.recordatorios_activos and not tarea.completada %}<span class="text-xs text-muted" title="Recordatorios activos">🔔 Avisos activos</span>{% endif %}
     {% if tarea.fecha_limite %}<span class="text-xs text-muted">{{ tarea.fecha_limite|date:'d/m/Y' }}{% if tarea.hora_inicio %} · {{ tarea.hora_inicio|time:'H:i' }}{% endif %}{% if tarea.repeticion != 'ninguna' %} · {{ tarea.get_repeticion_display }}{% endif %}</span>{% endif %}
@@ -69,12 +50,6 @@
   </section>
  </div>
  <aside class="space-y-6">
-  <div class="card p-5"><h2 class="font-display font-semibold mb-3">Mi cuenta</h2>
-   <p class="text-sm"><strong>Nombre:</strong> {{ user.nombre_completo }}</p>
-   <p class="text-sm mt-2"><strong>Código EduNova:</strong> {{ user.codigo_edunova }}</p>
-   <p class="mt-2"><strong>Bloques de horario:</strong> {{ bloques_horario.count }}</p>
-   <p class="text-xs text-muted mt-4">Las calificaciones y créditos se incorporarán en una etapa posterior.</p>
-  </div>
   <div class="card p-5"><h2 class="font-display font-semibold mb-3">Próximas actividades</h2>
    {% if agenda_proxima %}<ul class="space-y-2">{% for actividad in agenda_proxima %}<li class="text-sm">
      <span class="text-muted">{{ actividad.fecha|date:'d/m' }}{% if actividad.hora %} · {{ actividad.hora|time:'H:i' }}{% endif %}</span>
@@ -84,21 +59,6 @@
   </div>
  </aside>
 </div>
-<script>
-(function(){
-  const lista=document.getElementById('avisos-asistencia-lista');
-  if(!lista || !window.WebSocket)return;
-  const scheme=location.protocol==='https:'?'wss:':'ws:';
-  const ws=new WebSocket(scheme+'//'+location.host+'/ws/avisos/estudiante/');
-  ws.addEventListener('message',event=>{
-    try {const data=JSON.parse(event.data);if(data.tipo!=='asistencia')return;
-      document.getElementById('sin-avisos')?.remove();
-      const li=document.createElement('li');li.className='rounded-lg p-2';li.style.background='var(--lino-2)';li.textContent=data.texto;lista.prepend(li);
-      while(lista.children.length>5)lista.lastElementChild.remove();
-    }catch(_e){}
-  });
-})();
-</script>
 <script>
 (function(){
  const boton=document.getElementById('calendario-expandir');
@@ -115,7 +75,6 @@
    dialog.showModal();
    document.getElementById('cerrar-recordatorio').addEventListener('click',()=>dialog.close());
  }
-
 })();
 </script>
 {% endblock %}

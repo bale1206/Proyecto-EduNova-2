@@ -1,9 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Panel docente · EduNova{% endblock %}
-
 {% block content %}
 <h1 class="font-display text-2xl font-semibold mb-6">Hola, {{ user.first_name }}</h1>
-
 <div class="grid lg:grid-cols-3 gap-6">
     <div class="lg:col-span-1 space-y-6">
         <div class="card p-5">
@@ -16,24 +14,15 @@
                 <p class="font-medium mt-1">{{ proxima_clase.titulo }}</p>
                 <p class="text-sm text-muted">{{ proxima_clase.curso }}</p>
             </div>
-            {% else %}
-            <p class="text-sm text-muted">No tienes clases próximas agendadas.</p>
-            {% endif %}
-        </div>
-        <div class="flex gap-3">
-            <a href="{% url 'academico:tomar_asistencia' %}" class="btn btn-primary flex-1 text-center py-2.5 font-medium">
-                <i class="fas fa-plus"></i> Lista de Estudiantes
-            </a>
+            {% else %}<p class="text-sm text-muted">No tienes clases próximas agendadas.</p>{% endif %}
         </div>
         <div class="flex gap-3">
             <a href="{% url 'academico:crear_observacion' %}" class="btn btn-primary flex-1 text-center py-2.5 font-medium">
-                <i class="fas fa-plus"></i> Nueva Observación
+                <i class="fas fa-plus"></i> Nueva observación
             </a>
         </div>
     </div>
-
     <div class="lg:col-span-2">
-        {# Plantilla histórica sin dependencia de carreras, asignaturas ni filtros de secciones. #}
         {% include "academico/_calendario.html" %}
     </div>
 </div>
