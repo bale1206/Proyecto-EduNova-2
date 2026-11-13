@@ -4,13 +4,35 @@
 <section class="card p-5 md:p-8 max-w-6xl mx-auto">
   <a href="{% url 'usuarios:post_login_redirect' %}" class="underline">Volver a mi calendario</a>
   <h1 class="font-display text-3xl font-semibold mt-4">Importar mi horario</h1>
-  <p class="mt-3 text-muted">Descarga la plantilla, completa un bloque de clase por fila en la hoja «Horario» y carga el archivo para revisarlo. La hoja «Ejemplo» sirve de guía y no se importa.</p>
-  <p class="text-muted mt-2">Usa días de Lunes a Domingo, horas de 24 horas (08:30) y fechas AAAA-MM-DD. Asignatura, día, horas y fechas son obligatorios. Sala y docente son opcionales. Máximo 300 bloques y 5 MB.</p>
-  <a href="{% url 'academico:plantilla_horario' %}" class="btn-secondary inline-block px-4 py-3 my-5">Descargar plantilla XLSX</a>
+  <p class="mt-3 text-muted">Puedes descargar una plantilla vacía o exportar tu horario actual y editarlo. EduNova acepta ambos archivos si conservas el formato.</p>
+  <div class="flex flex-wrap gap-3 my-5">
+    <a href="{% url 'academico:plantilla_horario' %}" class="btn-secondary inline-block px-4 py-3">Descargar plantilla XLSX</a>
+    <a href="{% url 'academico:exportar_horario' %}" class="btn-secondary inline-block px-4 py-3">Exportar mi horario XLSX</a>
+  </div>
+  <section id="guia-horario" class="surface-subtle rounded-lg p-5 mb-7" aria-labelledby="titulo-guia">
+    <h2 id="titulo-guia" class="font-display text-2xl font-semibold mb-3">Cómo completar tu horario: paso a paso</h2>
+    <ol class="list-decimal pl-6 space-y-3">
+      <li><strong>Descarga el archivo:</strong> elige «Descargar plantilla XLSX» para comenzar desde cero. Si ya tienes clases registradas, selecciona «Exportar mi horario XLSX» para editarlas.</li>
+      <li><strong>Abre la hoja Horario:</strong> utiliza Excel o una aplicación que guarde archivos .xlsx. No cambies el nombre de la hoja «Horario», ni los ocho encabezados de la primera fila, ni el orden de las columnas. La hoja «Ejemplo» de la plantilla no se importa.</li>
+      <li><strong>Escribe una clase por fila:</strong> comienza en la fila 2. En la columna «Asignatura», escribe el nombre de la clase, por ejemplo «Programación». No necesitas seleccionar carrera, código o sección.</li>
+      <li><strong>Selecciona el día:</strong> escribe «Lunes», «Martes», «Miércoles», «Jueves», «Viernes», «Sábado» o «Domingo». También puedes usar los números del 1 al 7, empezando por Lunes.</li>
+      <li><strong>Completa las horas:</strong> usa formato de 24 horas, por ejemplo «08:30» para el inicio y «09:50» para el término. El término debe ser posterior al inicio y las dos horas deben pertenecer al mismo día.</li>
+      <li><strong>Define las fechas:</strong> usa «AAAA-MM-DD» para «Fecha inicio» y «Fecha fin», por ejemplo «2027-03-01» y «2027-07-15». La clase se repetirá semanalmente en el día seleccionado, exclusivamente en ese período.</li>
+      <li><strong>Agrega los detalles opcionales:</strong> escribe «Sala» y «Docente» si conoces esos datos. Puedes dejarlos vacíos.</li>
+      <li><strong>Repite para otros bloques:</strong> si una asignatura ocurre lunes y miércoles, crea una fila para cada día. Evita horarios superpuestos. No agregues columnas, fórmulas, macros ni más de 300 bloques; cada bloque puede abarcar hasta 370 días.</li>
+      <li><strong>Guarda y revisa:</strong> guarda el archivo en formato .xlsx (máximo 5 MB), selecciónalo a continuación y presiona «Revisar horario». Si hay errores, EduNova indicará qué fila debes corregir.</li>
+      <li><strong>Confirma cuando esté correcto:</strong> la confirmación reemplaza tu horario personal anterior, pero mantiene las tareas, reuniones y eventos. Antes puedes exportar el horario actual como respaldo.</li>
+    </ol>
+    <div class="overflow-x-auto mt-5">
+      <p class="font-semibold mb-2">Ejemplo de una fila correcta</p>
+      <table class="w-full text-sm horario-tabla"><thead><tr><th>Asignatura</th><th>Dia</th><th>Hora inicio</th><th>Hora fin</th><th>Fecha inicio</th><th>Fecha fin</th><th>Sala</th><th>Docente</th></tr></thead>
+      <tbody><tr><td>Programación</td><td>Lunes</td><td>08:30</td><td>09:50</td><td>2027-03-01</td><td>2027-07-15</td><td>Sala 204</td><td>Docente Ejemplo</td></tr></tbody></table>
+    </div>
+  </section>
   {% if error %}<div role="alert" class="registro-aviso mb-5" style="white-space:pre-line">{{ error }}</div>{% endif %}
   <form method="post" enctype="multipart/form-data" class="space-y-3 mb-6">
     {% csrf_token %}<input type="hidden" name="accion" value="previsualizar">
-    <label class="block font-semibold" for="archivo-horario">Archivo de horario</label>
+    <label class="block font-semibold" for="archivo-horario">Archivo de horario (.xlsx)</label>
     <input id="archivo-horario" name="archivo" type="file" accept=".xlsx" required class="surface-control border rounded-lg w-full p-3">
     <button class="btn-primary px-4 py-3">Revisar horario</button>
   </form>
