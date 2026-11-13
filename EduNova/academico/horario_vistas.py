@@ -5,13 +5,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 from usuarios.models import Usuario
 from .horario_personal import leer_horario, MAX_BYTES
+from .exportacion_horario import generar_horario_xlsx
 from .models import BloqueHorarioPersonal
 
 PENDIENTE = 'edunova_horario_previo_v1'
@@ -19,7 +20,7 @@ PENDIENTE = 'edunova_horario_previo_v1'
 
 def _autorizar(usuario):
     if usuario.rol not in (Usuario.Rol.ESTUDIANTE, Usuario.Rol.DOCENTE):
-        raise PermissionDenied('La importación de horario está disponible para estudiantes y docentes.')
+        raise PermissionDenied('La gestión de horarios está disponible para estudiantes y docentes.')
 
 
 @login_required
@@ -29,6 +30,24 @@ def plantilla_horario(request):
     return FileResponse(open(Path(settings.BASE_DIR) / 'plantillas/horario-edunova.xlsx', 'rb'),
                         as_attachment=True, filename='horario-edunova.xlsx',
                         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+@login_required
+@require_http_methods(['GET'])
+def exportar_horario(request):
+    """No expone horarios de otras cuentas ni datos del catálogo institucional."""
+    _autorizar(request.user)
+    bloques = BloqueHorarioPersonal.objects.filter(usuario=request.user).order_by(
+        'dia_semana', 'hora_inicio', 'asignatura', 'fecha_inicio')
+    contenido = generar_horario_xlsx(bloques)
+    response = HttpResponse(
+        contenido,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = 'attachment; filename="mi-horario-edunova.xlsx"'
+    response['Cache-Control'] = 'private, no-store'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 
 @login_required

@@ -1,8 +1,10 @@
 <div class="surface-subtle rounded-lg p-4 mb-4">
-  <p class="mb-3">Carga tus clases desde la plantilla XLSX. Cada bloque aparecerá en su día y horario, dentro del período indicado.</p>
+  <h3 class="font-semibold mb-2">Gestionar mi horario XLSX</h3>
+  <p class="mb-3">Descarga una plantilla para crear tu horario o exporta tus clases actuales para modificarlas. Ambos archivos se pueden importar en EduNova.</p>
   <div class="flex flex-wrap gap-3">
     <a class="btn-primary px-4 py-2" href="{% url 'academico:importar_horario' %}">Importar o reemplazar mi horario</a>
     <a class="btn-secondary px-4 py-2" href="{% url 'academico:plantilla_horario' %}">Descargar plantilla XLSX</a>
+    <a class="btn-secondary px-4 py-2" href="{% url 'academico:exportar_horario' %}">Exportar mi horario XLSX</a>
   </div>
   {% if not bloques_horario %}<p class="text-muted mt-3">Tu horario está vacío. Descarga y completa la plantilla para comenzar.</p>{% endif %}
 </div>
