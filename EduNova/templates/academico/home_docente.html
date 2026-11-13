@@ -5,7 +5,6 @@
 <h1 class="font-display text-2xl font-semibold mb-6">Hola, {{ user.first_name }}</h1>
 
 <div class="grid lg:grid-cols-3 gap-6">
-
     <div class="lg:col-span-1 space-y-6">
         <div class="card p-5">
             <h2 class="font-display font-semibold mb-3">Próxima actividad docente</h2>
@@ -21,50 +20,21 @@
             <p class="text-sm text-muted">No tienes clases próximas agendadas.</p>
             {% endif %}
         </div>
-
-        <div class="card p-5">
-            <h2 class="font-display font-semibold mb-3">Mis asignaturas y secciones</h2>
-            {% if cursos %}
-            <ul class="space-y-2">
-                {% for curso in cursos %}
-                <li class="flex items-center justify-between text-sm">
-                    <span>{{ curso }}</span>
-                    <span class="text-faint">{{ curso.matriculados.count }} estudiantes</span>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-sm text-muted">Aún no tienes secciones asignadas.</p>
-            {% endif %}
-        </div>
-
         <div class="flex gap-3">
             <a href="{% url 'academico:tomar_asistencia' %}" class="btn btn-primary flex-1 text-center py-2.5 font-medium">
                 <i class="fas fa-plus"></i> Lista de Estudiantes
             </a>
         </div>
-        
-        
         <div class="flex gap-3">
             <a href="{% url 'academico:crear_observacion' %}" class="btn btn-primary flex-1 text-center py-2.5 font-medium">
                 <i class="fas fa-plus"></i> Nueva Observación
             </a>
         </div>
-
     </div>
 
     <div class="lg:col-span-2">
-        <div class="card p-4 mb-4">
-            <label for="seccion-docente" class="block text-sm font-medium mb-2">Filtrar calendario por asignatura y sección</label>
-            <select id="seccion-docente" class="surface-control w-full rounded-lg border p-2" style="border-color:var(--linea)" onchange="location.href='?seccion='+encodeURIComponent(this.value)">
-                <option value="">Todas mis asignaturas</option>
-                {% for curso in cursos %}<option value="{{ curso.pk }}" {% if seccion_seleccionada == curso.pk|stringformat:'s' %}selected{% endif %}>{{ curso.asignatura }} · {{ curso.seccion }}</option>{% endfor %}
-            </select>
-        </div>
+        {# Plantilla histórica sin dependencia de carreras, asignaturas ni filtros de secciones. #}
         {% include "academico/_calendario.html" %}
     </div>
-
-    
-
 </div>
 {% endblock %}
