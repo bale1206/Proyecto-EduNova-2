@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 from . import csv_views
 from . import horario_vistas
+from . import eventos_personales
 
 app_name = 'academico'
 
@@ -23,7 +24,7 @@ urlpatterns = [
     path('estudiante/tareas/<int:tarea_id>/alternar/', views.alternar_tarea_estudiante, name='alternar_tarea_estudiante'),
     path('estudiante/tareas/<int:tarea_id>/eliminar/', views.eliminar_tarea_estudiante, name='eliminar_tarea_estudiante'),
     path('docente/', views.home_docente, name='home_docente'),
-    path('planificacion/tareas/nueva/', views.crear_tarea_equipo, name='crear_tarea_equipo'),
+    path('planificacion/tareas/nueva/', eventos_personales.crear_tarea_equipo, name='crear_tarea_equipo'),
     path('planificacion/tareas/<int:tarea_id>/<str:accion>/', views.tarea_equipo_accion, name='tarea_equipo_accion'),
     path('planificacion/recordatorios/', views.recordatorios_equipo, name='recordatorios_equipo'),
     path('administrativo/', views.home_administrativo, name='home_administrativo'),
@@ -31,7 +32,7 @@ urlpatterns = [
     path('administrativo/carreras/asignar/', views.asignar_carrera, name='asignar_carrera'),
     path('administrativo/secciones/matricular/', views.matricular_seccion, name='matricular_seccion'),
     path('administrativo/cursos/nuevo/', views.crear_curso, name='crear_curso'),
-    path('administrativo/eventos/nuevo/', views.crear_evento, name='crear_evento'),
+    path('administrativo/eventos/nuevo/', eventos_personales.crear_evento, name='crear_evento'),
     # Servicio compartido con las observaciones: no es una pantalla de asistencia.
     path('ajax/cargar-estudiantes/', views.cargar_estudiantes, name='ajax_cargar_estudiantes'),
     path('crear-observacion/', views.crear_observacion, name='crear_observacion'),
