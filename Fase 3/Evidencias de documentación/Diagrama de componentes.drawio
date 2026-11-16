@@ -1,0 +1,124 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Página-1" id="4gAcOksg7Ste1H-OtPrW">
+    <mxGraphModel dx="3333" dy="1900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-3" parent="1" style="swimlane;html=1;startSize=35;horizontal=1;rounded=1;fillColor=#EAF4FF;swimlaneFillColor=#F7FBFF;strokeColor=#B3CCE2;fontColor=#243447;fontStyle=1;shadow=0;" value="Cliente_Web" vertex="1">
+          <mxGeometry height="230" width="380" x="130" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-4" parent="DKK8bNhH9yKhqQAjnjyN-3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF4FF;strokeColor=#A5C5E0;fontColor=#243447;strokeWidth=2;spacing=12;" value="«component»&lt;br&gt;&lt;b&gt;Navegador&lt;/b&gt;&lt;hr&gt;Interfaz de Usuario&lt;br&gt;Registro de alumno, docente y administrativo&lt;br&gt;Ingreso del código de verificación" vertex="1">
+          <mxGeometry height="150" width="340" x="20" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-5" parent="1" style="swimlane;html=1;startSize=35;horizontal=1;rounded=1;fillColor=#EAF7EF;swimlaneFillColor=#F7FCF9;strokeColor=#BDD5C6;fontColor=#243447;fontStyle=1;shadow=0;" value="Servidor_EduNova" vertex="1">
+          <mxGeometry height="570" width="650" x="570" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-6" parent="DKK8bNhH9yKhqQAjnjyN-5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF7EF;strokeColor=#A6CDB5;fontColor=#243447;strokeWidth=2;spacing=12;" value="«component»&lt;br&gt;&lt;b&gt;App_Usuarios&lt;/b&gt;&lt;hr&gt;+Registro de usuarios&lt;br&gt;+Generación de códigos&lt;br&gt;+Validación de códigos y expiración&lt;br&gt;+Autenticación&lt;br&gt;+Roles: alumno, docente y administrativo" vertex="1">
+          <mxGeometry height="200" width="320" x="165" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-7" parent="DKK8bNhH9yKhqQAjnjyN-5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF5DF;strokeColor=#DDC58D;fontColor=#243447;strokeWidth=2;spacing=12;" value="«component»&lt;br&gt;&lt;b&gt;App_Comunicaciones&lt;/b&gt;&lt;hr&gt;+Mensajes&lt;br&gt;+Notificaciones&lt;br&gt;+Envío de códigos por correo" vertex="1">
+          <mxGeometry height="160" width="280" x="25" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-8" parent="DKK8bNhH9yKhqQAjnjyN-5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2ECFF;strokeColor=#C3B1E0;fontColor=#243447;strokeWidth=2;spacing=12;" value="«component»&lt;br&gt;&lt;b&gt;App_Academicc&lt;/b&gt;&lt;hr&gt;+Estudiantes&lt;br&gt;+Cursos&lt;br&gt;+Asistencia" vertex="1">
+          <mxGeometry height="160" width="280" x="345" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-9" parent="1" style="swimlane;html=1;startSize=35;horizontal=1;rounded=1;fillColor=#F0F1FF;swimlaneFillColor=#F9F9FF;strokeColor=#CED1EB;fontColor=#243447;fontStyle=1;shadow=0;" value="Render" vertex="1">
+          <mxGeometry height="210" width="320" x="1290" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-10" parent="DKK8bNhH9yKhqQAjnjyN-9" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F1FF;strokeColor=#BBBFE4;fontColor=#243447;strokeWidth=2;spacing=12;" value="«component»&lt;br&gt;&lt;b&gt;Servicio en Render&lt;/b&gt;&lt;hr&gt;Endpoint HTTPS" vertex="1">
+          <mxGeometry height="130" width="280" x="20" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-11" parent="1" style="swimlane;html=1;startSize=35;horizontal=1;rounded=1;fillColor=#E7F7F4;swimlaneFillColor=#F4FCFA;strokeColor=#BEDFD6;fontColor=#243447;fontStyle=1;shadow=0;" value="Supabase" vertex="1">
+          <mxGeometry height="280" width="400" x="880" y="770" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-12" parent="DKK8bNhH9yKhqQAjnjyN-11" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F7F4;strokeColor=#A0CEC5;fontColor=#243447;strokeWidth=2;spacing=12;" value="«component»&lt;br&gt;&lt;b&gt;edunova_bd&lt;/b&gt;&lt;hr&gt;Supabase Cloud&lt;br&gt;+Usuarios y roles&lt;br&gt;+Hash de códigos de verificación&lt;br&gt;+Expiración y estado de verificación" vertex="1">
+          <mxGeometry height="190" width="350" x="25" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-13" parent="1" style="swimlane;html=1;startSize=35;horizontal=1;rounded=1;fillColor=#FFF0F2;swimlaneFillColor=#FFF8F9;strokeColor=#E8C7CD;fontColor=#243447;fontStyle=1;shadow=0;" value="Google / Gmail" vertex="1">
+          <mxGeometry height="470" width="530" x="140" y="770" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-14" parent="DKK8bNhH9yKhqQAjnjyN-13" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF0F2;strokeColor=#E2B5BD;fontColor=#243447;strokeWidth=2;spacing=12;" value="«component»&lt;br&gt;&lt;b&gt;Servidor SMTP de Gmail&lt;/b&gt;&lt;hr&gt;smtp.gmail.com&lt;br&gt;Envío de correos" vertex="1">
+          <mxGeometry height="150" width="350" x="90" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-15" parent="DKK8bNhH9yKhqQAjnjyN-13" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF0F2;strokeColor=#E2B5BD;fontColor=#243447;strokeWidth=2;spacing=12;" value="&lt;b&gt;Correo del solicitante&lt;/b&gt;&lt;hr&gt;Código de verificación recibido" vertex="1">
+          <mxGeometry height="120" width="350" x="90" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-16" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.25;entryX=0;entryY=0.3;" target="DKK8bNhH9yKhqQAjnjyN-6" value="HTTPS: registro y validación del código">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-17" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.75;entryX=0;entryY=0.5;" target="DKK8bNhH9yKhqQAjnjyN-7" value="HTTPS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-18" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" target="DKK8bNhH9yKhqQAjnjyN-8" value="HTTPS">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="320" y="670" />
+              <mxPoint x="1055" y="670" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-19" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" target="DKK8bNhH9yKhqQAjnjyN-7" value="Solicita envío del código">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-20" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="DKK8bNhH9yKhqQAjnjyN-8" value="Usa">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-21" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.2;entryX=0.5;entryY=1;" target="DKK8bNhH9yKhqQAjnjyN-6" value="Usa">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-22" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=0;entryX=0.8;entryY=1;" target="DKK8bNhH9yKhqQAjnjyN-6" value="Usa">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-23" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.2;entryX=0;entryY=0.5;" target="DKK8bNhH9yKhqQAjnjyN-10" value="HTTPS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-24" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=1;entryY=0.3;" target="DKK8bNhH9yKhqQAjnjyN-12" value="API Supabase / HTTPS">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1250" y="210" />
+              <mxPoint x="1250" y="710" />
+              <mxPoint x="1320" y="710" />
+              <mxPoint x="1320" y="887" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-25" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.8;entryX=0.75;entryY=0;" target="DKK8bNhH9yKhqQAjnjyN-12" value="API Supabase / HTTPS">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1210" y="538" />
+              <mxPoint x="1210" y="730" />
+              <mxPoint x="1167.5" y="730" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-26" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=0.75;exitY=1;entryX=0.25;entryY=0;" target="DKK8bNhH9yKhqQAjnjyN-12" value="API Supabase / HTTPS">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="805" y="720" />
+              <mxPoint x="992.5" y="720" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-27" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" target="DKK8bNhH9yKhqQAjnjyN-14" value="SMTP con TLS: envío del código">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="665" y="710" />
+              <mxPoint x="405" y="710" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-28" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-14" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;" target="DKK8bNhH9yKhqQAjnjyN-15" value="Entrega del correo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="DKK8bNhH9yKhqQAjnjyN-29" edge="1" parent="1" source="DKK8bNhH9yKhqQAjnjyN-15" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#78889A;fontColor=#243447;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" target="DKK8bNhH9yKhqQAjnjyN-4" value="El solicitante ingresa el código">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="110" y="1140" />
+              <mxPoint x="110" y="180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
